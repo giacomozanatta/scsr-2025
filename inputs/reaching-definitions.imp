@@ -19,4 +19,24 @@ class reachingDefinitions {
 		for (; i < 5; i = i + 1)
 			x = "p";
 	}
+
+	fibo(n){
+	    if(n <= 1){
+            return 1;
+        }
+        else{
+            def rec1 = n - 1;
+            def rec2 = n - 2;
+
+            return this.fibo(rec1) + this.fibo(rec2);
+        }
+	}
+
+	test4() {
+	    // This is a comment
+	    def n = 10;
+
+        /* Also this is a comment */
+	    this.fibo(n);
+	}
 }

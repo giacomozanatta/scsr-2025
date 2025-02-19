@@ -6,6 +6,11 @@ plugins {
 repositories {
     mavenCentral()
 }
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
 
 dependencies {
     implementation 'io.github.lisa-analyzer:lisa-sdk:0.1b9'

@@ -15,7 +15,7 @@ import it.unive.lisa.program.Program;
 public class AvailableExpressionsTest {
 
     @Test
-    public void testRD() throws ParsingException, AnalysisException {
+    public void testAE() throws ParsingException, AnalysisException {
         // we parse the program to get the CFG representation of the code in it
         Program program = IMPFrontend.processFile("inputs/available-expressions.imp");
 

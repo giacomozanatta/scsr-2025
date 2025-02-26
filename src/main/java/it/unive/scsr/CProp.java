@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
@@ -106,7 +105,8 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         // Get all previous constants
         Stream<CProp> dataflowElements = domain.getDataflowElements().stream();
         // Filters all the previous constants that are referenced by the provided expression
-        List<CProp> referencedConstants = dataflowElements.filter(el -> depIdentifiers.containsAll(el.getInvolvedIdentifiers())).toList();
+        List<CProp> referencedConstants = dataflowElements
+                .filter(el -> depIdentifiers.containsAll(el.getInvolvedIdentifiers())).toList();
 
         // If the expression references all of his constants, calculate its final value and assign to this constant
         if (referencedConstants.size() == depIdentifiers.size()) {
@@ -142,7 +142,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
             CProp referencedConstant = referencedConstants.stream().filter(cProp -> cProp.getInvolvedIdentifiers().contains(((Identifier) expression)))
                     .findFirst()
                     // Throws an error if not found, but we already checked it exists
-                    .get();
+                    .orElseThrow();
 
             return referencedConstant.constant;
         }
@@ -156,18 +156,22 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         }
         // We only support +, -, * and / among binary expressions
         if (expression instanceof BinaryExpression) {
+            // +
             if (((BinaryExpression) expression).getOperator() instanceof AdditionOperator) {
                 return getExpressionValue(((BinaryExpression) expression).getLeft(), referencedConstants)
                         + getExpressionValue(((BinaryExpression) expression).getRight(), referencedConstants);
             }
+            // -
             if (((BinaryExpression) expression).getOperator() instanceof SubtractionOperator) {
                 return getExpressionValue(((BinaryExpression) expression).getLeft(), referencedConstants)
                         - getExpressionValue(((BinaryExpression) expression).getRight(), referencedConstants);
             }
+            // *
             if (((BinaryExpression) expression).getOperator() instanceof MultiplicationOperator) {
                 return getExpressionValue(((BinaryExpression) expression).getLeft(), referencedConstants)
                         * getExpressionValue(((BinaryExpression) expression).getRight(), referencedConstants);
             }
+            // /
             if (((BinaryExpression) expression).getOperator() instanceof DivisionOperator) {
                 return getExpressionValue(((BinaryExpression) expression).getLeft(), referencedConstants)
                         / getExpressionValue(((BinaryExpression) expression).getRight(), referencedConstants);
@@ -189,7 +193,8 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
     public Collection<CProp> kill(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
         // Here we assign a value to an identifier. Regardless of the expression value, the identifier should be removed from the propagated constants
         return domain.getDataflowElements()
-                .stream().filter(el -> el.id.getName().equals(id.getName())).toList();
+                .stream()
+                .filter(el -> el.id.getName().equals(id.getName())).toList();
     }
 
     @Override

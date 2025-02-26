@@ -106,10 +106,10 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         // Get all previous constants
         Stream<CProp> dataflowElements = domain.getDataflowElements().stream();
         // Filters all the previous constants that are referenced by the provided expression
-        Stream<CProp> referencedConstants = dataflowElements.filter(el -> depIdentifiers.containsAll(el.getInvolvedIdentifiers()));
+        List<CProp> referencedConstants = dataflowElements.filter(el -> depIdentifiers.containsAll(el.getInvolvedIdentifiers())).toList();
 
         // If the expression references all of his constants, calculate its final value and assign to this constant
-        if (referencedConstants.count() == depIdentifiers.size()) {
+        if (referencedConstants.size() == depIdentifiers.size()) {
             result.add(new CProp(id, getExpressionValue(expression, referencedConstants)));
         }
 
@@ -132,14 +132,14 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
     /**
      * Returns the integer value of an expression, provided it is among one of the `isExpressionSupported` operations
      **/
-    private Integer getExpressionValue(SymbolicExpression expression, Stream<CProp> referencedConstants) throws SemanticException {
+    private Integer getExpressionValue(SymbolicExpression expression, List<CProp> referencedConstants) throws SemanticException {
         if (expression instanceof Constant) {
             // This is surely an integer since we're only handling integer constants
             return (Integer) ((Constant) expression).getValue();
         }
         if (expression instanceof Identifier) {
             // In this case it's a variable. We need to find the Constant value associated to the variable
-            CProp referencedConstant = referencedConstants.filter(cProp -> cProp.getInvolvedIdentifiers().contains(((Identifier) expression)))
+            CProp referencedConstant = referencedConstants.stream().filter(cProp -> cProp.getInvolvedIdentifiers().contains(((Identifier) expression)))
                     .findFirst()
                     // Throws an error if not found, but we already checked it exists
                     .get();
@@ -189,7 +189,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
     public Collection<CProp> kill(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
         // Here we assign a value to an identifier. Regardless of the expression value, the identifier should be removed from the propagated constants
         return domain.getDataflowElements()
-                .stream().filter(el -> el.id == id).toList();
+                .stream().filter(el -> el.id.getName().equals(id.getName())).toList();
     }
 
     @Override

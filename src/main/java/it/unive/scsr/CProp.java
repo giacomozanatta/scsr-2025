@@ -121,11 +121,14 @@ implements
             return null;
         }
         if (expression instanceof Constant) {
+            // for constants, we simply retrieve the value and return it
             Object val =  ((Constant) expression).getValue();
             if (val instanceof Integer) 
                 return (Integer) val;
         }
         if (expression instanceof Identifier) {
+            // for identifiers, we look for the value in the domain and 
+            // return it if found
             Collection<CProp> elementsInDomain = domain.getDataflowElements();
             for (CProp element : elementsInDomain) {
                 if (element.id.equals((Identifier) expression)) {
@@ -135,6 +138,7 @@ implements
             return null;
         }
         if (expression instanceof UnaryExpression) {
+            // we only consider unary expressions that are negations of integers
             UnaryExpression expr = (UnaryExpression) expression;
             UnaryOperator operator = expr.getOperator();
             if (operator instanceof NumericNegation) {
@@ -147,6 +151,8 @@ implements
         }
 
         if (expression instanceof BinaryExpression) {
+            // we only consider binary expressions that are operations on integers
+            // such as addition, subtraction, multiplication and division
             BinaryExpression expr = (BinaryExpression) expression;
             BinaryOperator operator = expr.getOperator();
             
@@ -183,6 +189,8 @@ implements
             throws SemanticException {
         
         Set<CProp> result = new HashSet<>();
+        // for an assignment, if the expression evaluate to a non-null integer value,
+        // we add the pair (id, value) to the result
         Integer value = evaluateExpression(expression, domain);
         if (value != null) {
             result.add(new CProp(id, value));

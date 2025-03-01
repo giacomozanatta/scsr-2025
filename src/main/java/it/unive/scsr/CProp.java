@@ -1,6 +1,81 @@
 package it.unive.scsr;
 
-public class CProp {
+import it.unive.lisa.analysis.ScopeToken;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.SemanticOracle;
+import it.unive.lisa.analysis.dataflow.DataflowElement;
+import it.unive.lisa.analysis.dataflow.DefiniteDataflowDomain;
+import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.lisa.util.representation.ListRepresentation;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
+    private final Identifier id;
+    private final Integer constant;
+
+    public CProp(Identifier id, Integer constant) {
+        this.id = id;
+        this.constant = constant;
+    }
+
+    public CProp(){
+        this(null,null);
+    }
+
+    @Override
+	public StructuredRepresentation representation() {
+		return new ListRepresentation(
+				new StringRepresentation(id),
+				new StringRepresentation(constant));
+ 	}
+
+	@Override
+	public CProp pushScope(ScopeToken scope) throws SemanticException {
+		return this;
+	}
+
+	@Override
+	public CProp popScope(ScopeToken scope) throws SemanticException {
+		return this;
+	}
+
+    @Override
+    public Collection<Identifier> getInvolvedIdentifiers() {
+        return Collections.singleton(id);
+    }
+
+    @Override
+    public Collection<CProp> gen(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> cPropDefiniteDataflowDomain) throws SemanticException {
+        return List.of();
+    }
+
+    @Override
+    public Collection<CProp> gen(ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> cPropDefiniteDataflowDomain) throws SemanticException {
+        return List.of();
+    }
+
+    @Override
+    public Collection<CProp> kill(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> cPropDefiniteDataflowDomain) throws SemanticException {
+        return List.of();
+    }
+
+    @Override
+    public Collection<CProp> kill(ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> cPropDefiniteDataflowDomain) throws SemanticException {
+        return List.of();
+    }
+
+    @Override
+    public boolean canProcess(SymbolicExpression expression, ProgramPoint pp, SemanticOracle oracle) {
+        return DataflowElement.super.canProcess(expression, pp, oracle);
+    }
 
     // IMPLEMENTATION NOTE:
     // the code below is outside of the scope of the course. You can uncomment
@@ -25,25 +100,4 @@ public class CProp {
     //       2. [x,1] [y,3]
     //   - How can you retrieve the constant value of `x` to use at program point 2?
     //   - When working with an object of type `Constant`, you can obtain its value by calling the `getValue()` method.
-
-//	@Override
-//	public StructuredRepresentation representation() {
-//		return new ListRepresentation(
-//				new StringRepresentation(id),
-//				new StringRepresentation(constant));
-//	}
-//
-//	@Override
-//	public CProp pushScope(
-//			ScopeToken scope)
-//			throws SemanticException {
-//		return this;
-//	}
-//
-//	@Override
-//	public CProp popScope(
-//			ScopeToken scope)
-//			throws SemanticException {
-//		return this;
-//	}
 }

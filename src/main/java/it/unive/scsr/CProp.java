@@ -125,6 +125,7 @@ implements
             Object val =  ((Constant) expression).getValue();
             if (val instanceof Integer) 
                 return (Integer) val;
+            return null;
         }
         if (expression instanceof Identifier) {
             // for identifiers, we look for the value in the domain and 

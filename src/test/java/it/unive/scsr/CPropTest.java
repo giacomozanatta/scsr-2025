@@ -10,7 +10,7 @@ import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.imp.IMPFrontend;
 import it.unive.lisa.imp.ParsingException;
-import it.unive.lisa.program.Program;
+import it.unive.lisa.program.Program;   
 
 public class CPropTest {
 

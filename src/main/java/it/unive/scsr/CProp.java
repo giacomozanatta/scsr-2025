@@ -19,6 +19,7 @@ import it.unive.lisa.util.representation.StructuredRepresentation;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
@@ -192,5 +193,21 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
     public Collection<CProp> kill(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
         // The value is not stored in an identifier: no need to kill any variable
         return new HashSet<>();
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CProp cProp = (CProp) o;
+        return constant == cProp.constant && Objects.equals(id, cProp.id);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(id);
+        result = 31 * result + constant;
+        return result;
     }
 }

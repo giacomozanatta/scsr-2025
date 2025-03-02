@@ -1,5 +1,6 @@
 package it.unive.scsr;
 
+import it.unive.lisa.analysis.dataflow.DefiniteDataflowDomain;
 import org.junit.Test;
 
 import it.unive.lisa.AnalysisException;
@@ -20,31 +21,22 @@ public class ReachingDefinitionsTest {
 
     @Test
     public void testRD() throws ParsingException, AnalysisException {
-        // we parse the program to get the CFG representation of the code in it
-        Program program = IMPFrontend.processFile("inputs/reaching-definitions.imp");
+        Program p = IMPFrontend.processFile("inputs/reaching-definitions.imp");
 
-        // we build a new configuration for the analysis
         LiSAConfiguration conf = new DefaultConfiguration();
-
-        // we specify where we want files to be generated
         conf.workdir = "outputs/rd";
-
-        // we specify the visual format of the analysis results
         conf.analysisGraphs = GraphType.HTML;
 
-        // we specify the analysis that we want to execute
         conf.abstractState = new SimpleAbstractState<>(
-                // memory handling
+                // Track what we have in the heap
                 new MonolithicHeap(),
-                // domain
+                // The domain we are tracking
                 new PossibleDataflowDomain<>(new ReachingDefinitions()),
-                // how we compute types of expressions
-                new TypeEnvironment<>(new InferredTypes()));
+                // Keep track of variable types
+                new TypeEnvironment<>(new InferredTypes())
+        );
 
-        // we instantiate LiSA with our configuration
         LiSA lisa = new LiSA(conf);
-
-        // finally, we tell LiSA to analyze the program
-        lisa.run(program);
+        lisa.run(p);
     }
 }

@@ -2,6 +2,7 @@ package it.unive.scsr;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import it.unive.lisa.analysis.ScopeToken;
@@ -38,7 +39,7 @@ public class AvailableExpressions
                 // as type in fields/methods
                 AvailableExpressions> {
 
-    private final ValueExpression expression;
+    private ValueExpression expression;
 
     public AvailableExpressions(ValueExpression expression) {
         this.expression = expression;
@@ -52,6 +53,104 @@ public class AvailableExpressions
     public StructuredRepresentation representation() {
         return new StringRepresentation(expression);
     }
+
+    @Override
+    public Collection<Identifier> getInvolvedIdentifiers() {
+        return getVariablesIn(expression);
+    }
+
+    public static Collection<Identifier> getVariablesIn(ValueExpression expression) {
+        Collection<Identifier> result = new HashSet<>();
+
+        if (expression == null) return result;
+        if (expression instanceof Identifier) {
+            result.add((Identifier) expression);
+        }
+        if (expression instanceof UnaryExpression unary) {
+            // An unary expression could be, for example, -x.
+            // We are "extracting" the x from the unary expression.
+            ValueExpression valueExpression = (ValueExpression) unary.getExpression();
+            result.addAll(getVariablesIn(unary));
+        }
+
+        if (expression instanceof BinaryExpression binary) {
+            result.addAll(getVariablesIn((ValueExpression) binary.getLeft()));
+            result.addAll(getVariablesIn((ValueExpression) binary.getRight()));
+        }
+
+        if (expression instanceof TernaryExpression ternary) {
+            result.addAll(getVariablesIn((ValueExpression) ternary.getLeft()));
+            result.addAll(getVariablesIn((ValueExpression) ternary.getMiddle()));
+            result.addAll(getVariablesIn((ValueExpression) ternary.getRight()));
+        }
+
+        return result;
+    }
+
+    @Override
+    public Collection<AvailableExpressions> gen(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
+        Set<AvailableExpressions> result = new HashSet<>();
+        AvailableExpressions ae = new AvailableExpressions(expression);
+        // We need to filter out some expressions (https://lisa-analyzer.github.io/structure/analysis-infrastructure.html)
+        // See filter()
+        // We also need to check if an identifier is already being tracked
+        if (!ae.getInvolvedIdentifiers().contains(id) && filter(expression)) {
+            result.add(ae);
+        }
+
+        return result;
+    }
+
+    @Override
+    public Collection<AvailableExpressions> gen(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
+        Set<AvailableExpressions> result = new HashSet<>();
+        AvailableExpressions ae = new AvailableExpressions(expression);
+        // We need to filter out some expressions (https://lisa-analyzer.github.io/structure/analysis-infrastructure.html)
+        // See filter()
+        if (filter(expression)) {
+            result.add(ae);
+        }
+
+        return result;
+    }
+
+    private static boolean filter(ValueExpression expression) {
+        // We don't want to keep track of Identifier, Constant, Skip, PushAny
+        if (
+                expression instanceof Identifier
+                || expression instanceof Constant
+                || expression instanceof Skip
+                || expression instanceof PushAny
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public Collection<AvailableExpressions> kill(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
+        Collection<AvailableExpressions> result = new HashSet<>();
+        for (AvailableExpressions ae : domain.getDataflowElements()) {
+            // We search in the domain any expression that contains identifier id
+            // id is being redefined, so we want to kill any expression that
+            // is using id
+            Collection<Identifier> ids = getVariablesIn(ae.expression);
+            if (ids.contains(id)) {
+                result.add(ae);
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public Collection<AvailableExpressions> kill(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
+        // There is no identifier: this means that the expression
+        // will not change any definitions, so we don't kill any expression
+        return new HashSet<>();
+    }
+
 
     /* Out of the scope of the course: these are needed to handle calls */
 
@@ -67,95 +166,5 @@ public class AvailableExpressions
             ScopeToken scope)
             throws SemanticException {
         return this;
-    }
-
-    @Override
-    public Collection<Identifier> getInvolvedIdentifiers() {
-        return getVariablesIn(expression);
-    }
-
-    private static Collection<Identifier> getVariablesIn(
-            ValueExpression expression) {
-        Collection<Identifier> result = new HashSet<>();
-
-        if (expression == null)
-            return result;
-
-        if (expression instanceof Identifier)
-            result.add((Identifier) expression);
-
-        if (expression instanceof UnaryExpression)
-            result.addAll(getVariablesIn((ValueExpression) ((UnaryExpression) expression).getExpression()));
-
-        if (expression instanceof BinaryExpression) {
-            BinaryExpression binary = (BinaryExpression) expression;
-            result.addAll(getVariablesIn((ValueExpression) binary.getLeft()));
-            result.addAll(getVariablesIn((ValueExpression) binary.getRight()));
-        }
-
-        if (expression instanceof TernaryExpression) {
-            TernaryExpression ternary = (TernaryExpression) expression;
-            result.addAll(getVariablesIn((ValueExpression) ternary.getLeft()));
-            result.addAll(getVariablesIn((ValueExpression) ternary.getMiddle()));
-            result.addAll(getVariablesIn((ValueExpression) ternary.getRight()));
-        }
-
-        return result;
-    }
-
-    @Override
-    public Collection<AvailableExpressions> gen(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
-        Collection<AvailableExpressions> result = new HashSet<>();
-        AvailableExpressions ae = new AvailableExpressions(expression);
-        if (!ae.getInvolvedIdentifiers().contains(id) && filter(expression)) {
-            result.add(ae);
-        }
-        return result;
-    }
-
-    @Override
-    public Collection<AvailableExpressions> gen(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
-        Collection<AvailableExpressions> result = new HashSet<>();
-        AvailableExpressions ae = new AvailableExpressions(expression);
-        if (filter(expression)) {
-            result.add(ae);
-        }
-        return result;
-    }
-
-    private static boolean filter(ValueExpression expression) {
-        if (expression instanceof Identifier) {
-            return false;
-        }
-        if (expression instanceof Constant)
-            // constants do not need to be computed
-            return false;
-        // the following are lisa internal expressions that we don't care about
-        if (expression instanceof Skip)
-            return false;
-        if (expression instanceof PushAny)
-            return false;
-        return true;
-    }
-
-    @Override
-    public Collection<AvailableExpressions> kill(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
-        // we kill all of the elements that refer to expressions using the
-        // variable being assinged
-        Collection<AvailableExpressions> result = new HashSet<>();
-
-        for (AvailableExpressions ae : domain.getDataflowElements()) {
-            Collection<Identifier> ids = getVariablesIn(ae.expression);
-
-            if (ids.contains(id))
-                result.add(ae);
-        }
-
-        return result;
-    }
-
-    @Override
-    public Collection<AvailableExpressions> kill(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
-        return new HashSet<>();
     }
 }

@@ -1,8 +1,6 @@
 package it.unive.scsr;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -22,155 +20,108 @@ public class ReachingDefinitions
         // element
         // - they provide gen and kill functions that are specific to the
         // analysis that we are executing
-        implements
-        DataflowElement<
-                // the type of dataflow domain that we want to use with this
-                // analysis
-                PossibleDataflowDomain<
-                        // java requires this type parameter to have this class
-                        // as type in fields/methods
-                        ReachingDefinitions>,
-                // java requires this type parameter to have this class
-                // as type in fields/methods
-                ReachingDefinitions> {
+        implements DataflowElement<PossibleDataflowDomain<ReachingDefinitions>, ReachingDefinitions> {
 
-    /**
-     * The variable being defined
-     */
-    private final Identifier variable;
+    // This is the definition we want to track. In this case, we want to track all assignments
+    private Identifier identifier;
+    // Location in the code of the definition we are tracking.
+    private final CodeLocation location;
 
-    /**
-     * The place in the program where the variable is defined
-     */
-    private final CodeLocation definition;
+    public ReachingDefinitions(Identifier identifier, CodeLocation location) {
+        this.identifier = identifier;
+        this.location = location;
+    }
 
+    // The empty constructor is required to initialize the domain with empty values
     public ReachingDefinitions() {
         this(null, null);
     }
 
-    public ReachingDefinitions(
-            Identifier variable,
-            CodeLocation definition) {
-        this.variable = variable;
-        this.definition = definition;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((definition == null) ? 0 : definition.hashCode());
-        result = prime * result + ((variable == null) ? 0 : variable.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(
-            Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ReachingDefinitions other = (ReachingDefinitions) obj;
-        if (definition == null) {
-            if (other.definition != null)
-                return false;
-        } else if (!definition.equals(other.definition))
-            return false;
-        if (variable == null) {
-            if (other.variable != null)
-                return false;
-        } else if (!variable.equals(other.variable))
-            return false;
-        return true;
-    }
-
     @Override
     public Collection<Identifier> getInvolvedIdentifiers() {
+        // In this case we only have one identifier
         Set<Identifier> result = new HashSet<>();
-        result.add(variable);
+        result.add(identifier);
         return result;
     }
 
     @Override
-    public Collection<ReachingDefinitions> gen(
-            Identifier id,
-            ValueExpression expression,
-            ProgramPoint pp,
-            PossibleDataflowDomain<ReachingDefinitions> domain)
-            throws SemanticException {
-        // we generate a new element tracking this definition
+    public Collection<ReachingDefinitions> gen(Identifier id, ValueExpression expression, ProgramPoint pp, PossibleDataflowDomain<ReachingDefinitions> reachingDefinitionsPossibleDataflowDomain) throws SemanticException {
+        // We want to generate a reaching definition element
+        // We use the id given by the parameter. To obtain the location, we use the ProgramPoint, that is an instruction
+        // being pointed
+        ReachingDefinitions def = new ReachingDefinitions(id, pp.getLocation());
+        // Then we return it in a set
         Set<ReachingDefinitions> result = new HashSet<>();
-        ReachingDefinitions rd = new ReachingDefinitions(id, pp.getLocation());
-        result.add(rd);
+        result.add(def);
         return result;
     }
 
     @Override
-    public Collection<ReachingDefinitions> gen(
-            ValueExpression expression,
-            ProgramPoint pp,
-            PossibleDataflowDomain<ReachingDefinitions> domain)
-            throws SemanticException {
-        // if no assignment is performed, no element is generated!
+    public Collection<ReachingDefinitions> gen(ValueExpression valueExpression, ProgramPoint programPoint, PossibleDataflowDomain<ReachingDefinitions> reachingDefinitionsPossibleDataflowDomain) throws SemanticException {
+        // Notice that this overload of gen does not have the identifier. This is because it represents
+        // values computed but not assigned to an element. In this case we have no interest in tracking them.
         return new HashSet<>();
     }
 
     @Override
-    public Collection<ReachingDefinitions> kill(
-            Identifier id,
-            ValueExpression expression,
-            ProgramPoint pp,
-            PossibleDataflowDomain<ReachingDefinitions> domain)
-            throws SemanticException {
-        // we kill all of the elements that refer to the variable being
-        // assigned, as we are redefining the variable
-        Set<ReachingDefinitions> killed = new HashSet<>();
-        for (ReachingDefinitions rd : domain.getDataflowElements())
-            // we could use `rd.variable.equals(id)` as elements of this class
-            // refer to one variable at a time
-            if (rd.getInvolvedIdentifiers().contains(id))
-                killed.add(rd);
-        return killed;
+    public Collection<ReachingDefinitions> kill(Identifier id, ValueExpression expression, ProgramPoint pp, PossibleDataflowDomain<ReachingDefinitions> domain) throws SemanticException {
+        // The function returns all the elements that are killed by the statement.
+        // We want to kill id in this case. So we loop through all elements in the domain
+        // and if the elementc contains id, then we want to add it to the set
+        Set<ReachingDefinitions> result = new HashSet<>();
+        for (ReachingDefinitions rd : domain.getDataflowElements()) {
+            if (rd.getInvolvedIdentifiers().contains(id)) {
+                result.add(rd);
+            }
+        }
+
+        return result;
     }
 
     @Override
-    public Collection<ReachingDefinitions> kill(
-            ValueExpression expression,
-            ProgramPoint pp,
-            PossibleDataflowDomain<ReachingDefinitions> domain)
-            throws SemanticException {
-        // if no assignment is performed, no element is killed!
+    public Collection<ReachingDefinitions> kill(ValueExpression valueExpression, ProgramPoint programPoint, PossibleDataflowDomain<ReachingDefinitions> reachingDefinitionsPossibleDataflowDomain) throws SemanticException {
+        // We have no identifier, we don't kill anything
         return new HashSet<>();
     }
 
-    /*
-     * Out of the scope of the course: this is needed to build structured
-     * representations
-     */
-
+    // How to show the element in the HTML
     @Override
     public StructuredRepresentation representation() {
         return new ListRepresentation(
-                new StringRepresentation(variable),
-                new StringRepresentation(definition));
+                new StringRepresentation(identifier),
+                new StringRepresentation(location)
+        );
     }
 
-    /* Out of the scope of the course: these are needed to handle calls */
+    // Needed by LiSA
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ReachingDefinitions that = (ReachingDefinitions) o;
+        return Objects.equals(identifier, that.identifier) && Objects.equals(location, that.location);
+    }
+
+    // Needed by LiSA
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(identifier);
+        result = 31 * result + Objects.hashCode(location);
+        return result;
+    }
+
+
+    // OUT OF SCOPE BELOW
 
     @Override
-    public ReachingDefinitions pushScope(
-            ScopeToken token)
-            throws SemanticException {
+    public ReachingDefinitions pushScope(ScopeToken scopeToken) throws SemanticException {
         return this;
     }
 
     @Override
-    public ReachingDefinitions popScope(
-            ScopeToken token)
-            throws SemanticException {
+    public ReachingDefinitions popScope(ScopeToken scopeToken) throws SemanticException {
         return this;
     }
 }
+

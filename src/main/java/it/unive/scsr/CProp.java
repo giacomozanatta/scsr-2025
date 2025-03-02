@@ -8,6 +8,7 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.*;
 import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.representation.ListRepresentation;
 import it.unive.lisa.util.representation.StringRepresentation;
@@ -63,7 +64,7 @@ public class CProp implements
 
     @Override
     public Collection<CProp> kill(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
-        return Collections.emptyList();
+        return Collections.emptySet();
     }
 
     @Override
@@ -78,7 +79,7 @@ public class CProp implements
 
     @Override
     public Collection<CProp> gen(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
-        return Collections.emptyList();
+        return Collections.emptySet();
     }
 
     @Override
@@ -120,7 +121,7 @@ public class CProp implements
 
             Integer value = calculateConstant((ValueExpression) unaryExpression.getExpression(),domain);
             if(value != null) {
-                if(operator instanceof NegatableOperator){
+                if(operator instanceof NumericNegation){
                     return -value;
                 }
             }
@@ -155,11 +156,6 @@ public class CProp implements
                 }
             }
         }
-
-        if (expression instanceof TernaryExpression){
-
-        }
-
         return null;
     }
 

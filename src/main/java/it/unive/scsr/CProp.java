@@ -254,7 +254,7 @@ implements
 			throws SemanticException {
 		return this;
 	}
-
+ 
 	@Override
 	public CProp popScope(
 			ScopeToken scope)

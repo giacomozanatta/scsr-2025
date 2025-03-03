@@ -31,8 +31,12 @@ public class BinaryExpressionHandler extends ConstantsPropagationBase<BinaryExpr
                     (firstConst, secondCost) -> toInt.apply(firstConst) - toInt.apply(secondCost)),
             entry(MultiplicationOperator.class,
                     (firstConst, secondCost) -> toInt.apply(firstConst) * toInt.apply(secondCost)),
-            entry(DivisionOperator.class,
-                    (firstConst, secondCost) -> toInt.apply(firstConst) / toInt.apply(secondCost))
+            entry(DivisionOperator.class, (firstConst, secondCost) -> {
+                // When a division by zero is detected the calculation stops.
+                final var right = toInt.apply(secondCost);
+                if (right == 0) return null;
+                return toInt.apply(firstConst) / toInt.apply(secondCost);
+            })
     );
 
     public BinaryExpressionHandler(BinaryExpression expression) {

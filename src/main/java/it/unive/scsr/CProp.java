@@ -82,6 +82,40 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
     }
 
     @Override
+    public int hashCode() {
+        // Similar to `ReachingDefinitions`
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((constant == null) ? 0 : constant.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(
+            Object obj) {
+        // Defining instance equality
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        CProp other = (CProp) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (constant == null) {
+            if (other.constant != null)
+                return false;
+        } else if (!constant.equals(other.constant))
+            return false;
+        return true;
+    }
+
+    @Override
     public Collection<Identifier> getInvolvedIdentifiers() {
         // A constant has only itself as identifier
         Set<Identifier> result = new HashSet<>();

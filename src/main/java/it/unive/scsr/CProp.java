@@ -91,7 +91,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
 
 	@Override
 	public Collection<CProp> gen(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
-		Integer val = eval(expression, domain);
+		Integer val = getVariablesIn(expression, domain);
 		if (val != null)
 			return Collections.singleton(new CProp(id, val));
 		return Collections.emptySet();
@@ -145,7 +145,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
 		return Objects.equals(constant, other.constant) && Objects.equals(id, other.id);
 	}
 
-	private static Integer eval(
+	private static Integer getVariablesIn(
 			SymbolicExpression expression, DefiniteDataflowDomain<CProp> domain) {
 		Collection<Identifier> result = new HashSet<>();
 
@@ -167,7 +167,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
 			UnaryOperator operator = unary.getOperator();
 			ValueExpression arg = (ValueExpression) unary.getExpression();
 
-			Integer value = eval(arg, domain);
+			Integer value = getVariablesIn(arg, domain);
 			if (value == null)
 				return null;
 			if (operator instanceof NumericNegation)
@@ -177,8 +177,8 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
 		if (expression instanceof BinaryExpression) {
 			BinaryExpression binary = (BinaryExpression) expression;
 			BinaryOperator operator = binary.getOperator();
-			Integer right = eval(binary.getRight(), domain);
-			Integer left = eval(binary.getLeft(), domain);
+			Integer right = getVariablesIn(binary.getRight(), domain);
+			Integer left = getVariablesIn(binary.getLeft(), domain);
 
 			if (right == null || left == null)
 				return null;

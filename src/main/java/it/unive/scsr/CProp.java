@@ -1,6 +1,122 @@
 package it.unive.scsr;
 
-public class CProp {
+import it.unive.lisa.analysis.ScopeToken;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.dataflow.DataflowElement;
+import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.*;
+import it.unive.lisa.symbolic.value.Identifier;
+import it.unive.lisa.symbolic.value.operator.*;
+
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.util.representation.ListRepresentation;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
+import it.unive.lisa.analysis.dataflow.DefiniteDataflowDomain;
+
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class CProp implements
+        DataflowElement<
+                // the type of dataflow domain that we want to use with this
+                // analysis
+                DefiniteDataflowDomain<
+                        // java requires this type parameter to have this class
+                        // as type in fields/methods
+                        CProp>,
+                // java requires this type parameter to have this class
+                // as type in fields/methods
+                CProp> {
+    private final Identifier id;
+    private final Integer constant;
+    public CProp() {this(null,null);}
+    public CProp(Identifier id, Integer constant) {
+        this.id = id;
+        this.constant = constant;
+    }
+
+    public Integer getConstant() {
+        return constant;
+    }
+
+    @Override
+    public Collection<Identifier> getInvolvedIdentifiers() {
+        return List.of(id);
+    }
+
+    private static Integer eval(SymbolicExpression ve, DefiniteDataflowDomain<CProp> domain){
+        if(ve instanceof Constant c) return (c.getValue() instanceof Integer)?(Integer)c.getValue() :null;
+        if(ve instanceof Identifier i){
+            for (CProp cp : domain.getDataflowElements()){
+                if(cp.id.equals(i)){
+                    return cp.getConstant();
+                }
+            }
+        }
+        if(ve instanceof UnaryExpression u){
+            Integer i= eval(u.getExpression(),domain);
+            return u.getOperator() instanceof NumericNegation ? -i:i;
+        }
+        if(ve instanceof BinaryExpression b){
+            Integer left= eval(b.getLeft(),domain);
+            Integer right= eval(b.getRight(),domain);
+            if(b.getOperator() instanceof AdditionOperator) return left+right;
+            if(b.getOperator() instanceof SubtractionOperator) return left-right;
+            if(b.getOperator() instanceof MultiplicationOperator) return left*right;
+            if(b.getOperator() instanceof DivisionOperator) return left/right;
+        }
+        return null;
+    }
+
+    @Override
+    public Collection<CProp> gen(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> cPropDefiniteDataflowDomain) throws SemanticException {
+        Set<CProp> result = new HashSet<>();
+        result.add(new CProp(identifier, eval(valueExpression,cPropDefiniteDataflowDomain)));
+        return result;
+    }
+
+    @Override
+    public Collection<CProp> gen(ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> cPropDefiniteDataflowDomain) throws SemanticException {
+        return List.of();
+    }
+
+    @Override
+    public Collection<CProp> kill(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> cPropDefiniteDataflowDomain) throws SemanticException {
+        Set<CProp> kl = new HashSet<>();
+        for(CProp i : cPropDefiniteDataflowDomain.getDataflowElements()){
+            if(i.id.equals(identifier))kl.add(i);
+        }
+        return kl;
+    }
+
+    @Override
+    public Collection<CProp> kill(ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> cPropDefiniteDataflowDomain) throws SemanticException {
+        return List.of();
+    }
+
+
+    @Override
+    public CProp pushScope(ScopeToken scopeToken) throws SemanticException {
+        return null;
+    }
+
+    @Override
+    public CProp popScope(ScopeToken scopeToken) throws SemanticException {
+        return null;
+    }
+
+    @Override
+    public StructuredRepresentation representation() {
+        return new ListRepresentation(
+				new StringRepresentation(id),
+				new StringRepresentation(constant));
+    }
+
 
     // IMPLEMENTATION NOTE:
     // the code below is outside of the scope of the course. You can uncomment

@@ -27,4 +27,11 @@ class cp {
 
 		return;
 	}
+
+	f2() {
+	    def x = 1;
+        def y = x + 2;
+
+        return;
+	}
 }

@@ -1,5 +1,15 @@
 class cp {
-	f0() {
+
+	f0(){
+		def x = 5;
+		def i = 0;
+		while(i < 5){
+			i = i + 1;
+		}
+		return i;
+	}
+	
+	f1() {
 		def x = 0;
 		def y = 0;
 		def z = x * y;
@@ -9,7 +19,7 @@ class cp {
 		return;
 	}
 
-	f1() {
+	f2() {
 		def xy = 0;
 		def b = -1;
 		def y = 3;
@@ -26,5 +36,30 @@ class cp {
 		}
 
 		return;
+	}
+
+	f3(){
+	    def x = 1;
+	    def y = x + 2;
+		x=6;
+
+		def c = -y;
+
+	    return;
+	}
+
+	f4(){
+		def x=5;
+		def y=0;
+		def z = x/y;
+
+		return;
+	}
+
+	f5(){
+		def w = "s";
+		def x = 3;
+
+		return x;
 	}
 }

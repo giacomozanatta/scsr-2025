@@ -2,7 +2,6 @@ package it.unive.scsr;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -141,7 +140,7 @@ public class AvailableExpressions
     @Override
     public Collection<AvailableExpressions> kill(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
         // we kill all of the elements that refer to expressions using the
-        // variable being assinged
+        // variable being assigned
         Collection<AvailableExpressions> result = new HashSet<>();
 
         for (AvailableExpressions ae : domain.getDataflowElements()) {

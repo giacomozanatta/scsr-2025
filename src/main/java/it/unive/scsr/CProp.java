@@ -1,49 +1,156 @@
 package it.unive.scsr;
 
-public class CProp {
+import it.unive.lisa.analysis.ScopeToken;
+import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.dataflow.DataflowElement;
+import it.unive.lisa.analysis.dataflow.DefiniteDataflowDomain;
+import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.*;
+import it.unive.lisa.symbolic.value.operator.*;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.util.representation.ListRepresentation;
+import it.unive.lisa.util.representation.StringRepresentation;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 
-    // IMPLEMENTATION NOTE:
-    // the code below is outside of the scope of the course. You can uncomment
-    // it to get your code to compile. Be aware that the code is written
-    // expecting that a field named "id" and a field named "constant" exist
-    // in this class: if you name them differently, change also the code below
-    // to make it work by just using the name of your choice instead of
-    // "id"/"constant". If you don't have these fields in your
-    // solution, then you should make sure that what you are doing is correct :)
+import java.util.*;
 
-    // - Implement your solution using the DefiniteDataFlowDomain.
-    //   - What would happen if you used a PossibleDataFlowDomain instead? Think about it (or try it), but remember to deliver the Definite version.
-    // - Keep it simple: track only integer values. Any non-integer values should be ignored.
-    // - To test your implementation, you can use the inputs/cprop.imp file or define your own test cases.
-    // - Refer to the Java test methods discussed in class and adjust them accordingly to work with your domain.
-    // - How should integer constant values be propagated?
-    //   - Consider the following code snippet:
-    //       1. x = 1
-    //       2. y = x + 2
-    //     The expected output should be:
-    //       1. [x,1]
-    //       2. [x,1] [y,3]
-    //   - How can you retrieve the constant value of `x` to use at program point 2?
-    //   - When working with an object of type `Constant`, you can obtain its value by calling the `getValue()` method.
+public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
+    private final Identifier id;
+    private final Integer constant;
 
-//	@Override
-//	public StructuredRepresentation representation() {
-//		return new ListRepresentation(
-//				new StringRepresentation(id),
-//				new StringRepresentation(constant));
-//	}
-//
-//	@Override
-//	public CProp pushScope(
-//			ScopeToken scope)
-//			throws SemanticException {
-//		return this;
-//	}
-//
-//	@Override
-//	public CProp popScope(
-//			ScopeToken scope)
-//			throws SemanticException {
-//		return this;
-//	}
+    public CProp() {
+        this(null, null);
+    }
+
+    public CProp(Identifier id, Integer constant) {
+        this.id = id;
+        this.constant = constant;
+    }
+
+    @Override
+    public Collection<Identifier> getInvolvedIdentifiers() {
+        return id == null ? Collections.emptySet() : Collections.singleton(id);
+    }
+
+    @Override
+    public Collection<CProp> gen(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
+        Set<CProp> generatedSet = new HashSet<>();
+        Optional<Integer> value = evaluateExpression(valueExpression, domain);
+        value.ifPresent(val -> generatedSet.add(new CProp(identifier, val)));
+        return generatedSet;
+    }
+
+    @Override
+    public Collection<CProp> gen(ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Collection<CProp> kill(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
+        Set<CProp> removedSet = new HashSet<>();
+        for (CProp cp : domain.getDataflowElements()) {
+            if (cp.id.equals(identifier)) {
+                removedSet.add(cp);
+            }
+        }
+        return removedSet;
+    }
+
+    @Override
+    public Collection<CProp> kill(ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public String toString() {
+        return representation().toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CProp other = (CProp) o;
+        return Objects.equals(id, other.id) && Objects.equals(constant, other.constant);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, constant);
+    }
+
+    private static Optional<Integer> evaluateExpression(SymbolicExpression expression, DefiniteDataflowDomain<CProp> domain) {
+        if (expression instanceof Constant) {
+            Object value = ((Constant) expression).getValue();
+            if (value instanceof Integer) {
+                return Optional.of((Integer) value);
+            }
+            return Optional.empty();
+        }
+
+        if (expression instanceof Identifier) {
+            for (CProp cp : domain.getDataflowElements()) {
+                if (cp.id.equals(expression)) {
+                    return Optional.ofNullable(cp.constant);
+                }
+            }
+            return Optional.empty();
+        }
+
+        if (expression instanceof UnaryExpression) {
+            UnaryExpression unaryExpr = (UnaryExpression) expression;
+            Optional<Integer> value = evaluateExpression(unaryExpr.getExpression(), domain);
+            if (unaryExpr.getOperator() == NumericNegation.INSTANCE) {
+                return value.map(val -> -val);
+            }
+            return value;
+        }
+
+        if (expression instanceof BinaryExpression) {
+            BinaryExpression binaryExpr = (BinaryExpression) expression;
+            Optional<Integer> left = evaluateExpression(binaryExpr.getLeft(), domain);
+            Optional<Integer> right = evaluateExpression(binaryExpr.getRight(), domain);
+            Operator operator = binaryExpr.getOperator();
+
+            if (left.isEmpty() || right.isEmpty()) {
+                return Optional.empty();
+            }
+
+            if (operator instanceof AdditionOperator) {
+                return Optional.of(left.get() + right.get());
+            }
+            if (operator instanceof SubtractionOperator) {
+                return Optional.of(left.get() - right.get());
+            }
+            if (operator instanceof MultiplicationOperator) {
+                return Optional.of(left.get() * right.get());
+            }
+            if (operator instanceof DivisionOperator) {
+                return right.get() == 0 ? Optional.empty() : Optional.of(left.get() / right.get());
+            }
+            if (operator instanceof ModuloOperator) {
+                return right.get() == 0 ? Optional.empty() : Optional.of(left.get() % right.get());
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    public StructuredRepresentation representation() {
+        return new ListRepresentation(
+                new StringRepresentation(id),
+                new StringRepresentation(constant));
+    }
+
+    @Override
+    public CProp pushScope(ScopeToken scope) throws SemanticException {
+        return this;
+    }
+
+    @Override
+    public CProp popScope(ScopeToken scope) throws SemanticException {
+        return this;
+    }
 }

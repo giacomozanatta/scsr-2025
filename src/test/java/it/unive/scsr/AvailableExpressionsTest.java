@@ -27,7 +27,6 @@ public class AvailableExpressionsTest {
 
         // we specify the visual format of the analysis results
         conf.analysisGraphs = GraphType.HTML;
-
         // we specify the analysis that we want to execute
         conf.abstractState = DefaultConfiguration.simpleState(
                 // memory handling

@@ -27,4 +27,15 @@ class cp {
 
 		return;
 	}
+    f2() {
+        def h = 4;
+        def j = 2;
+        def k = h / 2;
+        def l = j * k;
+        def m = -j;
+        m = 7;
+        def g = -m;
+
+        return;
+    }
 }

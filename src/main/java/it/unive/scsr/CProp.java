@@ -128,7 +128,7 @@ implements
                 return (Integer) val;
             return null;
         }
-
+        
         if (expression instanceof Identifier) {
             // for identifiers, we look for the value in the domain and 
             // return it if found
@@ -140,7 +140,7 @@ implements
             }
             return null;
         }
-        
+
         if (expression instanceof UnaryExpression) {
             // we only consider unary expressions that are negations of integers
             UnaryExpression expr = (UnaryExpression) expression;
@@ -176,9 +176,6 @@ implements
                 return left * right;
             }
             if (operator instanceof DivisionOperator) {
-                if (right == 0) {
-                    return null;
-                }
                 return left / right;
             }
         

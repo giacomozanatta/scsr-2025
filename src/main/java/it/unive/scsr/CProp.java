@@ -1,6 +1,5 @@
 package it.unive.scsr;
 
-import it.unive.lisa.AnalysisException;
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.dataflow.DataflowElement;
@@ -14,6 +13,7 @@ import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingMul;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingSub;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.type.StringType;
+import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.representation.ListRepresentation;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
@@ -25,6 +25,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
 
     private final Identifier id;
     private final Constant constant;
+    private DefiniteDataflowDomain<CProp> domain;
 
     public CProp() {
         this(null, null);
@@ -40,23 +41,44 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         throw new NotImplementedException();
     }
 
-    public Integer getRawValueById(Set<CProp> elements, String id) {
+    public Integer getPrimitive(String id) {
 
-        for (CProp element : elements) {
+        Integer value = null;
+
+        for (CProp element : this.domain.getDataflowElements()) {
             if (element.id.getName().equals(id)) {
-                return (Integer) element.constant.getValue();
+                value = (Integer) element.constant.getValue();
             }
         }
-        return null;
+        return value;
     }
 
-    private boolean unSkippable(ValueExpression valueExpression) {
-        return valueExpression.getStaticType() instanceof StringType;
+    private Integer getPrimitive(Variable variable) {
+
+        Optional<CProp> prev = this.domain.getDataflowElements().stream()
+                .filter(element -> element.id.getName().equals(variable.getName()))
+                .findFirst();
+
+        return prev.map(cProp -> (Integer) cProp.constant.getValue()).orElse(null);
+    }
+
+    private boolean isSkippable(ValueExpression expression) {
+
+        if (expression.getStaticType() instanceof StringType) {
+            return true;
+
+        } else return expression.getStaticType() instanceof Untyped;
     }
 
     private Integer doArithmetics(Operator operator, Integer value1, Integer value2) {
 
-        if (operator instanceof NumericNonOverflowingAdd) {
+        if (value1 == null) {
+            return value2;
+
+        } else if (value2 == null) {
+            return value1;
+
+        } else if (operator instanceof NumericNonOverflowingAdd) {
             return value1 + value2;
 
         } else if (operator instanceof NumericNonOverflowingSub) {
@@ -77,76 +99,63 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         }
     }
 
-    private Integer solveBinaryExpr(BinaryExpression binary, DefiniteDataflowDomain<CProp> domain) {
+    private Integer solveExpression(ValueExpression expression) throws SemanticException {
 
-        Set<CProp> domainElements = domain.getDataflowElements();
-        Integer leftPrevValue;
-        Integer rightPrevValue;
+        if (expression instanceof Constant) {
+            return (Integer) ((Constant) expression).getValue();
 
-        if (binary.getLeft() instanceof Constant constant) {
-            leftPrevValue = (Integer) constant.getValue();
+        } else if (expression instanceof Variable) {
+            return getPrimitive(((Variable) expression).getName());
 
-        } else {
-            Variable variable = (Variable) binary.getLeft();
-            leftPrevValue = getRawValueById(domainElements, variable.getName());
-        }
+        } else if (expression instanceof UnaryExpression unary) {
 
-        if (binary.getRight() instanceof Constant constant) {
-            rightPrevValue = (Integer) constant.getValue();
+            if (unary.getOperator() == NumericNegation.INSTANCE) {
 
-        } else {
-            Variable variable = (Variable) binary.getRight();
-            rightPrevValue = getRawValueById(domainElements, variable.getName());
-        }
+                if (unary.getExpression() instanceof BinaryExpression binary) {
+                    return  -solveExpression(binary);
+                }
 
-        return doArithmetics(binary.getOperator(), leftPrevValue, rightPrevValue);
-    }
+                return -this.getPrimitive((Variable) unary.getExpression());
 
-    private Integer getRawValueFromVariable(Variable variable, DefiniteDataflowDomain<CProp> domain) {
+            } else {
+                throw new ArithmeticException("Only negations are supported in unary expressions!");
+            }
 
-        Optional<CProp> prev = domain.getDataflowElements().stream()
-                .filter(element -> element.id.getName().equals(variable.getName()))
-                .findFirst();
+        } else if (expression instanceof BinaryExpression binary) {
 
-        if (prev.isPresent()) {
-            return (Integer) prev.get().constant.getValue();
+            Integer leftSideConstant = solveExpression((ValueExpression) binary.getLeft());
+            Integer rightSideConstant = solveExpression((ValueExpression) binary.getRight());
+
+            return doArithmetics(binary.getOperator(), leftSideConstant, rightSideConstant);
 
         } else {
-            throw new AnalysisException("Value for variable " + variable.getName() + " was not found!");
+            throw new SemanticException("Unsupported expression: " + expression.getStaticType());
         }
     }
 
     @Override
-    public Collection<CProp> gen(Identifier identifier, ValueExpression expression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
+    public Collection<CProp> gen(Identifier identifier, ValueExpression expression, ProgramPoint programPoint,
+                                 DefiniteDataflowDomain<CProp> domain) throws SemanticException {
 
-        if (unSkippable(expression)) {
+        if (isSkippable(expression)) {
             return Set.of();
         }
+
+        this.domain = domain;
 
         if (expression instanceof Constant constant) {
             return Set.of(new CProp(identifier, constant));
         }
 
-        int value;
-        if (expression instanceof UnaryExpression unaryExpr) {
-            if (unaryExpr.getOperator() == NumericNegation.INSTANCE) {
-                value = -getRawValueFromVariable((Variable) unaryExpr.getExpression(), domain);
-            } else {
-                throw new ArithmeticException("Only negations are supported in unary expressions!");
-            }
-
-        } else if (expression instanceof BinaryExpression binaryExpr) {
-            value = solveBinaryExpr(binaryExpr, domain);
-
-        } else if (expression instanceof Variable variable) {
-            value = getRawValueFromVariable(variable, domain);
-
+        Integer value;
+        if (expression instanceof Variable variable) {
+            value = getPrimitive(variable);
         } else {
-            return Set.of();
+            value = solveExpression(expression);
         }
 
-        CProp element = new CProp(identifier, new Constant(Int32Type.INSTANCE, value, programPoint.getLocation()));
-        return Set.of(element);
+        CProp toGenerate = new CProp(identifier, new Constant(Int32Type.INSTANCE, value, programPoint.getLocation()));
+        return Set.of(toGenerate);
     }
 
     @Override

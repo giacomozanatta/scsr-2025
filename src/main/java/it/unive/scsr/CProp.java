@@ -67,7 +67,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         if (expression.getStaticType() instanceof StringType) {
             return true;
 
-        } else return expression.getStaticType() instanceof Untyped;
+        } else return expression.toString().equals("PUSHANY");
     }
 
     private Integer doArithmetics(Operator operator, Integer value1, Integer value2) {
@@ -154,8 +154,12 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
             value = solveExpression(expression);
         }
 
-        CProp toGenerate = new CProp(identifier, new Constant(Int32Type.INSTANCE, value, programPoint.getLocation()));
-        return Set.of(toGenerate);
+        if (value != null) {
+            CProp toGenerate = new CProp(identifier, new Constant(Int32Type.INSTANCE, value, programPoint.getLocation()));
+            return Set.of(toGenerate);
+        }
+
+        return Set.of();
     }
 
     @Override

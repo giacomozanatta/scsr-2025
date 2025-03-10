@@ -73,10 +73,10 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
     private Integer doArithmetics(Operator operator, Integer value1, Integer value2) {
 
         if (value1 == null) {
-            return value2;
+            return null;
 
         } else if (value2 == null) {
-            return value1;
+            return null;
 
         } else if (operator instanceof NumericNonOverflowingAdd) {
             return value1 + value2;
@@ -123,10 +123,10 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
 
         } else if (expression instanceof BinaryExpression binary) {
 
-            Integer leftSideConstant = solveExpression((ValueExpression) binary.getLeft());
-            Integer rightSideConstant = solveExpression((ValueExpression) binary.getRight());
+            Integer leftSideConstant = this.solveExpression((ValueExpression) binary.getLeft());
+            Integer rightSideConstant = this.solveExpression((ValueExpression) binary.getRight());
 
-            return doArithmetics(binary.getOperator(), leftSideConstant, rightSideConstant);
+            return this.doArithmetics(binary.getOperator(), leftSideConstant, rightSideConstant);
 
         } else {
             throw new SemanticException("Unsupported expression: " + expression.getStaticType());

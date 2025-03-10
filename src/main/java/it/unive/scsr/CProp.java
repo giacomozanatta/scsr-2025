@@ -120,6 +120,7 @@ implements
         if (expression == null) {
             return null;
         }
+
         if (expression instanceof Constant) {
             // for constants, we simply retrieve the value and return it
             Object val =  ((Constant) expression).getValue();
@@ -127,6 +128,7 @@ implements
                 return (Integer) val;
             return null;
         }
+        
         if (expression instanceof Identifier) {
             // for identifiers, we look for the value in the domain and 
             // return it if found
@@ -138,6 +140,7 @@ implements
             }
             return null;
         }
+
         if (expression instanceof UnaryExpression) {
             // we only consider unary expressions that are negations of integers
             UnaryExpression expr = (UnaryExpression) expression;

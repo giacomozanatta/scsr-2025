@@ -7,6 +7,13 @@ class signs {
         def sum2 = even + odd;
         def sum3 = odd + even;
         def sum4 = odd + odd;
+
+        def top1 = even / even;
+        def sum5 = top1 + top1;
+        def sum6 = top1 + even;
+        def sum7 = even + top1;
+        def sum8 = top1 + odd;
+        def sum9 = odd + top1;
     }
 
 	subtraction() {
@@ -17,6 +24,13 @@ class signs {
         def sub2 = even - odd;
         def sub3 = odd - even;
         def sub4 = odd - odd;
+
+        def top1 = even / even;
+        def sub5 = top1 - top1;
+        def sub6 = top1 - even;
+        def sub7 = even - top1;
+        def sub8 = top1 - odd;
+        def sub9 = odd - top1;
     }
 
 	multiplication() {
@@ -27,6 +41,13 @@ class signs {
         def mult2 = even * odd;
         def mult3 = odd * even;
         def mult4 = odd * odd;
+
+        def top1 = even / even;
+        def mult5 = top1 * top1;
+        def mult6 = top1 * even;
+        def mult7 = even * top1;
+        def mult8 = top1 * odd;
+        def mult9 = odd * top1;
 	}
 
 	division() {
@@ -37,6 +58,13 @@ class signs {
         def div2 = even / odd;
         def div3 = odd / even;
         def div4 = odd / odd;
+
+        def top1 = even / even;
+        def div5 = top1 / top1;
+        def div6 = top1 / even;
+        def div7 = even / top1;
+        def div8 = top1 / odd;
+        def div9 = odd / top1;
     }
 
     negation() {
@@ -45,5 +73,8 @@ class signs {
 
         def neg1 = -even;
         def neg2 = -odd;
+
+        def top1 = even / even;
+        def neg3 = -top1;
     }
 }

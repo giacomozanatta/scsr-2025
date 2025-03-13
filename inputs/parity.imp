@@ -1,0 +1,49 @@
+class signs {
+    addition(){
+        def even = 4;
+        def odd = 5;
+
+        def sum1 = even + even;
+        def sum2 = even + odd;
+        def sum3 = odd + even;
+        def sum4 = odd + odd;
+    }
+
+	subtraction() {
+		def even = 4;
+        def odd = 5;
+
+        def sub1 = even - even;
+        def sub2 = even - odd;
+        def sub3 = odd - even;
+        def sub4 = odd - odd;
+    }
+
+	multiplication() {
+		def even = 4;
+        def odd = 5;
+
+        def mult1 = even * even;
+        def mult2 = even * odd;
+        def mult3 = odd * even;
+        def mult4 = odd * odd;
+	}
+
+	division() {
+        def even = 4;
+        def odd = 5;
+
+        def div1 = even / even;
+        def div2 = even / odd;
+        def div3 = odd / even;
+        def div4 = odd / odd;
+    }
+
+    negation() {
+        def even = 4;
+        def odd = 5;
+
+        def neg1 = -even;
+        def neg2 = -odd;
+    }
+}

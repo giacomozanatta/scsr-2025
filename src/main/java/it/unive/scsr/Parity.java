@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
@@ -110,14 +111,10 @@ public class Parity
             ProgramPoint pp,
             SemanticOracle oracle)
             throws SemanticException {
-        if (constant.getValue() instanceof Integer) {
-            int v = (Integer) constant.getValue();
-            if (v % 2 == 0)
-                return EVEN;
-            else
-                return ODD;
-        }
-        return top();
+        if (!(constant.getValue() instanceof Integer))
+            return BOTTOM; // parities are only defined for integers
+        int v = (Integer) constant.getValue();
+        return (v % 2 == 0) ? EVEN : ODD;
     }
 
     @Override
@@ -127,10 +124,7 @@ public class Parity
             ProgramPoint pp,
             SemanticOracle oracle)
             throws SemanticException {
-        if (operator instanceof NumericNegation)
-            return arg;
-
-        return top();
+        return (operator instanceof NumericNegation) ? arg : TOP;
     }
 
     @Override
@@ -139,29 +133,36 @@ public class Parity
             Parity left,
             Parity right,
             ProgramPoint pp,
-            SemanticOracle oracle)
-            throws SemanticException {
-        if (operator instanceof AdditionOperator || operator instanceof SubtractionOperator) {
-            if (left == EVEN) {
-                return right;
-            } else if (left == ODD) {
-                if (right == ODD)
-                    return EVEN;
-                else
-                    return ODD;
-            } else
-                return top();
-        
-        } else if (operator instanceof MultiplicationOperator) {
-            if (left == EVEN || right == EVEN) {
-                return EVEN;
-            } else if (left == ODD && right == ODD) {
-                return ODD;
-            } else
-                return top();
-        }
-        return top();
+            SemanticOracle oracle) throws SemanticException {
 
+        // If either operand is bottom, the result is bottom
+        if (left == BOTTOM || right == BOTTOM)
+            return BOTTOM;
+
+        // Division is not defined for parity
+        if (operator instanceof DivisionOperator)
+            return BOTTOM;
+
+        // Handle addition and subtraction
+        if (operator instanceof AdditionOperator || operator instanceof SubtractionOperator) {
+            if (left == TOP || right == TOP)
+                return TOP;
+            // If both operands have the same parity, result is EVEN; otherwise, it's ODD
+            return ((left == EVEN && right == EVEN) || (left == ODD && right == ODD)) ? EVEN : ODD;
+        }
+
+        // Handle multiplication
+        if (operator instanceof MultiplicationOperator) {
+            if (left == EVEN || right == EVEN)
+                return EVEN;
+            if (left == ODD && right == ODD)
+                return ODD;
+            if (left == TOP || right == TOP)
+                return TOP;
+        }
+
+        // Default to TOP for any other case
+        return TOP;
     }
 
     @Override

@@ -68,7 +68,7 @@ public class Parity
         if (getClass() != obj.getClass())
             return false;
         Parity other = (Parity) obj;
-        if (parity != other.parity)
+        if (!parity.equals(other.parity))
             return false;
         return true;
     }

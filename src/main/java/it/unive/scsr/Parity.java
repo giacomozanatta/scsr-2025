@@ -147,9 +147,15 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
                 return TOP;
             }
         } else if (operator instanceof DivisionOperator) {
-            // TODO BOTTOM or TOP? I think it's bottom because if the number is not divisible, we have a case out of scope
-            // In any case, the number might not be divisible by zero
-            return BOTTOM;
+            if (left.equals(ODD) && right.equals(EVEN)) {
+                // ODD / EVEN: BOTTOM
+                return BOTTOM;
+            } else {
+                // EVEN / EVEN: EVEN, ODD or BOTTOM
+                // EVEN / ODD: EVEN or BOTTOM
+                // ODD / ODD: ODD or BOTTOM
+                return TOP;
+            }
         }
 
         return TOP;

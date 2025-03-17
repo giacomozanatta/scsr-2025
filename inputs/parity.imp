@@ -1,7 +1,7 @@
 class Parity {
 
     addition() {
-        def even = 34354;
+        def even = -34354;
         def odd = 21943;
 
         def ee = even + even;     // EVEN

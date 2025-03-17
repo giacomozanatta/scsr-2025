@@ -108,7 +108,6 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
     @Override
     public Parity evalUnaryExpression(UnaryOperator operator, Parity arg, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {
         if (operator instanceof NumericNegation) {
-            // TODO check if this is the expected behaviour
             return arg;
         }
 

@@ -1,0 +1,132 @@
+class Parity {
+
+    addition() {
+        def even = 34354;
+        def odd = 21943;
+
+        def ee = even + even;     // EVEN
+        def eo = even + odd;     // ODD
+        def oe = odd + even;     // ODD
+        def oo = odd + odd;      // EVEN
+
+        def i = 0;
+        def j = 1;
+        def k = 0;
+        while (i < 10) {
+            i = i + 2;
+            j = j + 2;
+            k = k + 1;
+        }
+        // i should be EVEN, j should be ODD, k should be TOP
+
+        if (true) {
+            i = i + i;
+            j = j + j;
+        } else {
+            i = i + i + i;
+            j = j + j + j;
+        }
+        // i should be EVEN, j should be TOP
+    }
+
+    subtraction() {
+        def even = 34354;
+        def odd = 21943;
+
+        def ee = even - even;     // EVEN
+        def eo = even - odd;      // ODD
+        def oe = odd - even;     // ODD
+        def oo = odd - odd;      // EVEN
+
+        def i = 10;
+        def j = 11;
+        def k = 10;
+        while (i > 0) {
+            i = i - 2;
+            j = j - 2;
+            k = k - 1;
+        }
+        // i should be EVEN, j should be ODD, k should be TOP
+
+        if (true) {
+            i = i - i;
+            j = j - j;
+        } else {
+            i = i - i - i;
+            j = j - j - j;
+        }
+        // i should be EVEN, j should be TOP
+    }
+
+    multiplication() {
+        def even = 34354;
+        def odd = 21943;
+
+        def ee = even * even;     // EVEN
+        def eo = even * odd;     // EVEN
+        def oe = odd * even;     // EVEN
+        def oo = odd * odd;     // ODD
+
+        def i = 4;
+        def j = 3;
+        def k = 3;
+        while (i < 10) {
+            i = i * 2;
+            j = j * 3;
+            k = k * 2;
+        }
+        // i should be EVEN, j should be ODD, k should be TOP
+
+        if (true) {
+            i = i * i;
+            j = j * j;
+        } else {
+            i = i * i * i;
+            j = j * 2;
+        }
+        // i should be EVEN, j should be TOP
+    }
+
+    division() {
+        def even = 34354;
+        def odd = 21943;
+
+        def ee = even / even;   // TOP
+        def eo = even / odd;    // TOP
+        def oe = odd / even;    // TOP
+        def oo = odd / odd;     // TOP
+        def imp = even / 0;     // TOP
+
+        def i = 10;
+        def j = 30;
+        def k = 40;
+        while (i > 1) {
+            i = i / 2;
+            j = j / 3;
+            k = k / 3;
+        }
+        // i should be TOP, j should be TOP, k should be TOP
+
+        if (true) {
+            i = i / i;
+            j = j / j;
+        } else {
+            i = i / i / i;
+            j = j / j / j;
+        }
+        // i should be TOP, j should be TOP
+
+        def x = imp / imp;       // TOP
+    }
+
+    combined() {
+        def even = 34354;
+        def odd = 21943;
+
+        def result1 = (even + odd) * (even - odd);  // ODD
+        def result2 = (even * odd) / (odd + 1);     // TOP
+        def result3 = (odd * odd) + (odd - 1);      // ODD
+        def result4 = (even * odd) * (even + odd);  // EVEN
+        def result5 = (even / 0) + odd;             // TOP
+    }
+}

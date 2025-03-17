@@ -15,8 +15,7 @@ public class ParityTest {
     @Test
     public void testSigns() throws ParsingException, AnalysisException {
         // we parse the program to get the CFG representation of the code in it
-        // I use the same test of signs
-        Program program = IMPFrontend.processFile("inputs/signs.imp");
+        Program program = IMPFrontend.processFile("inputs/parity.imp");
 
         // we build a new configuration for the analysis
         LiSAConfiguration conf = new DefaultConfiguration();

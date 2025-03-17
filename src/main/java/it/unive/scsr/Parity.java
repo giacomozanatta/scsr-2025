@@ -117,6 +117,10 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
 
     @Override
     public Parity evalBinaryExpression(BinaryOperator operator, Parity left, Parity right, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {
+        if (left.equals(BOTTOM) && right.equals(BOTTOM)) {
+            return BOTTOM;
+        }
+
         // I use the equals method instead of the == operator to avoid
         // the edge case in which Parity is instantiated with the "new" keyword
         // instead of using the defined constants
@@ -147,15 +151,9 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
                 return TOP;
             }
         } else if (operator instanceof DivisionOperator) {
-            if (left.equals(ODD) && right.equals(EVEN)) {
-                // ODD / EVEN: BOTTOM
-                return BOTTOM;
-            } else {
-                // EVEN / EVEN: EVEN, ODD or BOTTOM
-                // EVEN / ODD: EVEN or BOTTOM
-                // ODD / ODD: ODD or BOTTOM
-                return TOP;
-            }
+            // Always TOP. The case of division by zero cannot be handled because
+            // 0 is even and I do not know when an even value is 0.
+            return TOP;
         }
 
         return TOP;

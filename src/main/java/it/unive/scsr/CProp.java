@@ -59,7 +59,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
 
         Integer val = calcConstant(valueExpression, cPropDefiniteDataflowDomain);
         if(val != null) {
-            newGen.add(new CProp(id, val));
+            newGen.add(new CProp(identifier, val));
         }
 
         return newGen;
@@ -94,10 +94,16 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        CProp cProp = (CProp) o;
-        return constant.equals(cProp.constant) && Objects.equals(id, cProp.id);
+    public boolean equals(
+            Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        CProp other = (CProp) obj;
+        return Objects.equals(constant, other.constant) && Objects.equals(id, other.id);
     }
 
     @Override

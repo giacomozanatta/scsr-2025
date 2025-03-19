@@ -64,10 +64,6 @@ public class Parity implements DataflowElement<DefiniteDataflowDomain<Parity>, P
         return Collections.emptySet();
     }
 
-    /**
-     * Matches DataflowElement's signature:
-     * gen(Identifier id, ValueExpression expression, ProgramPoint pp, D domain).
-     */
     @Override
     public Collection<Parity> gen(Identifier id, ValueExpression expression, ProgramPoint pp,
                                   DefiniteDataflowDomain<Parity> domain) throws SemanticException {
@@ -81,20 +77,12 @@ public class Parity implements DataflowElement<DefiniteDataflowDomain<Parity>, P
         return Collections.emptySet();
     }
 
-    /**
-     * Matches DataflowElement's signature:
-     * gen(ValueExpression expression, ProgramPoint pp, D domain).
-     */
     @Override
     public Collection<Parity> gen(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<Parity> domain)
             throws SemanticException {
         return Collections.emptySet();
     }
 
-    /**
-     * Matches DataflowElement's signature:
-     * kill(Identifier id, ValueExpression expression, ProgramPoint pp, D domain).
-     */
     @Override
     public Collection<Parity> kill(Identifier id, ValueExpression expression, ProgramPoint pp,
                                    DefiniteDataflowDomain<Parity> domain) throws SemanticException {
@@ -108,10 +96,6 @@ public class Parity implements DataflowElement<DefiniteDataflowDomain<Parity>, P
         return toKill;
     }
 
-    /**
-     * Matches DataflowElement's signature:
-     * kill(ValueExpression expression, ProgramPoint pp, D domain).
-     */
     @Override
     public Collection<Parity> kill(ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<Parity> domain)
             throws SemanticException {

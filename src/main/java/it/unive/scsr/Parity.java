@@ -68,7 +68,7 @@ public class Parity
         if (getClass() != obj.getClass())
             return false;
         Parity other = (Parity) obj;
-        if (parity != other.parity)
+        if (!parity.equals(other.parity))
             return false;
         return true;
     }
@@ -139,10 +139,6 @@ public class Parity
         if (left == BOTTOM || right == BOTTOM)
             return BOTTOM;
 
-        // Division is not defined for parity
-        if (operator instanceof DivisionOperator)
-            return BOTTOM;
-
         // Handle addition and subtraction
         if (operator instanceof AdditionOperator || operator instanceof SubtractionOperator) {
             if (left == TOP || right == TOP)
@@ -159,6 +155,10 @@ public class Parity
                 return ODD;
             if (left == TOP || right == TOP)
                 return TOP;
+        }
+
+        if (operator instanceof DivisionOperator) { 
+            return TOP;
         }
 
         // Default to TOP for any other case

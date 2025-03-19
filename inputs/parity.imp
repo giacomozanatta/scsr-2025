@@ -1,0 +1,41 @@
+class parity {
+	loop() {
+		def c = 1;
+		def b = 0;
+   		while (b < 10)
+        	b = b + c;
+   		return b;
+    }
+
+	basic() {
+		def i = 2;
+		def j = -10;
+		def a = i + j;
+		def s = i - j;
+		def m = i * j;
+		def d = i / j;
+	}
+
+	branches() {
+	    def a = 3;
+	    def b = 5;
+		def x = 0;
+		if (a > b)
+           	x = x * 7;
+       	else
+           	x = -7;
+		def y = x / x;
+    }
+
+    c(){
+        def a = 1;
+        def b = 3;
+        def c = 1 + b;
+        def d = a * b;
+        def f = 3 * 4;
+        def g = a + b;
+        def h = -b + g;
+        def s = 7 / 2;
+
+    }
+}

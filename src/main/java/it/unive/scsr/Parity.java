@@ -65,7 +65,7 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
     }
 
     public int hashCode() {
-        return Objects.hash(parity);
+        return parity.hashCode();
     }
 
     @Override

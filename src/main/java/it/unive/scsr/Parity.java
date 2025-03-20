@@ -141,7 +141,7 @@ public class Parity
             if (left == TOP || right == TOP)
                 return TOP;
             // If both operands have the same parity, result is EVEN; otherwise, it's ODD
-            return ((left == EVEN && right == EVEN) || (left == ODD && right == ODD)) ? EVEN : ODD;
+            return (left.equals(right)) ? EVEN : ODD;
         }
 
         // Handle multiplication

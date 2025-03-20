@@ -1,0 +1,10 @@
+class parity {
+
+	f0() {
+		def a = 6;
+		def b = 4;
+		def x = a + b;
+
+		return;
+	}
+}

@@ -20,6 +20,7 @@ import java.util.Optional;
 public class Parity implements
         BaseNonRelationalValueDomain<Parity>  {
 
+    // Instead of having an empty constructor, constants are public and accessible from outside.
     public final static Parity TOP = new Parity();
     public final static Parity EVEN = new Parity();
     public final static Parity ODD = new Parity();

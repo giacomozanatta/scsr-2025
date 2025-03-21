@@ -135,14 +135,16 @@ public class Parity
             Parity right,
             ProgramPoint pp,
             SemanticOracle oracle) throws SemanticException {
+        
+        // since we are defaulting all non-integer constants to TOP, we need to return TOP
+        // if any of the operands is TOP
+        if (left == TOP || right == TOP)
+            return TOP;
 
         // Handle addition and subtraction
-        if (operator instanceof AdditionOperator || operator instanceof SubtractionOperator) {
-            if (left == TOP || right == TOP)
-                return TOP;
+        if (operator instanceof AdditionOperator || operator instanceof SubtractionOperator) 
             // If both operands have the same parity, result is EVEN; otherwise, it's ODD
             return (left.equals(right)) ? EVEN : ODD;
-        }
 
         // Handle multiplication
         if (operator instanceof MultiplicationOperator) {
@@ -150,8 +152,6 @@ public class Parity
                 return EVEN;
             if (left == ODD && right == ODD)
                 return ODD;
-            if (left == TOP || right == TOP)
-                return TOP;
         }
 
         // Default to TOP for any other case, including division

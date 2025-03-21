@@ -126,7 +126,7 @@ public class Parity
             SemanticOracle oracle)
             throws SemanticException {
         return (operator instanceof NumericNegation) ? arg : TOP;
-    }
+    } 
 
     @Override
     public Parity evalBinaryExpression(

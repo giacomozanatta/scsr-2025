@@ -7,7 +7,6 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-//import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
@@ -160,6 +159,7 @@ public class Parity
 
     @Override
     public int hashCode() {
-        return parity.hashCode();
+        int prime = 31;
+        return prime * (parity == null ? 0 : parity.hashCode());
     }
 }

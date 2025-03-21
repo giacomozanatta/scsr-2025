@@ -12,61 +12,73 @@ import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.util.representation.ListRepresentation;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
-
 import java.util.*;
 
-public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
-    private final Identifier id;
-    private final Integer constant;
+public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> { // CProp follows the rules of DataflowElement
+    private final Identifier id; // stores the name of the variable.
+    private final Integer constant; // stores the value assigned to that variable.
+    // The final keyword means their values cannot be changed after being assigned
 
+    // This constructor sets id and constant to null (empty values). (Constructor)
     public CProp() {
         this(null, null);
     }
 
+    // This constructor allows creating a CProp object with 2 parameters
     public CProp(Identifier id, Integer constant) {
         this.id = id;
         this.constant = constant;
     }
 
-    @Override
-    public Collection<Identifier> getInvolvedIdentifiers() {
-        return id == null ? Collections.emptySet() : Collections.singleton(id);
-    }
+    // Tracking Variables Used
+    @Override // this Override the method that is related to some super class definded previously
+    public Collection<Identifier> getInvolvedIdentifiers() { // This function returns the variable that CProp is tracking.
+        return id == null ? Collections.emptySet() : Collections.singleton(id); // If no variable is tracked (id == null), it returns an empty set.
+    } // Otherwise, it returns a set containing id.
 
+    // Generating New Constant Assignments
+    // This function tracks new constants assigned to variables.
     @Override
     public Collection<CProp> gen(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
-        Set<CProp> generatedSet = new HashSet<>();
-        Optional<Integer> value = evaluateExpression(valueExpression, domain);
-        value.ifPresent(val -> generatedSet.add(new CProp(identifier, val)));
-        return generatedSet;
+        Set<CProp> generatedSet = new HashSet<>(); // Creating an empty set
+        Optional<Integer> value = evaluateExpression(valueExpression, domain); //check if it's a constant
+        value.ifPresent(val -> generatedSet.add(new CProp(identifier, val))); // If the expression resluts in a constant, then create a new CProp object and adds it to generatedSet
+        return generatedSet; // and finaly retruns generatedSet
     }
 
+    // Overloaded gen Method by using one similar to the one above it does not create a new assignment and returns empty list (like in tempo assignment)
     @Override
     public Collection<CProp> gen(ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
         return Collections.emptyList();
     }
 
+    // Removing Constants When a Variable Changes
+    // This function removes constants when a variable is re-assigned a non-constant value.
     @Override
     public Collection<CProp> kill(Identifier identifier, ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
-        Set<CProp> removedSet = new HashSet<>();
-        for (CProp cp : domain.getDataflowElements()) {
+        Set<CProp> removedSet = new HashSet<>(); // Create  an empty set
+        for (CProp cp : domain.getDataflowElements()) { // goes throught all tracked variables
             if (cp.id.equals(identifier)) {
-                removedSet.add(cp);
+                removedSet.add(cp); // If a tracked variable is the same as identifier, it removes it from tracking.
             }
         }
-        return removedSet;
+        return removedSet; // Returns the removed constants.
     }
 
+    // Overloaded kill Method
+    // Similar to the gen method, this version of kill does nothing and returns an empty list.
     @Override
     public Collection<CProp> kill(ValueExpression valueExpression, ProgramPoint programPoint, DefiniteDataflowDomain<CProp> domain) throws SemanticException {
         return Collections.emptyList();
     }
 
+    // Representing the Object as a String
     @Override
     public String toString() {
         return representation().toString();
     }
 
+    // Equals function, It checks if both id and constant are the same.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -75,11 +87,13 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         return Objects.equals(id, other.id) && Objects.equals(constant, other.constant);
     }
 
+    // Generating a Unique Hash Code
     @Override
     public int hashCode() {
         return Objects.hash(id, constant);
-    }
+    } // Hash codes help store and compare objects efficiently.
 
+    // This function computes the value of an expressions, it can handle vaiables, Unary expressions, constants, and Binary expressions
     private static Optional<Integer> evaluateExpression(SymbolicExpression expression, DefiniteDataflowDomain<CProp> domain) {
         if (expression instanceof Constant) {
             Object value = ((Constant) expression).getValue();
@@ -137,6 +151,7 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         return Optional.empty();
     }
 
+    // Representing the Object in a Structured Way, It helps format the object into a structured output.
     @Override
     public StructuredRepresentation representation() {
         return new ListRepresentation(
@@ -154,3 +169,6 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
         return this;
     }
 }
+
+// This program tracks variables assigned to constant values and removes them if their values change
+// It evaluates arithmetic expressions and ensures correctness in constant propagation analysis.

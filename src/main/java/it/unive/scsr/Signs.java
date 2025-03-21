@@ -58,9 +58,7 @@ public class Signs
         if (getClass() != obj.getClass())
             return false;
         Signs other = (Signs) obj;
-        if (sign != other.sign)
-            return false;
-        return true;
+        return sign == other.sign;
     }
 
     @Override

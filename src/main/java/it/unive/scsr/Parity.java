@@ -36,12 +36,12 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
     }
 
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        Parity parity1 = (Parity) o;
-        return Objects.equals(parity, parity1.parity);
-    }
+   // @Override
+    //public boolean equals(Object o) {
+       // if (o == null || getClass() != o.getClass()) return false;
+       // Parity parity1 = (Parity) o;
+      //  return Objects.equals(parity, parity1.parity);
+    //}
 
     @Override
     public Parity lubAux(Parity parity) throws SemanticException {
@@ -91,21 +91,21 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
             int v = ((Integer) constant.getValue());
             if (v % 2 == 0)
                 return Parity.EVEN;
-            else if (v % 2 == 1)
+            else if (v % 2 > 0)
                 return Parity.ODD;
             else
-                return ZERO;
+                return TOP;
         }
-        return top();
+        return TOP;
     }
 
     private Parity negate() {
         if (this == ODD)
-            return EVEN;
-        else if (this == EVEN)
             return ODD;
+        else if (this == EVEN)
+            return EVEN;
         else
-            return this;
+            return TOP;
     }
 
     @Override
@@ -117,7 +117,6 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
             throws SemanticException {
         if (operator instanceof NumericNegation)
             return arg.negate();
-
         return TOP;
     }
 
@@ -125,54 +124,52 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
     public Parity evalBinaryExpression(BinaryOperator operator, Parity left, Parity right, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {
         if (operator instanceof AdditionOperator) {
             if (left == EVEN) {
-                if (right == ZERO || right == EVEN) {
+                if (right == EVEN) {
                     return EVEN;
                 } else {
                     return ODD;
                 }
             } else if (left == ODD) {
-                if (right == ZERO || right == ODD) {
-                    return ODD;
-                } else {
+                if (right == ODD) {
                     return EVEN;
+                } else {
+                    return ODD;
                 }
             }
         } else if (operator instanceof SubtractionOperator) {
             if (left == EVEN) {
-                if (right == ZERO || right == EVEN) {
+                if (right == EVEN) {
                     return EVEN;
                 } else {
                     return ODD;
                 }
-            } else if (left == ODD) {
-                if (right == ZERO || right == ODD) {
-                    return ODD;
-                } else {
+            }else if (left == ODD) {
+                if (right == ODD) {
                     return EVEN;
+                } else {
+                    return ODD;
                 }
             }
         } else if (operator instanceof MultiplicationOperator) {
-            if (left == ZERO || right == ZERO) {
-                return ZERO;
-            } else if (left == EVEN || right == EVEN) {
+            if (left == EVEN || right == EVEN) {
                 return EVEN;
-            } else if (left == ODD && right == ODD) {
+            }else if (left == ODD && right == ODD) {
                 return ODD;
             } else {
                 return TOP;
             }
         } else if (operator instanceof DivisionOperator) {
-            if (right == ZERO) {
-                return BOTTOM;
-            } else if (left == EVEN) {
-                if (right == EVEN) {
+            if (left == ODD){
+                if (right == ODD){
+                    return ODD;
+                }else{
                     return EVEN;
                 }
-                if (right == ODD) {
-                    return BOTTOM;
-                }
-                if (right == ZERO) {
-                    return ZERO;
+            }else if (left==EVEN){
+                if (right == ODD){
+                    return EVEN;
+                } else {
+                    return EVEN;
                 }
             }
             return TOP;

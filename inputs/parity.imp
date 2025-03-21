@@ -1,0 +1,13 @@
+class parity {
+	f1(){
+	def x = 10;
+	def y = 5;
+	def g = 4;
+	def z = x + y;
+	def c = -x;
+	def a = x * y;
+	def b = x / y;
+	def d = x - y;
+	def t = x + y - g;
+	}
+}

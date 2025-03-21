@@ -46,7 +46,7 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
     public final Integer parity;
 
     public Parity() {
-        this.parity = 0;
+		this.parity = 0;
     }
 
     public Parity(int parity) {

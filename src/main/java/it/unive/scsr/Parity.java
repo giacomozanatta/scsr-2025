@@ -47,16 +47,16 @@ public class Parity
         this.parity = parity;
     }    
 
-	@Override
-	public StructuredRepresentation representation() {
-		if (this == TOP)
-			return Lattice.topRepresentation();
-		if (this == BOTTOM)
-			return Lattice.bottomRepresentation();
-		if (this == EVEN)
-			return new StringRepresentation("EVEN");
-		return new StringRepresentation("ODD");
-	}
+    @Override
+    public StructuredRepresentation representation() {
+        if (this == TOP)
+            return Lattice.topRepresentation();
+        if (this == BOTTOM)
+            return Lattice.bottomRepresentation();
+        if (this == EVEN)
+            return new StringRepresentation("EVEN");
+        return new StringRepresentation("ODD");
+    }
     @Override
     public boolean equals(
             Object obj) {

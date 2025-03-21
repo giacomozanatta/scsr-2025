@@ -23,14 +23,14 @@ public class SignsTest {
         LiSAConfiguration conf = new DefaultConfiguration();
 
         // we specify where we want files to be generated
-        conf.workdir = "outputs/sign";
+        conf.workdir = "outputs/par";
 
         // we specify the visual format of the analysis results
         conf.analysisGraphs = GraphType.HTML;
         // we specify the analysis that we want to execute
         conf.abstractState = DefaultConfiguration.simpleState(
                 DefaultConfiguration.defaultHeapDomain(),
-                new ValueEnvironment<>(new Signs()),
+                new ValueEnvironment<>(new Parity()),
                 DefaultConfiguration.defaultTypeDomain());
 
         // we instantiate LiSA with our configuration*/

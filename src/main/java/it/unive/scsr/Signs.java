@@ -185,7 +185,7 @@ public class Signs
                 else
                     return TOP;
             } else if (left == ZERO) {
-                return right;
+                return right.negate();
             } else
                 return TOP;
         } else if (operator instanceof MultiplicationOperator) {

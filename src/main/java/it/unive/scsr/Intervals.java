@@ -118,6 +118,9 @@ public class Intervals
 		MathNumber uA = a.getHigh();
 		MathNumber uB = b.getHigh();
 		
+		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
+			return BOTTOM;
+		
 		MathNumber newLower = lA.min(lB);
 		MathNumber newUpper = uA.max(uB);
 		
@@ -141,7 +144,7 @@ public class Intervals
 		MathNumber newLower = lA.max(lB);
 		MathNumber newUpper = uA.min(uB);
 		
-		if(lA.compareTo(lB) > 0 || uA.compareTo(uB) > 0)
+		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
 		
 		Intervals newInterval = new Intervals(newLower, newUpper);
@@ -183,7 +186,7 @@ public class Intervals
 		if(this.isBottom())
 			return Lattice.bottomRepresentation();
 		
-		return new StringRepresentation(this.interval.toString());
+		return new StringRepresentation("["+this.interval.getLow()+","+this.interval.getHigh()+"]");
 	}
 
 	@Override

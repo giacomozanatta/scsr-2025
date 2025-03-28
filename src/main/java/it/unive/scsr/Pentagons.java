@@ -102,10 +102,13 @@ public class Pentagons
 		ValueEnvironment<UpperBounds> newBounds = upperbounds.lub(other.upperbounds);
 		for (Entry<Identifier, UpperBounds> entry : upperbounds) {
 			Set<Identifier> closure = new HashSet<>();
-			for (Identifier bound : entry.getValue())
-				if (other.intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(other.intervals.getState(bound).interval.getLow()) < 0)
+			for (Identifier bound : entry.getValue()) {
+				Intervals intervalState = other.intervals.getState(entry.getKey());
+				Intervals boundIntervalState = other.intervals.getState(bound);
+				if (!intervalState.isBottom() && !boundIntervalState.isBottom() && intervalState.interval.getHigh()
+						.compareTo(boundIntervalState.interval.getLow()) < 0)
 					closure.add(bound);
+			}
 			if (!closure.isEmpty())
 				// glb is the union
 				newBounds = newBounds.putState(entry.getKey(),
@@ -232,7 +235,7 @@ public class Pentagons
 		Map<StructuredRepresentation, StructuredRepresentation> mapping = new HashMap<>();
 		for (Identifier id : CollectionUtils.union(intervals.getKeys(), upperbounds.getKeys()))
 			mapping.put(new StringRepresentation(id),
-					new StringRepresentation(intervals.getState(id).toString() + ", " +
+					new StringRepresentation(intervals.getState(id).representation() + ", " +
 							upperbounds.getState(id).representation()));
 		return new MapRepresentation(mapping);
 	}
@@ -268,8 +271,7 @@ public class Pentagons
 	}
 
 	private Pentagons closure() throws SemanticException {
-		ValueEnvironment<
-				UpperBounds> newBounds = new ValueEnvironment<UpperBounds>(upperbounds.lattice, upperbounds.getMap());
+		ValueEnvironment<UpperBounds> newBounds = new ValueEnvironment<UpperBounds>(upperbounds.lattice, upperbounds.getMap());
 
 		for (Identifier id1 : intervals.getKeys()) {
 			Set<Identifier> closure = new HashSet<>();
@@ -282,12 +284,12 @@ public class Pentagons
 				// glb is the union
 				newBounds = newBounds.putState(id1,
 						newBounds.getState(id1).glb(new UpperBounds(closure)));
-
 		}
 
 		return new Pentagons(newBounds, intervals);
 	}
 
+	
 	
 
 }

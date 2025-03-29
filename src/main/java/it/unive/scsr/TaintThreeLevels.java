@@ -30,7 +30,23 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	 *   - BOTTOM: error state
 	 * 
 	 */
+
+	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels("BOT");
+    private static final TaintThreeLevels TAINT = new TaintThreeLevels("TAINT");
+    private static final TaintThreeLevels CLEAN = new TaintThreeLevels("CLEAN");
+    private static final TaintThreeLevels TOP = new TaintThreeLevels("TOP");
 	
+	private final String taint;
+
+    public TaintThreeLevels() {
+        this("TOP");
+    }
+
+    public TaintThreeLevels(
+            String taint) {
+        this.taint = taint;
+    }
+
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
 		// TODO: to implement
@@ -45,26 +61,22 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	public TaintThreeLevels top() {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 	@Override
 	public TaintThreeLevels bottom() {
-		// TODO: to implement
-		return null;
+		return BOTTOM;
 	}
 
 	@Override
 	protected TaintThreeLevels tainted() {
-		// TODO: to implement
-		return null;
+		return TAINT;
 	}
 
 	@Override
 	protected TaintThreeLevels clean() {
-		// TODO: to implement
-		return null;
+		return CLEAN;
 	}
 
 	@Override
@@ -110,8 +122,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	
 		@Override
 	public StructuredRepresentation representation() {
-		// return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
-		return null;
+		return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
 	}
 	
 }

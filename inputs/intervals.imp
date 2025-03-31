@@ -35,7 +35,7 @@ class intervals {
 		def z =1;
 
 	if (b) {
-			z = x + y;
+			z = x / y;
 		} else {
 			z = y - x;
 		}

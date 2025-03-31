@@ -48,14 +48,27 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
     }
 
 	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null || getClass() != obj.getClass())
+			return false;
+		TaintThreeLevels other = (TaintThreeLevels) obj;
+		return taint.equals(other.taint);
+	}
+
+	@Override
+	public int hashCode() {
+		return taint.hashCode();
+	}
+
+	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 	@Override
 	public boolean lessOrEqualAux(TaintThreeLevels other) throws SemanticException {
-		// TODO: to implement
 		return false;
 	}
 
@@ -81,13 +94,15 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	public boolean isAlwaysTainted() {
-		// TODO: to implement
+		if (this == TAINT)
+			return true;
 		return false;
 	}
 
 	@Override
 	public boolean isPossiblyTainted() {
-		// TODO: to implement
+		if (this == TOP)
+			return true;
 		return false;
 	}
 	
@@ -98,16 +113,17 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		// TODO: to implement
-		return null;
+		
+		if ((left == TAINT && right == TAINT) || (left == CLEAN && right == CLEAN))
+			return left;
+		return TOP;
 	}
 	
 	@Override
 	public TaintThreeLevels wideningAux(
 			TaintThreeLevels other)
 			throws SemanticException {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 

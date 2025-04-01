@@ -11,6 +11,7 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.NegatableOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
@@ -97,10 +98,13 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		// TODO: The semantics of negation should be implemented here! 
-		
 		if(operator instanceof NegatableOperator) {
+			MathNumber low = arg.interval.getLow();
+			MathNumber high = arg.interval.getHigh();
 			
+			// negation of the interval
+			IntInterval negatedInterval = new IntInterval(high.multiply(MathNumber.MINUS_ONE), low.multiply(MathNumber.MINUS_ONE));
+			return new Intervals(negatedInterval);
 		}
 		
 		return top();
@@ -242,15 +246,61 @@ public class Intervals
 			
 		} else 
 			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
+		if (operator instanceof SubtractionOperator) {
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
 			
-		if( operator instanceof SubtractionOperator) {
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
 			
-		} else if( operator instanceof MultiplicationOperator) {
+			return new Intervals(lA.subtract(uB), uA.subtract(lB));
 			
+		} else if (operator instanceof MultiplicationOperator) {
+			MathNumber aLow = a.getLow();
+			MathNumber aHigh = a.getHigh();
+			MathNumber bLow = b.getLow();
+			MathNumber bHigh = b.getHigh();
 			
+			// Compute all products between endpoints
+			MathNumber prod1 = aLow.multiply(bLow);
+			MathNumber prod2 = aLow.multiply(bHigh);
+			MathNumber prod3 = aHigh.multiply(bLow);
+			MathNumber prod4 = aHigh.multiply(bHigh);
+			
+			// Determine the minimum and maximum values
+			MathNumber newLower = prod1.min(prod2).min(prod3).min(prod4);
+			MathNumber newUpper = prod1.max(prod2).max(prod3).max(prod4);
+			
+			return new Intervals(newLower, newUpper);
+		} else if (operator instanceof DivisionOperator) { 
+
+			// Retrieve the denominator interval bounds
+			MathNumber lB = b.getLow();
+			MathNumber uB = b.getHigh();
+			
+			// Check if the denominator interval contains zero
+			if (lB.compareTo(MathNumber.ZERO) <= 0 && uB.compareTo(MathNumber.ZERO) >= 0) {
+				// If the denominator is exactly [0, 0], division is undefined -> return bottom
+				if (lB.equals(MathNumber.ZERO) && uB.equals(MathNumber.ZERO))
+					return bottom();
+				// Otherwise, if the interval spans zero, over-approximate to top
+				return top();
+			}
+			
+			// Denominator does not contain zero; compute all possible quotients
+			MathNumber q1 = a.getLow().divide(lB);
+			MathNumber q2 = a.getLow().divide(uB);
+			MathNumber q3 = a.getHigh().divide(lB);
+			MathNumber q4 = a.getHigh().divide(uB);
+			
+			// Determine the minimum and maximum among the computed quotients
+			MathNumber newLower = q1.min(q2).min(q3).min(q4);
+			MathNumber newUpper = q1.max(q2).max(q3).max(q4);
+			
+			return new Intervals(newLower, newUpper);
 		}
-			
+
+
 		return top();
 	}
 
@@ -315,7 +365,4 @@ public class Intervals
 		
 		return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest, oracle);
 	}
-	
-
-	
 }

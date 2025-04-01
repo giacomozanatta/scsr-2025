@@ -28,4 +28,17 @@ class intervals {
 			}
 			return c; 
 	}
+
+	simple(b) { 
+		def x = 10;
+		def y = 2;
+		def z =1;
+
+	if (b) {
+			z = x / y;
+		} else {
+			z = y - x;
+		}
+		return z;
+	}
 }

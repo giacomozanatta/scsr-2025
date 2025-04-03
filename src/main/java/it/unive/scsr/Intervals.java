@@ -92,17 +92,20 @@ public class Intervals
 	public Intervals() {
 		this(IntInterval.INFINITY);
 	}
-	
+// IMPLEMENTED NEGATION BELOW
+// [a , b] becomes [-b , -a]
 	@Override
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		
-		// TODO: The semantics of negation should be implemented here! 
-		
+		if(arg.isBottom())
+			return bottom();
+
 		if(operator instanceof NegatableOperator) {
-			
+			MathNumber low = arg.interval.getLow();
+			MathNumber high = arg.interval.getHigh();
+			return new Intervals(MathNumber.ZERO.subtract(high), MathNumber.ZERO.subtract(low));
 		}
-		
+
 		return top();
 	}
 	
@@ -218,7 +221,7 @@ public class Intervals
 		
 		return top();
 	}
-
+//IMPLEMENTED BINARY OPERATIONS BELOW
 	@Override
 	public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
 			SemanticOracle oracle) throws SemanticException {
@@ -240,19 +243,35 @@ public class Intervals
 			
 			return new Intervals(lA.add(lB), uA.add(uB));
 			
-		} else 
-			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
-		if( operator instanceof SubtractionOperator) {
-			
-		} else if( operator instanceof MultiplicationOperator) {
-			
-			
 		}
-			
+		else if(operator instanceof SubtractionOperator) {
+			MathNumber newLower = a.getLow().subtract(b.getHigh());
+			MathNumber newUpper = a.getHigh().subtract(b.getLow());
+			return new Intervals(newLower, newUpper);
+		}
+
+		else if(operator instanceof MultiplicationOperator) {
+			MathNumber lA = a.getLow();
+			MathNumber uA = a.getHigh();
+			MathNumber lB = b.getLow();
+			MathNumber uB = b.getHigh();
+
+
+			MathNumber p1 = lA.multiply(lB);
+			MathNumber p2 = lA.multiply(uB);
+			MathNumber p3 = uA.multiply(lB);
+			MathNumber p4 = uA.multiply(uB);
+
+
+			MathNumber newLower = p1.min(p2).min(p3).min(p4);
+			MathNumber newUpper = p1.max(p2).max(p3).max(p4);
+
+			return new Intervals(newLower, newUpper);
+		}
+
 		return top();
 	}
+
 
 	@Override
 	public int hashCode() {
@@ -315,7 +334,5 @@ public class Intervals
 		
 		return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest, oracle);
 	}
-	
-
 	
 }

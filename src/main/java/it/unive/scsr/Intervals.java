@@ -10,10 +10,7 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
@@ -97,10 +94,9 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		// TODO: The semantics of negation should be implemented here! 
-		
 		if(operator instanceof NegatableOperator) {
-			
+			// Negating [a, b] produces [-b, -a]
+			return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
 		}
 		
 		return top();
@@ -242,14 +238,19 @@ public class Intervals
 			
 		} else 
 			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
+
 		if( operator instanceof SubtractionOperator) {
-			
+			// Performing [a, b] - [c, d] should produce [a - d, b - c]
+			// Example [2, 4] - [1, 3] = [-1, 3], [2, 4] - [-10, 6] = [-4, 14]
+			return new Intervals(left.interval.diff(right.interval));
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+			// Performing [a, b] * [c, d] should produce [min(...), max(...)] where ... are a*c, a*d, b*c, b*d
+			// For example [2, 4] * [-3, 2] = [b * c, b * d] = [-12, 8]
+			return new Intervals(left.interval.mul(right.interval));
+		} else if( operator instanceof DivisionOperator) {
+			return new Intervals(left.interval.div(right.interval, false, true));
 		}
+
 			
 		return top();
 	}

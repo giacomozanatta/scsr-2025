@@ -54,7 +54,7 @@ public class TaintThreeLevelsTaskEvaluation {
 		
 		 conf.abstractState = DefaultConfiguration.simpleState(
 				DefaultConfiguration.defaultHeapDomain(),
-				new ValueEnvironment<>(new ThreeLevelsTaint()),
+				new ValueEnvironment<>(new TaintThreeLevels()),
 				DefaultConfiguration.defaultTypeDomain());
 		 
 		 // we specify to perform an interprocedural analysis (require to recognize calls to sources, sanitizers, and sinks)

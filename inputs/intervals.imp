@@ -28,4 +28,12 @@ class intervals {
 			}
 			return c; 
 	}
+
+	loop2(){
+	    def c = 7;
+	    while(c>0){
+	        c = c-1;
+	    }
+	    return c;
+	}
 }

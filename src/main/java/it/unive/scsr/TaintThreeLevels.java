@@ -59,16 +59,29 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	public int hashCode() {
-		return taint.hashCode();
+		int prime = 31;
+		return prime + ((taint == null) ? 0 : taint.hashCode());
 	}
 
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
+		if (this.equals(other))
+			return this;
+		if (this.equals(BOTTOM))
+			return other;
+		if (other.equals(BOTTOM))
+			return this;
 		return TOP;
 	}
 
 	@Override
 	public boolean lessOrEqualAux(TaintThreeLevels other) throws SemanticException {
+		if (this.equals(other))
+			return true;
+		if (this.equals(BOTTOM))
+			return true;
+		if (other.equals(TOP))
+			return true;
 		return false;
 	}
 
@@ -114,8 +127,13 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			SemanticOracle oracle)
 			throws SemanticException {
 		
-		if ((left == TAINT && right == TAINT) || (left == CLEAN && right == CLEAN))
+		// Propagate error if any operand is BOTTOM
+		if (left.equals(BOTTOM) || right.equals(BOTTOM))
+			return BOTTOM;
+		// If both operands are equal, then result is that same value
+		if (left.equals(right))
 			return left;
+		// Otherwise, the result is TOP (uncertain)
 		return TOP;
 	}
 	
@@ -123,7 +141,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	public TaintThreeLevels wideningAux(
 			TaintThreeLevels other)
 			throws SemanticException {
-		return TOP;
+		return this.lubAux(other);
 	}
 
 

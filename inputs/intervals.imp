@@ -41,4 +41,74 @@ class intervals {
 		}
 		return z;
 	}
+
+    divNonZero(b) {
+        // Division with a denominator that does not include zero
+        def num = 0;   // Numerator is zero in all cases
+        def denom = 0;   // Denominator is exactly zero in all cases
+        if (b) {
+            num = 10;    // branch 1: numerator = 10
+        } else {
+            num = 20;    // branch 2: numerator = 20
+        }
+        if (b) {
+            denom = 2;   // branch 1: denominator = 2
+        } else {
+            denom = 5;   // branch 2: denominator = 5
+        }
+		def result = num / denom;   // Possible outcomes: 10/2=5, 20/5=4
+        return result;
+    }
+
+    divSpanningZero(b) {
+        // Division where the denominator interval spans zero
+        def num = 0;   // Numerator is zero in all cases
+        def denom = 0;   // Denominator is exactly zero in all cases
+        if (b) {
+            num = 10;    // branch 1: positive numerator
+        } else {
+            num = -5;    // branch 2: negative numerator
+        }
+        if (b) {
+            denom = 2;   // branch 1: positive denominator
+        } else {
+            denom = 0;   // branch 2: denominator equals zero
+        }
+        def result = num / denom;   // Possible outcomes: 10/2=5, -5/0=undefined
+		return result;
+    }
+
+    divExactZero(b) {
+        // Division where the denominator is exactly zero; should be treated as bottom
+        def num = 0;   // Numerator is zero in all cases
+        def denom = 0;   // Denominator is exactly zero in all cases
+        if (b) {
+            num = 10;
+        } else {
+            num = -5;
+        }
+        denom = 0;   // Denominator is exactly zero in all cases
+        def result = num / denom;   // Possible outcomes: 10/0=undefined, -5/0=undefined
+		return result;
+    }
+
+    divVarying(b, c) {
+        // Division where both numerator and denominator vary over two branches
+        def num = 0;   // Numerator is zero in all cases
+        def denom = 0;   // Denominator is exactly zero in all cases
+        if (b) {
+            num = 10;   // branch 1 for numerator
+        } else {
+            num = -5;   // branch 2 for numerator
+        }
+        if (c) {
+            denom = 2;   // branch 1 for denominator (positive)
+        } else {
+            denom = -3;  // branch 2 for denominator (negative)
+        }
+        def result = num / denom;   // Possible outcomes: 10/2=5, -5/-3=1.67
+		return result;
+    }
+
+	
 }

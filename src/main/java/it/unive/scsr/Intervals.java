@@ -10,10 +10,7 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
@@ -96,13 +93,16 @@ public class Intervals
 	@Override
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		
-		// TODO: The semantics of negation should be implemented here! 
-		
+
+		// TODO: The semantics of negation should be implemented here!
 		if(operator instanceof NegatableOperator) {
-			
+			MathNumber low = arg.interval.getLow();
+			MathNumber high = arg.interval.getHigh();
+
+			IntInterval negatedInterval = new IntInterval(high.multiply(MathNumber.MINUS_ONE), low.multiply(MathNumber.MINUS_ONE));
+			return new Intervals(negatedInterval);
 		}
-		
+
 		return top();
 	}
 	
@@ -240,17 +240,53 @@ public class Intervals
 			
 			return new Intervals(lA.add(lB), uA.add(uB));
 			
-		} else 
-			
+		} else
+
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
-		if( operator instanceof SubtractionOperator) {
-			
-		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+		if (operator instanceof SubtractionOperator) {
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+
+			return new Intervals(lA.subtract(uB), uA.subtract(lB));
+		} else if (operator instanceof MultiplicationOperator) {
+			MathNumber aLow = a.getLow();
+			MathNumber aHigh = a.getHigh();
+			MathNumber bLow = b.getLow();
+			MathNumber bHigh = b.getHigh();
+
+			MathNumber prod1 = aLow.multiply(bLow);
+			MathNumber prod2 = aLow.multiply(bHigh);
+			MathNumber prod3 = aHigh.multiply(bLow);
+			MathNumber prod4 = aHigh.multiply(bHigh);
+
+			MathNumber newLower = prod1.min(prod2).min(prod3).min(prod4);
+			MathNumber newUpper = prod1.max(prod2).max(prod3).max(prod4);
+
+			return new Intervals(newLower, newUpper);
+		} else if (operator instanceof DivisionOperator) {
+			MathNumber lB = b.getLow();
+			MathNumber uB = b.getHigh();
+
+			if (lB.compareTo(MathNumber.ZERO) <= 0 && uB.compareTo(MathNumber.ZERO) >= 0) {
+				if (lB.equals(MathNumber.ZERO) && uB.equals(MathNumber.ZERO))
+					return bottom();
+				return top();
+			}
+
+			MathNumber q1 = a.getLow().divide(lB);
+			MathNumber q2 = a.getLow().divide(uB);
+			MathNumber q3 = a.getHigh().divide(lB);
+			MathNumber q4 = a.getHigh().divide(uB);
+
+			MathNumber newLower = q1.min(q2).min(q3).min(q4);
+			MathNumber newUpper = q1.max(q2).max(q3).max(q4);
+
+			return new Intervals(newLower, newUpper);
 		}
-			
+
 		return top();
 	}
 

@@ -7,12 +7,24 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.lisa.imp.constructs.StringLength;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.DivisionOperator;
+import it.unive.lisa.symbolic.value.operator.ModuloOperator;
+import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
+import it.unive.lisa.symbolic.value.operator.RemainderOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonGe;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonGt;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonLe;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -95,9 +107,17 @@ public class Intervals
     @Override
     public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
             throws SemanticException {
-        // TODO: The semantics of Negation should be implemented here!
-
-        return BaseNonRelationalValueDomain.super.evalUnaryExpression(operator, arg, pp, oracle);
+        if (operator == NumericNegation.INSTANCE) {
+            if (arg.isTop()) {
+                return top();
+            } else {
+                return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
+            }
+        } else if (operator instanceof StringLength) {
+            return new Intervals(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
+        } else {
+            return top();
+        }
     }
 
     @Override
@@ -232,12 +252,81 @@ public class Intervals
 
             return new Intervals(subLow, subHigh);
 
+        } else if (operator instanceof MultiplicationOperator) {
+            if (left.is(0) || right.is(0)) {
+                return ZERO;
+            } else {
+                return new Intervals(left.interval.mul(right.interval));
+            }
+        } else if (operator instanceof DivisionOperator) {
+            if (right.is(0)) {
+                return bottom();
+            } else if (left.is(0)) {
+                return ZERO;
+            } else if (left.isTop() || right.isTop()) {
+                return top();
+            } else {
+                return new Intervals(left.interval.div(right.interval, false, false));
+            }
+        } else if (operator instanceof ModuloOperator) {
+            if (right.is(0)) {
+                return bottom();
+            } else if (left.is(0)) {
+                return ZERO;
+            } else if (left.isTop() || right.isTop()) {
+                return top();
+            } else {
+                if (right.interval.getHigh().compareTo(MathNumber.ZERO) < 0) {
+                    return new Intervals(right.interval.getLow().add(MathNumber.ONE), MathNumber.ZERO);
+                } else if (right.interval.getLow().compareTo(MathNumber.ZERO) > 0) {
+                    return new Intervals(MathNumber.ZERO, right.interval.getHigh().subtract(MathNumber.ONE));
+                } else {
+                    return new Intervals(right.interval.getLow().add(MathNumber.ONE),
+                            right.interval.getHigh().subtract(MathNumber.ONE));
+                }
+            }
+        } else if (operator instanceof RemainderOperator) {
+            if (right.is(0)) {
+                return bottom();
+            } else if (left.is(0)) {
+                return ZERO;
+            } else if (left.isTop() || right.isTop()) {
+                return top();
+            } else {
+                MathNumber mathNumber;
+                if (right.interval.getHigh().compareTo(MathNumber.ZERO) < 0) {
+                    mathNumber = right.interval.getLow().multiply(MathNumber.MINUS_ONE);
+                } else if (right.interval.getLow().compareTo(MathNumber.ZERO) > 0) {
+                    mathNumber = right.interval.getHigh();
+                } else {
+                    mathNumber = right.interval.getLow().abs().max(right.interval.getHigh().abs());
+                }
+
+                if (left.interval.getHigh().compareTo(MathNumber.ZERO) < 0) {
+                    return new Intervals(mathNumber.multiply(MathNumber.MINUS_ONE).add(MathNumber.ONE),
+                            MathNumber.ZERO);
+                } else if (left.interval.getLow().compareTo(MathNumber.ZERO) > 0) {
+                    return new Intervals(MathNumber.ZERO, mathNumber.subtract(MathNumber.ONE));
+                } else {
+                    return new Intervals(mathNumber.multiply(MathNumber.MINUS_ONE).add(MathNumber.ONE),
+                            mathNumber.subtract(MathNumber.ONE));
+                }
+            }
         }
-
-        // TODO: The semantics of other binary mathematical operations should be
-        // implemented here!
-
         return top();
+    }
+
+    /**
+     * Tests whether this interval instance corresponds (i.e., concretizes)
+     * exactly to the given integer. The tests is performed through
+     * {@link IntInterval#is(int)}.
+     * 
+     * @param n the integer value
+     * 
+     * @return {@code true} if that condition holds
+     */
+    public boolean is(int n) {
+        return !isBottom() && interval.is(n);
     }
 
     @Override
@@ -295,11 +384,61 @@ public class Intervals
     public ValueEnvironment<Intervals> assumeBinaryExpression(ValueEnvironment<Intervals> environment,
             BinaryOperator operator, ValueExpression left, ValueExpression right, ProgramPoint src, ProgramPoint dest,
             SemanticOracle oracle) throws SemanticException {
+        Identifier identifier;
+        Intervals eval;
+        boolean rightExpression;
+        if (left instanceof Identifier) {
+            eval = eval(right, environment, src, oracle);
+            identifier = (Identifier) left;
+            rightExpression = true;
+        } else if (right instanceof Identifier) {
+            eval = eval(left, environment, src, oracle);
+            identifier = (Identifier) right;
+            rightExpression = false;
+        } else
+            return environment;
 
-        // TODO: The assumptions should be implemented here!
+        Intervals start = environment.getState(identifier);
+        if (eval.isBottom() || start.isBottom())
+            return environment.bottom();
 
-        return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest,
-                oracle);
+        boolean lowIsMinusInfinity = eval.interval.lowIsMinusInfinity();
+        Intervals lowInfinity = new Intervals(eval.interval.getLow(), MathNumber.PLUS_INFINITY);
+        Intervals lowPlusOneToInfinity = new Intervals(eval.interval.getLow().add(MathNumber.ONE),
+                MathNumber.PLUS_INFINITY);
+        Intervals highInfinity = new Intervals(MathNumber.MINUS_INFINITY, eval.interval.getHigh());
+        Intervals upperBoundMinusOne = new Intervals(MathNumber.MINUS_INFINITY,
+                eval.interval.getHigh().subtract(MathNumber.ONE));
+        Intervals update = null;
+        if (operator == ComparisonEq.INSTANCE)
+            update = eval;
+        else if (operator == ComparisonGe.INSTANCE)
+            if (rightExpression)
+                update = lowIsMinusInfinity ? null : start.glb(lowInfinity);
+            else
+                update = start.glb(highInfinity);
+        else if (operator == ComparisonGt.INSTANCE)
+            if (rightExpression)
+                update = lowIsMinusInfinity ? null : start.glb(lowPlusOneToInfinity);
+            else
+                update = lowIsMinusInfinity ? eval : start.glb(upperBoundMinusOne);
+        else if (operator == ComparisonLe.INSTANCE)
+            if (rightExpression)
+                update = start.glb(highInfinity);
+            else
+                update = lowIsMinusInfinity ? null : start.glb(lowInfinity);
+        else if (operator == ComparisonLt.INSTANCE)
+            if (rightExpression)
+                update = lowIsMinusInfinity ? eval : start.glb(upperBoundMinusOne);
+            else
+                update = lowIsMinusInfinity ? null : start.glb(lowPlusOneToInfinity);
+
+        if (update == null)
+            return environment;
+        else if (update.isBottom())
+            return environment.bottom();
+        else
+            return environment.putState(identifier, update);
     }
 
 }

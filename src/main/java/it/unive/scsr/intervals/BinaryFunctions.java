@@ -106,6 +106,14 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals, Intervals> 
 
     @Override
     protected Optional<Intervals> inapplicable(Intervals left, Intervals right) {
+
+        if (left.isBottom() || right.isBottom()) {
+            // As soon as one of the elements expresses a bottom element, the calculation is stopped and then bottom is
+            // returned.
+            defaultLogger.info(() -> MessageFormat.format("Left {0} or right {1} is a bottom element", left, right));
+            return Optional.of(Intervals.BOTTOM);
+        }
+
         if (Stream.of(left.interval.getLow(),
                         left.interval.getHigh(),
                         right.interval.getLow(),
@@ -114,14 +122,6 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals, Intervals> 
             // When a NaN element is found among the intervals before actually computing the operation, the bottom
             // element is returned.
             defaultLogger.info(() -> "A NaN element has been found before computing the binary expression");
-            return Optional.of(Intervals.BOTTOM);
-        }
-
-
-        if (left.isBottom() || right.isBottom()) {
-            // As soon as one of the elements expresses a bottom element, the calculation is stopped and then bottom is
-            // returned.
-            defaultLogger.info(() -> MessageFormat.format("Left {0} or right {1} is a bottom element", left, right));
             return Optional.of(Intervals.BOTTOM);
         }
 

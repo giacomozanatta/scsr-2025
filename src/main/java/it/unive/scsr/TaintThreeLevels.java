@@ -73,13 +73,13 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	@Override
 	public boolean isAlwaysTainted() {
 		// ...
-		return false;
+		return this == TAINT;
 	}
 
 	@Override
 	public boolean isPossiblyTainted() {
 		// ...
-		return this == TAINT;
+		return this == TOP;
 	}
 	
 	public TaintThreeLevels evalBinaryExpression(

@@ -1,5 +1,8 @@
 package it.unive.scsr;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import it.unive.lisa.analysis.Lattice;
@@ -10,11 +13,9 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -96,11 +97,15 @@ public class Intervals
 	@Override
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		
-		// TODO: The semantics of negation should be implemented here! 
-		
-		if(operator instanceof NegatableOperator) {
-			
+
+		if(operator instanceof NumericNegation) {
+			MathNumber min = arg.interval.getLow();
+			MathNumber max = arg.interval.getHigh();
+
+			min.multiply(new MathNumber(-1));
+			max.multiply(new MathNumber(-1));
+
+			return new Intervals(max, min);
 		}
 		
 		return top();
@@ -229,26 +234,37 @@ public class Intervals
 		
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
+
+		MathNumber lA = a.getLow();
+		MathNumber lB = b.getLow();
+		MathNumber hA = a.getHigh();
+		MathNumber hB = b.getHigh();
 		
 		if(operator instanceof AdditionOperator)  {
+			return new Intervals(lA.add(lB), hA.add(hB));
 			
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
-			return new Intervals(lA.add(lB), uA.add(uB));
-			
-		} else 
-			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
-		if( operator instanceof SubtractionOperator) {
-			
+		} else if( operator instanceof SubtractionOperator) {
+			return new Intervals(lA.subtract(hB), hA.subtract(lB));
+
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+			List<MathNumber> all = new ArrayList<>();
+			all.add(lA.multiply(lB));
+			all.add(lA.multiply(hB));
+			all.add(hA.multiply(lB));
+			all.add(hA.multiply(hB));
+
+			all.sort(MathNumber::compareTo);
+			return new Intervals(all.get(0), all.get(all.size() - 1));
+		} else if( operator instanceof DivisionOperator){
+
+			List<MathNumber> all = new ArrayList<>();
+			all.add(lA.divide(lB));
+			all.add(lA.divide(hB));
+			all.add(hA.divide(lB));
+			all.add(hA.divide(hB));
+
+			all.sort(MathNumber::compareTo);
+			return new Intervals(all.get(0).roundDown(), all.get(all.size() - 1).roundUp());
 		}
 			
 		return top();

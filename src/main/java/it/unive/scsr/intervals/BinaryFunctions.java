@@ -30,11 +30,8 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals, Intervals> 
             // Perform addition between two intervals. The order is somewhat preserved so that the smallest element on
             // the left is added to the smallest element on the right to get the smallest number. The same reasoning
             // applies to get the largest number.
-            var leftInterval = left.interval;
-            var rightInterval = right.interval;
-            var low = leftInterval.getLow().add(rightInterval.getLow());
-            var high = leftInterval.getHigh().add(rightInterval.getHigh());
-            return new Intervals(low, high);
+            var group = new Group(left, right);
+            return new Intervals(group.ll().add(group.lr()), group.hl().add(group.hr()));
         };
     }
 
@@ -45,11 +42,8 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals, Intervals> 
         // right interval. For the largest element the reasoning is similar, that is, the largest element of the left
         // interval is related to the smallest element of the right interval.
         return (left, right) -> {
-            var leftInterval = left.interval;
-            var rightInterval = right.interval;
-            var low = leftInterval.getLow().subtract(rightInterval.getHigh());
-            var high = leftInterval.getHigh().subtract(rightInterval.getLow());
-            return new Intervals(low, high);
+            var group = new Group(left, right);
+            return new Intervals(group.ll().subtract(group.hr()), group.hl().subtract(group.lr()));
         };
     }
 

@@ -3,16 +3,12 @@ package it.unive.scsr.intervals;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.utils.BiFunctionDispatcher;
-import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.stream.Stream;
 
-import static it.unive.scsr.utils.Logging.defaultLogger;
-
-public class BinaryFunctions extends BiFunctionDispatcher<Intervals, Intervals> {
+public class BinaryFunctions extends BiFunctionDispatcher<Intervals> {
 
     // Record to group the extremes involved in the binary operation between intervals.
     private record Group(Intervals left, Intervals right) {
@@ -105,35 +101,15 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals, Intervals> 
     }
 
     @Override
-    protected Optional<Intervals> inapplicable(Intervals left, Intervals right) {
+    protected Intervals polishResult(Intervals output) {
+        // ...
+        if (output.isBottom() || output.isTop()) return output;
 
-        if (left.isBottom() || right.isBottom()) {
-            // As soon as one of the elements expresses a bottom element, the calculation is stopped and then bottom is
-            // returned.
-            defaultLogger.info(() -> MessageFormat.format("Left {0} or right {1} is a bottom element", left, right));
-            return Optional.of(Intervals.BOTTOM);
-        }
-
-        if (Stream.of(left.interval.getLow(),
-                        left.interval.getHigh(),
-                        right.interval.getLow(),
-                        right.interval.getHigh())
-                .anyMatch(MathNumber::isNaN)) {
-            // When a NaN element is found among the intervals before actually computing the operation, the bottom
-            // element is returned.
-            defaultLogger.info(() -> "A NaN element has been found before computing the binary expression");
-            return Optional.of(Intervals.BOTTOM);
-        }
-
-        if (left.isTop() || right.isTop()) {
-            // Whenever a top element is found, the calculation is stopped and then the bottom is returned. This must be
-            // done because the top element can also express something that is not an interval, so any calculation can
-            // actually be performed.
-            return Optional.of(Intervals.TOP);
-        }
-
-        // No condition was found to stop the binary calculation, so the "inapplicable" object cannot be returned.
-        return Optional.empty();
+        // ...
+        var low = output.interval.getLow();
+        var high = output.interval.getHigh();
+        if (low.isNaN() || high.isNaN()) return Intervals.BOTTOM;
+        return output;
     }
 
     // Selects the minimum element from the given numbers. If the minimum element is NaN, instead of considering it a

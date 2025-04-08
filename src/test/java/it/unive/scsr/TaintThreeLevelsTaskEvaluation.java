@@ -6,7 +6,6 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.DefaultConfiguration;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.taint.ThreeLevelsTaint;
 import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.imp.IMPFrontend;
@@ -28,7 +27,7 @@ public class TaintThreeLevelsTaskEvaluation {
 	String[] sources = new String[] {"source1", "source2"};
 	String[] sanitizers = new String[] {"sanitizer1", "sanitizer2"};
 	String[] sinks = new String[] {"sink1", "sinks"};
-	
+
 
 	@Test
 	public void testTaintThreeLevels() throws ParsingException, AnalysisException {
@@ -54,7 +53,7 @@ public class TaintThreeLevelsTaskEvaluation {
 		
 		 conf.abstractState = DefaultConfiguration.simpleState(
 				DefaultConfiguration.defaultHeapDomain(),
-				new ValueEnvironment<>(new ThreeLevelsTaint()),
+				new ValueEnvironment<>(new TaintThreeLevels()),
 				DefaultConfiguration.defaultTypeDomain());
 		 
 		 // we specify to perform an interprocedural analysis (require to recognize calls to sources, sanitizers, and sinks)

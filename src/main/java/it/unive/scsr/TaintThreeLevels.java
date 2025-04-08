@@ -10,8 +10,35 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
+import java.util.Objects;
 
 public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
+	private static final TaintThreeLevels TAINT = new TaintThreeLevels("TAINT");
+	private static final TaintThreeLevels CLEAN = new TaintThreeLevels("CLEAN");
+	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels("BOTTOM");
+	private static final TaintThreeLevels TOP = new TaintThreeLevels("TOP");
+
+	private String taintStatus;
+
+	public TaintThreeLevels() {
+		this("TOP");
+	}
+
+	public TaintThreeLevels(String taintStatus) {
+		this.taintStatus = taintStatus;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) return false;
+		TaintThreeLevels that = (TaintThreeLevels) o;
+		return Objects.equals(taintStatus, that.taintStatus);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(taintStatus);
+	}
 
 	/*
 	 * Lattice of Taint Domain with three level
@@ -33,50 +60,44 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
-		// TODO: to implement
-		return null;
+		//Since the only case is that this == CLEAN AND other == TAINT or vice versa
+		return TOP;
 	}
 
 	@Override
 	public boolean lessOrEqualAux(TaintThreeLevels other) throws SemanticException {
-		// TODO: to implement
+		//Since the only case is that this == CLEAN AND other == TAINT or vice versa
 		return false;
 	}
 
 	@Override
 	public TaintThreeLevels top() {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 	@Override
 	public TaintThreeLevels bottom() {
-		// TODO: to implement
-		return null;
+		return BOTTOM;
 	}
 
 	@Override
 	protected TaintThreeLevels tainted() {
-		// TODO: to implement
-		return null;
+		return TAINT;
 	}
 
 	@Override
 	protected TaintThreeLevels clean() {
-		// TODO: to implement
-		return null;
+		return CLEAN;
 	}
 
 	@Override
 	public boolean isAlwaysTainted() {
-		// TODO: to implement
-		return false;
+		return this == TAINT;
 	}
 
 	@Override
 	public boolean isPossiblyTainted() {
-		// TODO: to implement
-		return false;
+		return this == TAINT || this == TOP;
 	}
 	
 	public TaintThreeLevels evalBinaryExpression(
@@ -86,16 +107,23 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		// TODO: to implement
-		return null;
+
+		if(left == TAINT || right == TAINT) {
+			return TAINT;
+		}
+
+		if(left == TOP || right == TOP) {
+			return TOP;
+		}
+
+		return CLEAN;
 	}
 	
 	@Override
 	public TaintThreeLevels wideningAux(
 			TaintThreeLevels other)
 			throws SemanticException {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 
@@ -108,10 +136,9 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	// choice. If you use methods instead of constants, change == with the
 	// invocation of the corresponding method
 	
-		@Override
+	@Override
 	public StructuredRepresentation representation() {
-		// return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
-		return null;
+		return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
 	}
 	
 }

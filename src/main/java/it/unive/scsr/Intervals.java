@@ -94,6 +94,9 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 
+		if (arg.isBottom())
+			return bottom();
+
 		// TODO: The semantics of negation should be implemented here!
 		if(operator instanceof NegatableOperator) {
 			MathNumber low = arg.interval.getLow();
@@ -229,17 +232,17 @@ public class Intervals
 		
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
-		
+
 		if(operator instanceof AdditionOperator)  {
-			
+
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
-			
+
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
-			
+
 			return new Intervals(lA.add(lB), uA.add(uB));
-			
+
 		} else
 
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
@@ -252,18 +255,19 @@ public class Intervals
 
 			return new Intervals(lA.subtract(uB), uA.subtract(lB));
 		} else if (operator instanceof MultiplicationOperator) {
-			MathNumber aLow = a.getLow();
-			MathNumber aHigh = a.getHigh();
-			MathNumber bLow = b.getLow();
-			MathNumber bHigh = b.getHigh();
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
 
-			MathNumber prod1 = aLow.multiply(bLow);
-			MathNumber prod2 = aLow.multiply(bHigh);
-			MathNumber prod3 = aHigh.multiply(bLow);
-			MathNumber prod4 = aHigh.multiply(bHigh);
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
 
-			MathNumber newLower = prod1.min(prod2).min(prod3).min(prod4);
-			MathNumber newUpper = prod1.max(prod2).max(prod3).max(prod4);
+			MathNumber p1 = lA.multiply(lB);
+			MathNumber p2 = lA.multiply(uB);
+			MathNumber p3 = uA.multiply(lB);
+			MathNumber p4 = uA.multiply(uB);
+
+			MathNumber newLower = p1.min(p2).min(p3).min(p4);
+			MathNumber newUpper = p1.max(p2).max(p3).max(p4);
 
 			return new Intervals(newLower, newUpper);
 		} else if (operator instanceof DivisionOperator) {

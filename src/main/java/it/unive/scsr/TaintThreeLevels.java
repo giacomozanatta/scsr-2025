@@ -13,6 +13,13 @@ import it.unive.lisa.util.representation.StructuredRepresentation;
 
 public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
+	private static final TaintThreeLevels TOP = new TaintThreeLevels((byte) 3);
+	private static final TaintThreeLevels TAINTED = new TaintThreeLevels((byte) 2);
+	private static final TaintThreeLevels CLEAN = new TaintThreeLevels((byte) 1);
+	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels((byte) 0);
+
+	private final int tainted;
+
 	/*
 	 * Lattice of Taint Domain with three level
 	 * 
@@ -30,11 +37,20 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	 *   - BOTTOM: error state
 	 * 
 	 */
-	
+
+	public TaintThreeLevels() {
+		this((byte) 3);
+	}
+
+	private TaintThreeLevels(
+			byte v) {
+		this.tainted = v;
+	}
+
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
 		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 	@Override
@@ -46,37 +62,37 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	@Override
 	public TaintThreeLevels top() {
 		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 	@Override
 	public TaintThreeLevels bottom() {
 		// TODO: to implement
-		return null;
+		return BOTTOM;
 	}
 
 	@Override
 	protected TaintThreeLevels tainted() {
 		// TODO: to implement
-		return null;
+		return TAINTED;
 	}
 
 	@Override
 	protected TaintThreeLevels clean() {
 		// TODO: to implement
-		return null;
+		return CLEAN;
 	}
 
 	@Override
 	public boolean isAlwaysTainted() {
 		// TODO: to implement
-		return false;
+		return this == TAINTED;
 	}
 
 	@Override
 	public boolean isPossiblyTainted() {
 		// TODO: to implement
-		return false;
+		return this == TOP;
 	}
 	
 	public TaintThreeLevels evalBinaryExpression(
@@ -86,8 +102,14 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
+		if (left == TAINTED || right == TAINTED)
+			return TAINTED;
+
+		if (left == TOP || right == TOP)
+			return TOP;
+
+		return CLEAN;
 		// TODO: to implement
-		return null;
 	}
 	
 	@Override
@@ -95,7 +117,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			TaintThreeLevels other)
 			throws SemanticException {
 		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 
@@ -110,8 +132,8 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	
 		@Override
 	public StructuredRepresentation representation() {
-		// return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
-		return null;
+		return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
+		//return null;
 	}
 	
 }

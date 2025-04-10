@@ -10,10 +10,7 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
@@ -100,7 +97,7 @@ public class Intervals
 		// TODO: The semantics of negation should be implemented here! 
 		
 		if(operator instanceof NegatableOperator) {
-			
+			return new Intervals(new MathNumber(0).subtract(arg.interval.getHigh()),new MathNumber(0).subtract(arg.interval.getLow()));
 		}
 		
 		return top();
@@ -240,17 +237,34 @@ public class Intervals
 			
 			return new Intervals(lA.add(lB), uA.add(uB));
 			
-		} else 
-			
+		} else
+
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
 			
 		if( operator instanceof SubtractionOperator) {
-			
+
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+			return new Intervals(lA.subtract(lB), uA.subtract(uB));
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+			return new Intervals(lA.multiply(lB), uA.multiply(uB));
+		}else if( operator instanceof DivisionOperator) {
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+			return new Intervals(lA.divide(lB), uA.divide(uB));
 		}
-			
 		return top();
 	}
 

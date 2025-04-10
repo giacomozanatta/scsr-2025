@@ -239,8 +239,11 @@ public class Intervals
 			
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
+
+			MathNumber first = lA.add(lB);
+			MathNumber second = uA.add(uB);
 			
-			return new Intervals(lA.add(lB), uA.add(uB));
+			return new Intervals(first.min(second), first.max(second));
 			
 		} else if( operator instanceof SubtractionOperator) {
 

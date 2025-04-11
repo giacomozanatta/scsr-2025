@@ -6,11 +6,8 @@ import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.taint.BaseTaint;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
-import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
-import it.unive.scsr.taintthreelevels.BinaryFunctions;
-import java.util.Optional;
 
 public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
@@ -87,11 +84,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		// Extract the most appropriate function from the dispatcher and apply it to evaluate whether the expression
-		// will be tainted or not
-		return Optional.ofNullable(BinaryFunctions.INSTANCE.findBy(operator))
-				.map(f -> f.apply(left, right))
-				.orElse(TOP);
+		return super.evalBinaryExpression(operator, left, right, pp, oracle);
 	}
 	
 	@Override

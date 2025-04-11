@@ -10,6 +10,8 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
+import java.util.Objects;
+
 
 public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
@@ -30,54 +32,98 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	 *   - BOTTOM: error state
 	 * 
 	 */
-	
+	private static final TaintThreeLevels TOP = new TaintThreeLevels(TaintStates.TOP);
+	private static final TaintThreeLevels TAINT = new TaintThreeLevels(TaintStates.TAINT);
+	private static final TaintThreeLevels CLEAN = new TaintThreeLevels(TaintStates.CLEAN);
+	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels(TaintStates.BOTTOM);
+
+	private enum TaintStates {BOTTOM, CLEAN, TAINT, TOP}
+	private TaintStates taintState; //0 - BOTTOM, 1 - CLEAN, 2 - TAINT, 3 - TOP
+
+	public TaintThreeLevels() {
+		this(TaintStates.TAINT);
+	}
+
+	public TaintThreeLevels(TaintStates taintState) {
+		this.taintState = taintState;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof TaintThreeLevels that)) return false;
+        return taintState == that.taintState;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(taintState);
+	}
+
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
-		// TODO: to implement
+		if(other.taintState == taintState)
+		{
+			if(this.taintState == TaintStates.BOTTOM) return BOTTOM;
+			if(this.taintState == TaintStates.TOP) return TOP;
+			if(this.taintState == TaintStates.CLEAN) return CLEAN;
+			if(this.taintState == TaintStates.TAINT) return TAINT;
+		}
+		if(this.taintState == TaintStates.TOP || other.taintState == TaintStates.TOP)
+			return TOP;
+		if((this.taintState == TaintStates.CLEAN && other.taintState == TaintStates.TAINT)
+				||(this.taintState == TaintStates.TAINT && other.taintState == TaintStates.CLEAN))
+			return TOP;
+		if((this.taintState == TaintStates.CLEAN && other.taintState == TaintStates.BOTTOM)
+				||(this.taintState == TaintStates.BOTTOM && other.taintState == TaintStates.CLEAN))
+			return CLEAN;
+		if((this.taintState == TaintStates.TAINT && other.taintState == TaintStates.BOTTOM)
+				||(this.taintState == TaintStates.BOTTOM && other.taintState == TaintStates.TAINT))
+			return TAINT;
 		return null;
 	}
 
 	@Override
 	public boolean lessOrEqualAux(TaintThreeLevels other) throws SemanticException {
-		// TODO: to implement
+		if (other.taintState == taintState)
+			return true;
+		if (this == BOTTOM || other == TOP)
+			return true;
+		if (this == TOP || other == BOTTOM)
+			return false;
+		if((this == CLEAN && other == TAINT)||(this == TAINT && other == CLEAN))
+			return false;
 		return false;
 	}
 
 	@Override
 	public TaintThreeLevels top() {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 	@Override
 	public TaintThreeLevels bottom() {
-		// TODO: to implement
-		return null;
+		return BOTTOM;
 	}
 
 	@Override
 	protected TaintThreeLevels tainted() {
-		// TODO: to implement
-		return null;
+		return TAINT;
 	}
 
 	@Override
 	protected TaintThreeLevels clean() {
-		// TODO: to implement
-		return null;
+		return CLEAN;
 	}
 
 	@Override
 	public boolean isAlwaysTainted() {
-		// TODO: to implement
-		return false;
-	}
+        return this.taintState == TaintStates.TAINT;
+    }
 
 	@Override
 	public boolean isPossiblyTainted() {
-		// TODO: to implement
-		return false;
-	}
+        return this.taintState == TaintStates.TOP || this.taintState == TaintStates.TAINT;
+    }
 	
 	public TaintThreeLevels evalBinaryExpression(
 			BinaryOperator operator,
@@ -86,7 +132,14 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		// TODO: to implement
+		if(left.taintState == TaintStates.BOTTOM || right.taintState == TaintStates.BOTTOM)
+			return BOTTOM;
+		if(left.taintState == TaintStates.TAINT || right.taintState == TaintStates.TAINT)
+			return TAINT;
+		if(left.taintState == TaintStates.TOP || right.taintState == TaintStates.TOP)
+			return TOP;
+		if(left.taintState == TaintStates.CLEAN && right.taintState == TaintStates.CLEAN)
+			return CLEAN;
 		return null;
 	}
 	
@@ -94,8 +147,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	public TaintThreeLevels wideningAux(
 			TaintThreeLevels other)
 			throws SemanticException {
-		// TODO: to implement
-		return null;
+		return TAINT;
 	}
 
 
@@ -110,8 +162,8 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	
 		@Override
 	public StructuredRepresentation representation() {
-		// return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
-		return null;
+		return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
+		//return null;
 	}
 	
 }

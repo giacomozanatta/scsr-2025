@@ -97,10 +97,8 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		// TODO: The semantics of negation should be implemented here! 
-		
 		if(operator instanceof NegatableOperator) {
-			
+			return new Intervals(arg.interval.mul(new IntInterval(-1, -1)));
 		}
 		
 		return top();
@@ -245,10 +243,19 @@ public class Intervals
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
 			
 		if( operator instanceof SubtractionOperator) {
-			
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+			return new Intervals(lA.subtract(lB), uA.subtract(uB));
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+			return new Intervals(lA.multiply(lB), uA.multiply(uB));
 		}
 			
 		return top();
@@ -315,7 +322,5 @@ public class Intervals
 		
 		return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest, oracle);
 	}
-	
 
-	
 }

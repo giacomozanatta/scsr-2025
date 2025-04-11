@@ -102,10 +102,10 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals> {
 
     @Override
     protected Intervals polishResult(Intervals output) {
-        // ...
+        // If the calculation of the upper or lower element cannot proceed.
         if (output.isBottom() || output.isTop()) return output;
 
-        // ...
+        // Whenever the number to the left or right of the range is NaN, the bottom element of the lattice is returned.
         var low = output.interval.getLow();
         var high = output.interval.getHigh();
         if (low.isNaN() || high.isNaN()) return Intervals.BOTTOM;
@@ -119,7 +119,8 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals> {
                 .stream()
                 .min(MathNumber::compareTo)
                 .filter(mathNumber -> !mathNumber.isNaN())
-                .orElse(MathNumber.MINUS_INFINITY);
+                .orElse(MathNumber.MINUS_INFINITY)
+                .roundDown();
     }
 
     // Selects the maximum element from the given numbers. If the maximum element is NaN, instead of considering it a
@@ -129,6 +130,7 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals> {
                 .stream()
                 .max(MathNumber::compareTo)
                 .filter(mathNumber -> !mathNumber.isNaN())
-                .orElse(MathNumber.PLUS_INFINITY);
+                .orElse(MathNumber.PLUS_INFINITY)
+                .roundUp();
     }
 }

@@ -28,4 +28,23 @@ class intervals {
 			}
 			return c; 
 	}
+
+	get_zero() {
+	    def a = 0;
+	    return a;
+	}
+
+	div_by_zero() {
+	    def a = this.get_zero();
+	    def b = 25 / a;
+
+	    return b;
+	}
+
+	div_by_zero_1() {
+	    def a = 0;
+	    def b = 25 / a;
+
+	    return b;
+	}
 }

@@ -40,6 +40,10 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	private TaintThreeLevels(String level) {
 		this.level = level;
 	}
+// Public constructor for domain instantiation
+	public TaintThreeLevels() {
+		this.level = "BOTTOM";
+	}
 // Least Upper Bound operations over the lattice
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) {

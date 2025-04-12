@@ -116,7 +116,7 @@ public class Intervals
 		
 		return TOP;
 	}
-	
+
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
 		
@@ -152,8 +152,8 @@ public class Intervals
 		MathNumber uA = a.getHigh();
 		MathNumber uB = b.getHigh();
 		
-		MathNumber newLower = lA.max(lB);
-		MathNumber newUpper = uA.min(uB);
+		MathNumber newLower = lA.min(lB);
+		MathNumber newUpper = uA.max(uB);
 		
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;

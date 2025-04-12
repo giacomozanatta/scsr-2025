@@ -261,13 +261,27 @@ public class Intervals
 			MathNumber bLow = b.getLow();
 			MathNumber bHigh = b.getHigh();
 			
+			// Check if any multiplication involves 0 * infinity, which is indeterminate
+			boolean aLowInfinite = aLow.isPlusInfinity() || aLow.isMinusInfinity();
+			boolean aHighInfinite = aHigh.isPlusInfinity() || aHigh.isMinusInfinity();
+			boolean bLowInfinite = bLow.isPlusInfinity() || bLow.isMinusInfinity();
+			boolean bHighInfinite = bHigh.isPlusInfinity() || bHigh.isMinusInfinity();
+			
+			if ((aLow.equals(MathNumber.ZERO) && (bLowInfinite || bHighInfinite)) ||
+				(aHigh.equals(MathNumber.ZERO) && (bLowInfinite || bHighInfinite)) ||
+				(bLow.equals(MathNumber.ZERO) && (aLowInfinite || aHighInfinite)) ||
+				(bHigh.equals(MathNumber.ZERO) && (aLowInfinite || aHighInfinite))) {
+				// Indeterminate case: 0 multiplied by infinity yields an over-approximation to top
+				return top();
+			}
+			
 			// Compute all products between endpoints
 			MathNumber prod1 = aLow.multiply(bLow);
 			MathNumber prod2 = aLow.multiply(bHigh);
 			MathNumber prod3 = aHigh.multiply(bLow);
 			MathNumber prod4 = aHigh.multiply(bHigh);
 			
-			// Determine the minimum and maximum values
+			// Determine the minimum and maximum among the computed products
 			MathNumber newLower = prod1.min(prod2).min(prod3).min(prod4);
 			MathNumber newUpper = prod1.max(prod2).max(prod3).max(prod4);
 			

@@ -110,5 +110,17 @@ class intervals {
 		return result;
     }
 
+    mulVarying(b, c, num) {
+        // Division where both numerator and denominator vary over two branches
+        def denom = 0;   // Denominator is exactly zero in all cases
+        if (c) {
+            denom = 2;   // branch 1 for denominator (positive)
+        } else {
+            denom = -3;  // branch 2 for denominator (negative)
+        }
+        def result = num / denom;   // Possible outcomes: 10/2=5, -5/-3=1.67
+		return result;
+    }
+
 	
 }

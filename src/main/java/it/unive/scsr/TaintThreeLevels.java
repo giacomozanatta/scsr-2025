@@ -17,80 +17,79 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	/*
 	 * Lattice of Taint Domain with three level
-	 * 
+	 *
 	 * 	  TOP
 	 * 	/  	   \
 	 * TAINT	CLEAN
 	 *  \      /
 	 *   BOTTOM
-	 *   
-	 *   
+	 *
+	 *
 	 *   Element meanings:
 	 *   - TOP: might be tainted or clean
-	 *   - TAINT: definitly tainted
-	 *   - CLEAN: definitly clean
+	 *   - TAINT: definitely tainted
+	 *   - CLEAN: definitely clean
 	 *   - BOTTOM: error state
-	 * 
+	 *
 	 */
-	private static final TaintThreeLevels TOP = new TaintThreeLevels(TaintStates.TOP);
-	private static final TaintThreeLevels TAINT = new TaintThreeLevels(TaintStates.TAINT);
-	private static final TaintThreeLevels CLEAN = new TaintThreeLevels(TaintStates.CLEAN);
-	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels(TaintStates.BOTTOM);
+	private static final TaintThreeLevels TOP = new TaintThreeLevels((byte)3);
+	private static final TaintThreeLevels TAINTED = new TaintThreeLevels((byte)2);
+	private static final TaintThreeLevels CLEAN = new TaintThreeLevels((byte)1);
+	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels((byte)0);
 
-	private enum TaintStates {BOTTOM, CLEAN, TAINT, TOP}
-	private TaintStates taintState; //0 - BOTTOM, 1 - CLEAN, 2 - TAINT, 3 - TOP
+	private final byte taint; //0 - BOTTOM, 1 - CLEAN, 2 - TAINT, 3 - TOP
 
 	public TaintThreeLevels() {
-		this(TaintStates.TAINT);
+		this((byte) 3);
 	}
 
-	public TaintThreeLevels(TaintStates taintState) {
-		this.taintState = taintState;
+	public TaintThreeLevels(byte taint) {
+		this.taint = taint;
 	}
 
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof TaintThreeLevels that)) return false;
-        return taintState == that.taintState;
+		return taint == that.taint;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(taintState);
+		return Objects.hashCode(taint);
 	}
 
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
-		if(other.taintState == taintState)
+		if(other.taint == taint)
 		{
-			if(this.taintState == TaintStates.BOTTOM) return BOTTOM;
-			if(this.taintState == TaintStates.TOP) return TOP;
-			if(this.taintState == TaintStates.CLEAN) return CLEAN;
-			if(this.taintState == TaintStates.TAINT) return TAINT;
+			if(this.taint == 0) return BOTTOM;
+			if(this.taint == 3) return TOP;
+			if(this.taint == 1) return CLEAN;
+			if(this.taint == 2) return TAINTED;
 		}
-		if(this.taintState == TaintStates.TOP || other.taintState == TaintStates.TOP)
+		if(this == TOP || other == TOP)
 			return TOP;
-		if((this.taintState == TaintStates.CLEAN && other.taintState == TaintStates.TAINT)
-				||(this.taintState == TaintStates.TAINT && other.taintState == TaintStates.CLEAN))
+		if((this == CLEAN && other == TAINTED)
+				||(this == TAINTED && other == CLEAN))
 			return TOP;
-		if((this.taintState == TaintStates.CLEAN && other.taintState == TaintStates.BOTTOM)
-				||(this.taintState == TaintStates.BOTTOM && other.taintState == TaintStates.CLEAN))
+		if((this == CLEAN && other == BOTTOM)
+				||(this == BOTTOM && other == CLEAN))
 			return CLEAN;
-		if((this.taintState == TaintStates.TAINT && other.taintState == TaintStates.BOTTOM)
-				||(this.taintState == TaintStates.BOTTOM && other.taintState == TaintStates.TAINT))
-			return TAINT;
+		if((this == TAINTED && other == BOTTOM)
+				||(this == BOTTOM && other == TAINTED))
+			return TAINTED;
 		return null;
 	}
 
 	@Override
 	public boolean lessOrEqualAux(TaintThreeLevels other) throws SemanticException {
-		if (other.taintState == taintState)
+		if (other.taint == taint)
 			return true;
 		if (this == BOTTOM || other == TOP)
 			return true;
 		if (this == TOP || other == BOTTOM)
 			return false;
-		if((this == CLEAN && other == TAINT)||(this == TAINT && other == CLEAN))
+		if((this == CLEAN && other == TAINTED)||(this == TAINTED && other == CLEAN))
 			return false;
 		return false;
 	}
@@ -107,7 +106,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	protected TaintThreeLevels tainted() {
-		return TAINT;
+		return TAINTED;
 	}
 
 	@Override
@@ -117,14 +116,14 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	public boolean isAlwaysTainted() {
-        return this.taintState == TaintStates.TAINT;
-    }
+		return this == TAINTED;
+	}
 
 	@Override
 	public boolean isPossiblyTainted() {
-        return this.taintState == TaintStates.TOP || this.taintState == TaintStates.TAINT;
-    }
-	
+		return this == TOP;
+	}
+
 	public TaintThreeLevels evalBinaryExpression(
 			BinaryOperator operator,
 			TaintThreeLevels left,
@@ -132,22 +131,22 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		if(left.taintState == TaintStates.BOTTOM || right.taintState == TaintStates.BOTTOM)
+		if(left == BOTTOM || right == BOTTOM)
 			return BOTTOM;
-		if(left.taintState == TaintStates.TAINT || right.taintState == TaintStates.TAINT)
-			return TAINT;
-		if(left.taintState == TaintStates.TOP || right.taintState == TaintStates.TOP)
+		if(left == TAINTED || right == TAINTED)
+			return TAINTED;
+		if(left == TOP || right == TOP)
 			return TOP;
-		if(left.taintState == TaintStates.CLEAN && right.taintState == TaintStates.CLEAN)
+		if(left == CLEAN && right == CLEAN)
 			return CLEAN;
 		return null;
 	}
-	
+
 	@Override
 	public TaintThreeLevels wideningAux(
 			TaintThreeLevels other)
 			throws SemanticException {
-		return TAINT;
+		return TOP;
 	}
 
 
@@ -159,11 +158,11 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	// change also the code below to make it work by just using the name of your
 	// choice. If you use methods instead of constants, change == with the
 	// invocation of the corresponding method
-	
-		@Override
+
+	@Override
 	public StructuredRepresentation representation() {
 		return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
 		//return null;
 	}
-	
+
 }

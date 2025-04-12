@@ -130,11 +130,15 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 		// Propagate error if any operand is BOTTOM
 		if (left.equals(BOTTOM) || right.equals(BOTTOM))
 			return BOTTOM;
-		// If both operands are equal, then result is that same value
-		if (left.equals(right))
-			return left;
-		// Otherwise, the result is TOP (uncertain)
-		return TOP;
+		// If one of the two operand is tainted, the result is tainted
+		if (left == TAINT || right == TAINT)
+			return TAINT;
+		// If one of the two operand is TOP, the result is TOP
+		if (left == TOP || right == TOP)
+			return TOP;
+		// We are left only with the case where both operands are CLEAN
+		// In this case, the result is CLEAN
+		return CLEAN;
 	}
 	
 	@Override

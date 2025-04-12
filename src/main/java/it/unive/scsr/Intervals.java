@@ -162,7 +162,6 @@ public class Intervals
 		return other.interval.includes(this.interval);
 	}
 
-
 	@Override
 	public Intervals top() {
 		// the top element of the lattice is [-inf, +inf]
@@ -224,98 +223,52 @@ public class Intervals
 	}
 
 	@Override
-	public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
-			SemanticOracle oracle) throws SemanticException {
+	public Intervals evalBinaryExpression(
+			BinaryOperator operator,
+			Intervals left,
+			Intervals right,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
 		
+		if ((left.isTop() || right.isTop()))
+			return top();
 		
-		if(left.isBottom() || right.isBottom())
-			return bottom();
-		
-		IntInterval a = left.interval;
-		IntInterval b = right.interval;
-		
-		if(operator instanceof AdditionOperator)  {
-			
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
-			return new Intervals(lA.add(lB), uA.add(uB));
-			
-		} else 
-			
-		if (operator instanceof SubtractionOperator) {
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
-			return new Intervals(lA.subtract(uB), uA.subtract(lB));
-			
-		} else if (operator instanceof MultiplicationOperator) {
-			MathNumber aLow = a.getLow();
-			MathNumber aHigh = a.getHigh();
-			MathNumber bLow = b.getLow();
-			MathNumber bHigh = b.getHigh();
-			
-			// Check if any multiplication involves 0 * infinity, which is indeterminate
-			boolean aLowInfinite = aLow.isPlusInfinity() || aLow.isMinusInfinity();
-			boolean aHighInfinite = aHigh.isPlusInfinity() || aHigh.isMinusInfinity();
-			boolean bLowInfinite = bLow.isPlusInfinity() || bLow.isMinusInfinity();
-			boolean bHighInfinite = bHigh.isPlusInfinity() || bHigh.isMinusInfinity();
-			
-			if ((aLow.equals(MathNumber.ZERO) && (bLowInfinite || bHighInfinite)) ||
-				(aHigh.equals(MathNumber.ZERO) && (bLowInfinite || bHighInfinite)) ||
-				(bLow.equals(MathNumber.ZERO) && (aLowInfinite || aHighInfinite)) ||
-				(bHigh.equals(MathNumber.ZERO) && (aLowInfinite || aHighInfinite))) {
-				// Indeterminate case: 0 multiplied by infinity yields an over-approximation to top
-				return top();
-			}
-			
-			// Compute all products between endpoints
-			MathNumber prod1 = aLow.multiply(bLow);
-			MathNumber prod2 = aLow.multiply(bHigh);
-			MathNumber prod3 = aHigh.multiply(bLow);
-			MathNumber prod4 = aHigh.multiply(bHigh);
-			
-			// Determine the minimum and maximum among the computed products
-			MathNumber newLower = prod1.min(prod2).min(prod3).min(prod4);
-			MathNumber newUpper = prod1.max(prod2).max(prod3).max(prod4);
-			
-			return new Intervals(newLower, newUpper);
-		} else if (operator instanceof DivisionOperator) { 
+		// Using native arithmetic operations from the IntInterval class
+		// to evaluate the binary expression
 
-			// Retrieve the denominator interval bounds
-			MathNumber lB = b.getLow();
-			MathNumber uB = b.getHigh();
-			
-			// Check if the denominator interval contains zero
-			if (lB.compareTo(MathNumber.ZERO) <= 0 && uB.compareTo(MathNumber.ZERO) >= 0) {
-				// If the denominator is exactly [0, 0], division is undefined -> return bottom
-				if (lB.equals(MathNumber.ZERO) && uB.equals(MathNumber.ZERO))
-					return bottom();
-				// Otherwise, if the interval spans zero, over-approximate to top
-				return top();
-			}
-			
-			// Denominator does not contain zero; compute all possible quotients
-			MathNumber q1 = a.getLow().divide(lB);
-			MathNumber q2 = a.getLow().divide(uB);
-			MathNumber q3 = a.getHigh().divide(lB);
-			MathNumber q4 = a.getHigh().divide(uB);
-			
-			// Determine the minimum and maximum among the computed quotients
-			MathNumber newLower = q1.min(q2).min(q3).min(q4);
-			MathNumber newUpper = q1.max(q2).max(q3).max(q4);
-			
-			return new Intervals(newLower, newUpper);
+		// for addition and subtraction there are no "edge" cases to handle
+		if (operator instanceof AdditionOperator)
+			return new Intervals(left.interval.plus(right.interval));
+
+		else if (operator instanceof SubtractionOperator)
+			return new Intervals(left.interval.diff(right.interval));
+
+		else if (operator instanceof MultiplicationOperator) {
+			// multiplying by the singleton interval [0,0] on either set leads to [0,0]
+			if (left.nonBottomSingletonNumber(0) || right.nonBottomSingletonNumber(0))
+				return ZERO;
+			else
+				return new Intervals(left.interval.mul(right.interval));
 		}
 
-
+		else if (operator instanceof DivisionOperator) {
+			// dividing by the singleton interval [0,0] leads to bottom
+			if (right.nonBottomSingletonNumber(0))
+				return bottom();
+			// if the numerator is a singleton interval [0,0] the result is [0,0]
+			else if (left.nonBottomSingletonNumber(0))
+				return ZERO;
+			// in all other cases we can divide the two intervals using the IntInterval div method 
+			else
+				return new Intervals(left.interval.div(right.interval, false, false));
+		}
+		
 		return top();
+	}
+
+	public boolean nonBottomSingletonNumber(
+			int number) {
+		return interval.isSingleton() && interval.getLow().is(number) && !isBottom();
 	}
 
 	@Override

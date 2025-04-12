@@ -99,12 +99,16 @@ public class Intervals
 			throws SemanticException {
 		
 		if(operator instanceof NegatableOperator) {
-			MathNumber low = arg.interval.getLow();
-			MathNumber high = arg.interval.getHigh();
-			
-			// negation of the interval
-			IntInterval negatedInterval = new IntInterval(high.multiply(MathNumber.MINUS_ONE), low.multiply(MathNumber.MINUS_ONE));
-			return new Intervals(negatedInterval);
+			if (arg.isTop())
+				return top();
+			else {
+				MathNumber low = arg.interval.getLow();
+				MathNumber high = arg.interval.getHigh();
+				
+				// negation of the interval
+				IntInterval negatedInterval = new IntInterval(high.multiply(MathNumber.MINUS_ONE), low.multiply(MathNumber.MINUS_ONE));
+				return new Intervals(negatedInterval);
+			}
 		}
 		
 		return top();
@@ -234,9 +238,10 @@ public class Intervals
 			return top();
 		
 		// Using native arithmetic operations from the IntInterval class
-		// to evaluate the binary expression
+		// to evaluate binary expressions
 
 		// for addition and subtraction there are no "edge" cases to handle
+		// and we can just use the IntInterval methods
 		if (operator instanceof AdditionOperator)
 			return new Intervals(left.interval.plus(right.interval));
 
@@ -244,8 +249,8 @@ public class Intervals
 			return new Intervals(left.interval.diff(right.interval));
 
 		else if (operator instanceof MultiplicationOperator) {
-			// multiplying by the singleton interval [0,0] on either set leads to [0,0]
-			if (left.nonBottomSingletonNumber(0) || right.nonBottomSingletonNumber(0))
+			// multiplying by the singleton interval [0,0] on either side leads to [0,0]
+			if (left.isNonBottomSingletonWithValue(0) || right.isNonBottomSingletonWithValue(0))
 				return ZERO;
 			else
 				return new Intervals(left.interval.mul(right.interval));
@@ -253,10 +258,10 @@ public class Intervals
 
 		else if (operator instanceof DivisionOperator) {
 			// dividing by the singleton interval [0,0] leads to bottom
-			if (right.nonBottomSingletonNumber(0))
+			if (right.isNonBottomSingletonWithValue(0))
 				return bottom();
 			// if the numerator is a singleton interval [0,0] the result is [0,0]
-			else if (left.nonBottomSingletonNumber(0))
+			else if (left.isNonBottomSingletonWithValue(0))
 				return ZERO;
 			// in all other cases we can divide the two intervals using the IntInterval div method 
 			else
@@ -266,14 +271,15 @@ public class Intervals
 		return top();
 	}
 
-	public boolean nonBottomSingletonNumber(
+	public boolean isNonBottomSingletonWithValue(
 			int number) {
 		return interval.isSingleton() && interval.getLow().is(number) && !isBottom();
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(interval);
+		int h = 7;
+		return h + (interval == null ? 0 : interval.hashCode());
 	}
 
 	@Override

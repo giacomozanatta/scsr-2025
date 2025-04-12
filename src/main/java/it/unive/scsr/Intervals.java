@@ -11,8 +11,8 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -97,12 +97,12 @@ public class Intervals
 			throws SemanticException {
 		// If the specified argument is bottom or top, the input is returned as output without performing any
 		// calculations.
-		if (arg.isBottom() || arg.isTop()) return arg;
+		if (arg.isTop()) return arg;
 
 		// If one of the elements is NaN, the lower element is returned since the computation cannot continue.
 		if (arg.interval.getLow().isNaN() || arg.interval.getHigh().isNaN()) return BOTTOM;
 
-		if(operator instanceof NegatableOperator) {
+		if (operator instanceof NumericNegation) {
 			// Given a MathNumber element, the negation is calculated taking into account the possibility of handling an
 			// infinite element.
 			Function<MathNumber, MathNumber> f = n ->

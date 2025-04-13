@@ -124,7 +124,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			throws SemanticException {
 		
 		// Propagate error if any operand is BOTTOM
-		if (left.equals(BOTTOM) || right.equals(BOTTOM))
+		if (left == BOTTOM || right == BOTTOM)
 			return BOTTOM;
 		// If one of the two operand is definitely tainted, the result is definitely tainted
 		if (left == TAINT || right == TAINT)
@@ -133,7 +133,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 		if (left == TOP || right == TOP)
 			return TOP;
 		// We are left only with the case where both operands are CLEAN
-		// In this case, the result is CLEAN
+		// In this case, the result is CLEAN (not using if statement as it is not needed)
 		return CLEAN;
 	}
 	

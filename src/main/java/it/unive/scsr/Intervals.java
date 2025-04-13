@@ -279,7 +279,8 @@ public class Intervals
 	@Override
 	public int hashCode() {
 		int h = 7;
-		return h + (interval == null ? 0 : interval.hashCode());
+		h = 31 * h + (interval == null ? 0 : interval.hashCode());
+		return h;
 	}
 
 	@Override

@@ -231,6 +231,9 @@ public class Intervals
 		
 		if ((left.isTop() || right.isTop()))
 			return top();
+
+		if (left.isBottom() || right.isBottom())
+			return bottom();
 		
 		// Using native arithmetic operations from the IntInterval class
 		// to evaluate binary expressions

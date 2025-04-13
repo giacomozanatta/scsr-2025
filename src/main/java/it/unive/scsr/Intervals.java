@@ -13,10 +13,10 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.StringRepresentation;
@@ -98,17 +98,11 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		if(operator instanceof NegatableOperator) {
-			if (arg.isTop())
-				return top();
-			else {
-				MathNumber low = arg.interval.getLow();
-				MathNumber high = arg.interval.getHigh();
-				
-				// negation of the interval
-				IntInterval negatedInterval = new IntInterval(high.multiply(MathNumber.MINUS_ONE), low.multiply(MathNumber.MINUS_ONE));
-				return new Intervals(negatedInterval);
-			}
+		if(operator instanceof NumericNegation) {
+			// negation of the interval by multiplying it by -1
+			if (arg.isBottom())
+				return bottom();
+			return new Intervals(arg.interval.mul(new IntInterval(MathNumber.MINUS_ONE, MathNumber.MINUS_ONE)));
 		}
 		
 		return top();
@@ -116,6 +110,29 @@ public class Intervals
 	
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
+		
+		IntInterval a = this.interval;
+		IntInterval b = other.interval;
+		
+		MathNumber lA = a.getLow();
+		MathNumber lB = b.getLow();
+		
+		MathNumber uA = a.getHigh();
+		MathNumber uB = b.getHigh();
+		
+		MathNumber newLower = lA.max(lB);
+		MathNumber newUpper = uA.min(uB);
+		
+		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
+			return BOTTOM;
+		
+		Intervals newInterval = new Intervals(newLower, newUpper);
+		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() :
+			newInterval;
+	}
+
+	@Override
+	public Intervals lubAux(Intervals other) throws SemanticException {
 		
 		IntInterval a = this.interval;
 		IntInterval b = other.interval;
@@ -137,28 +154,6 @@ public class Intervals
 		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : newInterval;
 	}
 
-	@Override
-	public Intervals lubAux(Intervals other) throws SemanticException {
-		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
-		
-		MathNumber lA = a.getLow();
-		MathNumber lB = b.getLow();
-		
-		MathNumber uA = a.getHigh();
-		MathNumber uB = b.getHigh();
-		
-		MathNumber newLower = lA.max(lB);
-		MathNumber newUpper = uA.min(uB);
-		
-		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
-			return BOTTOM;
-		
-		Intervals newInterval = new Intervals(newLower, newUpper);
-		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() :
-			newInterval;
-	}
 
 	@Override
 	public boolean lessOrEqualAux(Intervals other) throws SemanticException {
@@ -278,9 +273,7 @@ public class Intervals
 
 	@Override
 	public int hashCode() {
-		int h = 7;
-		h = 31 * h + (interval == null ? 0 : interval.hashCode());
-		return h;
+		return 31 + (interval == null ? 0 : interval.hashCode());
 	}
 
 	@Override

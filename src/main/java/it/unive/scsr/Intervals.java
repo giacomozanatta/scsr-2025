@@ -108,53 +108,52 @@ public class Intervals
 
 		return top();
 	}
-	
+
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
-		
+
 		IntInterval a = this.interval;
 		IntInterval b = other.interval;
-		
+
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
-		
+
 		MathNumber uA = a.getHigh();
 		MathNumber uB = b.getHigh();
-		
+
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
-		
-		MathNumber newLower = lA.min(lB);
-		MathNumber newUpper = uA.max(uB);
-		
+
+		MathNumber newLower = lA.max(lB);
+		MathNumber newUpper = uA.min(uB);
+
 		Intervals newInterval = new Intervals(newLower, newUpper);
-		
+
 		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : newInterval;
 	}
 
 	@Override
 	public Intervals lubAux(Intervals other) throws SemanticException {
-		
+
 		IntInterval a = this.interval;
 		IntInterval b = other.interval;
-		
+
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
-		
+
 		MathNumber uA = a.getHigh();
 		MathNumber uB = b.getHigh();
-		
-		MathNumber newLower = lA.max(lB);
-		MathNumber newUpper = uA.min(uB);
-		
+
+		MathNumber newLower = lA.min(lB);
+		MathNumber newUpper = uA.max(uB);
+
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
-		
+
 		Intervals newInterval = new Intervals(newLower, newUpper);
 		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() :
-			newInterval;
+				newInterval;
 	}
-
 	@Override
 	public boolean lessOrEqualAux(Intervals other) throws SemanticException {
 		

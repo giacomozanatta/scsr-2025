@@ -10,10 +10,7 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
@@ -100,7 +97,18 @@ public class Intervals
 		// TODO: The semantics of negation should be implemented here! 
 		
 		if(operator instanceof NegatableOperator) {
-			
+			if(arg.isTop())
+				return top();
+			else{
+				IntInterval a = arg.interval;
+
+				MathNumber lA = a.getLow();
+				MathNumber uA = a.getHigh();
+
+				// [2, 6] = -[2, 6] = [-2, -6] = [-6, -2]
+
+				return new Intervals(uA.multiply(MathNumber.MINUS_ONE), lA.multiply(MathNumber.MINUS_ONE));
+			}
 		}
 		
 		return top();
@@ -229,26 +237,42 @@ public class Intervals
 		
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
+
+		MathNumber lA = a.getLow();
+		MathNumber lB = b.getLow();
+
+		MathNumber uA = a.getHigh();
+		MathNumber uB = b.getHigh();
 		
 		if(operator instanceof AdditionOperator)  {
-			
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
+
 			return new Intervals(lA.add(lB), uA.add(uB));
 			
-		} else 
+		}
 			
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
-		if( operator instanceof SubtractionOperator) {
+
+		else if( operator instanceof SubtractionOperator) {
+			return new Intervals(lA.subtract(lB), uA.subtract(uB));
 			
 		} else if( operator instanceof MultiplicationOperator) {
+			return new Intervals(lA.multiply(lB), uA.multiply(uB));
 			
-			
+		}
+		else if(operator instanceof DivisionOperator){
+			if (lB.is(0) || uB.is(0)){
+				return bottom();
+			}else if(lA.is(0) || uA.is(0)){
+				if(lA.is(0) && uA.is(0)){
+					return new Intervals(MathNumber.ZERO, MathNumber.ZERO);
+				}else if(lA.is(0)){
+					return new Intervals(MathNumber.ZERO, uA.divide(uB));
+				}
+				else
+					return new Intervals(lA.divide(lB), MathNumber.ZERO);
+			}
+			return new Intervals(lA.divide(lB), uA.divide(uB));
+
 		}
 			
 		return top();

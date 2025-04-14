@@ -59,7 +59,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	public int hashCode() {
-		int prime = 31;
+		int prime = 13;
 		return prime + ((taint == null) ? 0 : taint.hashCode());
 	}
 
@@ -107,16 +107,12 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	public boolean isAlwaysTainted() {
-		if (this == TAINT)
-			return true;
-		return false;
+		return this == TAINT;
 	}
 
 	@Override
 	public boolean isPossiblyTainted() {
-		if (this == TOP)
-			return true;
-		return false;
+		return this == TOP;
 	}
 	
 	public TaintThreeLevels evalBinaryExpression(
@@ -128,13 +124,17 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			throws SemanticException {
 		
 		// Propagate error if any operand is BOTTOM
-		if (left.equals(BOTTOM) || right.equals(BOTTOM))
+		if (left == BOTTOM || right == BOTTOM)
 			return BOTTOM;
-		// If both operands are equal, then result is that same value
-		if (left.equals(right))
-			return left;
-		// Otherwise, the result is TOP (uncertain)
-		return TOP;
+		// If one of the two operand is definitely tainted, the result is definitely tainted
+		if (left == TAINT || right == TAINT)
+			return TAINT;
+		// If one of the two operand is TOP, the result is TOP 
+		if (left == TOP || right == TOP)
+			return TOP;
+		// We are left only with the case where both operands are CLEAN
+		// In this case, the result is CLEAN (not using if statement as it is not needed)
+		return CLEAN;
 	}
 	
 	@Override

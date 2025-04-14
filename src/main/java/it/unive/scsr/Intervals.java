@@ -13,10 +13,10 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.StringRepresentation;
@@ -98,13 +98,11 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		if(operator instanceof NegatableOperator) {
-			MathNumber low = arg.interval.getLow();
-			MathNumber high = arg.interval.getHigh();
-			
-			// negation of the interval
-			IntInterval negatedInterval = new IntInterval(high.multiply(MathNumber.MINUS_ONE), low.multiply(MathNumber.MINUS_ONE));
-			return new Intervals(negatedInterval);
+		if(operator instanceof NumericNegation) {
+			// negation of the interval by multiplying it by -1
+			if (arg.isBottom())
+				return bottom();
+			return new Intervals(arg.interval.mul(new IntInterval(MathNumber.MINUS_ONE, MathNumber.MINUS_ONE)));
 		}
 		
 		return top();
@@ -112,29 +110,6 @@ public class Intervals
 	
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
-		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
-		
-		MathNumber lA = a.getLow();
-		MathNumber lB = b.getLow();
-		
-		MathNumber uA = a.getHigh();
-		MathNumber uB = b.getHigh();
-		
-		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
-			return BOTTOM;
-		
-		MathNumber newLower = lA.min(lB);
-		MathNumber newUpper = uA.max(uB);
-		
-		Intervals newInterval = new Intervals(newLower, newUpper);
-		
-		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : newInterval;
-	}
-
-	@Override
-	public Intervals lubAux(Intervals other) throws SemanticException {
 		
 		IntInterval a = this.interval;
 		IntInterval b = other.interval;
@@ -157,11 +132,34 @@ public class Intervals
 	}
 
 	@Override
+	public Intervals lubAux(Intervals other) throws SemanticException {
+		
+		IntInterval a = this.interval;
+		IntInterval b = other.interval;
+		
+		MathNumber lA = a.getLow();
+		MathNumber lB = b.getLow();
+		
+		MathNumber uA = a.getHigh();
+		MathNumber uB = b.getHigh();
+		
+		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
+			return BOTTOM;
+		
+		MathNumber newLower = lA.min(lB);
+		MathNumber newUpper = uA.max(uB);
+		
+		Intervals newInterval = new Intervals(newLower, newUpper);
+		
+		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : newInterval;
+	}
+
+
+	@Override
 	public boolean lessOrEqualAux(Intervals other) throws SemanticException {
 		
 		return other.interval.includes(this.interval);
 	}
-
 
 	@Override
 	public Intervals top() {
@@ -224,89 +222,61 @@ public class Intervals
 	}
 
 	@Override
-	public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
-			SemanticOracle oracle) throws SemanticException {
+	public Intervals evalBinaryExpression(
+			BinaryOperator operator,
+			Intervals left,
+			Intervals right,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
 		
-		
-		if(left.isBottom() || right.isBottom())
+		if ((left.isTop() || right.isTop()))
+			return top();
+
+		if (left.isBottom() || right.isBottom())
 			return bottom();
 		
-		IntInterval a = left.interval;
-		IntInterval b = right.interval;
-		
-		if(operator instanceof AdditionOperator)  {
-			
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
-			return new Intervals(lA.add(lB), uA.add(uB));
-			
-		} else 
-			
-		if (operator instanceof SubtractionOperator) {
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
-			return new Intervals(lA.subtract(uB), uA.subtract(lB));
-			
-		} else if (operator instanceof MultiplicationOperator) {
-			MathNumber aLow = a.getLow();
-			MathNumber aHigh = a.getHigh();
-			MathNumber bLow = b.getLow();
-			MathNumber bHigh = b.getHigh();
-			
-			// Compute all products between endpoints
-			MathNumber prod1 = aLow.multiply(bLow);
-			MathNumber prod2 = aLow.multiply(bHigh);
-			MathNumber prod3 = aHigh.multiply(bLow);
-			MathNumber prod4 = aHigh.multiply(bHigh);
-			
-			// Determine the minimum and maximum values
-			MathNumber newLower = prod1.min(prod2).min(prod3).min(prod4);
-			MathNumber newUpper = prod1.max(prod2).max(prod3).max(prod4);
-			
-			return new Intervals(newLower, newUpper);
-		} else if (operator instanceof DivisionOperator) { 
+		// Using native arithmetic operations from the IntInterval class
+		// to evaluate binary expressions
 
-			// Retrieve the denominator interval bounds
-			MathNumber lB = b.getLow();
-			MathNumber uB = b.getHigh();
-			
-			// Check if the denominator interval contains zero
-			if (lB.compareTo(MathNumber.ZERO) <= 0 && uB.compareTo(MathNumber.ZERO) >= 0) {
-				// If the denominator is exactly [0, 0], division is undefined -> return bottom
-				if (lB.equals(MathNumber.ZERO) && uB.equals(MathNumber.ZERO))
-					return bottom();
-				// Otherwise, if the interval spans zero, over-approximate to top
-				return top();
-			}
-			
-			// Denominator does not contain zero; compute all possible quotients
-			MathNumber q1 = a.getLow().divide(lB);
-			MathNumber q2 = a.getLow().divide(uB);
-			MathNumber q3 = a.getHigh().divide(lB);
-			MathNumber q4 = a.getHigh().divide(uB);
-			
-			// Determine the minimum and maximum among the computed quotients
-			MathNumber newLower = q1.min(q2).min(q3).min(q4);
-			MathNumber newUpper = q1.max(q2).max(q3).max(q4);
-			
-			return new Intervals(newLower, newUpper);
+		// for addition and subtraction there are no "edge" cases to handle
+		// and we can just use the IntInterval methods
+		if (operator instanceof AdditionOperator)
+			return new Intervals(left.interval.plus(right.interval));
+
+		else if (operator instanceof SubtractionOperator)
+			return new Intervals(left.interval.diff(right.interval));
+
+		else if (operator instanceof MultiplicationOperator) {
+			// multiplying by the singleton interval [0,0] on either side leads to [0,0]
+			if (left.isNonBottomSingletonWithValue(0) || right.isNonBottomSingletonWithValue(0))
+				return ZERO;
+			else
+				return new Intervals(left.interval.mul(right.interval));
 		}
 
-
+		else if (operator instanceof DivisionOperator) {
+			// dividing by the singleton interval [0,0] leads to bottom
+			if (right.isNonBottomSingletonWithValue(0))
+				return bottom();
+			// if the numerator is a singleton interval [0,0] the result is [0,0]
+			else if (left.isNonBottomSingletonWithValue(0))
+				return ZERO;
+			// in all other cases we can divide the two intervals using the IntInterval div method 
+			else
+				return new Intervals(left.interval.div(right.interval, false, false));
+		}
+		
 		return top();
+	}
+
+	public boolean isNonBottomSingletonWithValue(
+			int number) {
+		return interval.isSingleton() && interval.getLow().is(number) && !isBottom();
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(interval);
+		return 31 + (interval == null ? 0 : interval.hashCode());
 	}
 
 	@Override

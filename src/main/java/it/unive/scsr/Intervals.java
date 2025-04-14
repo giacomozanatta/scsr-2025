@@ -132,8 +132,8 @@ public class Intervals
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
 		
-		MathNumber newLower = lA.min(lB);
-		MathNumber newUpper = uA.max(uB);
+		MathNumber newLower = lA.max(lB);
+		MathNumber newUpper = uA.min(uB);
 		
 		Intervals newInterval = new Intervals(newLower, newUpper);
 		
@@ -269,7 +269,7 @@ public class Intervals
 
 		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : new Intervals(newLower, newUpper);
 	}
-	
+
 	@Override
 	public Intervals narrowingAux(
 			Intervals other)

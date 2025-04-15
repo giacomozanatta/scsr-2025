@@ -21,11 +21,19 @@ class intervals {
 
 	loop(b) {
 			def c = 1;
-			
+
 			while (b < 3) {
 				c = c + 1;
-				b = b + 1; 
+				b = b + 1;
 			}
-			return c; 
+			return c;
+	}
+
+	loop2(){
+	    def c = 7;
+	    while(c>0){
+	        c = c-1;
+	    }
+	    return c;
 	}
 }

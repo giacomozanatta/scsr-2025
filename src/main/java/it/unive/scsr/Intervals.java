@@ -99,10 +99,9 @@ public class Intervals
 		if(operator instanceof NegatableOperator) {
 			if(arg.isBottom()) return bottom();
 			IntInterval i = arg.interval;
-			MathNumber zero = MathNumber.ZERO;
-			MathNumber newLow = zero.subtract(i.getHigh());
-			MathNumber newHigh = zero.subtract(i.getLow());
-			return new Intervals(newLow, newHigh);
+			MathNumber lA = i.getLow();
+			MathNumber uA = i.getHigh();
+			return new Intervals(lA.multiply(MathNumber.MINUS_ONE), uA.multiply(MathNumber.MINUS_ONE));
 		}
 		
 		return top();

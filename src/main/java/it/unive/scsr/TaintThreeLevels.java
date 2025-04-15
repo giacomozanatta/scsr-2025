@@ -113,15 +113,13 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			SemanticOracle oracle)
 			throws SemanticException {
 
-		// both elements are tainted
-		if (left == TAINTED && right == TAINTED)
+		if (left == TAINTED || right == TAINTED)
 			return TAINTED;
 
-		if (left == CLEAN && right == CLEAN)
-			return CLEAN;
+		if (left == TOP || right == TOP)
+			return TOP;
 
-		//if one of the two is TOP or are different
-		return TOP;
+		return CLEAN;
 	}
 
 	@Override

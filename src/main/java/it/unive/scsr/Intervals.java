@@ -252,20 +252,44 @@ public class Intervals
                 MathNumber second = uA.subtract(uB);
 
                 return new Intervals(first.min(second), first.max(second));
+            }
+            else if (operator instanceof MultiplicationOperator) {
 
-            } else if (operator instanceof MultiplicationOperator) {
+                MathNumber aMin = a.getLow();
+                MathNumber aMax = a.getHigh();
+                MathNumber bMin = b.getLow();
+                MathNumber bMax = b.getHigh();
 
-                MathNumber first = lA.multiply(lB);
-                MathNumber second = uA.multiply(uB);
+                MathNumber prodA = aMin.multiply(bMin);
+                MathNumber prodB = aMin.multiply(bMax);
+                MathNumber prodC = aMax.multiply(bMin);
+                MathNumber prodD = aMax.multiply(bMax);
 
-                return new Intervals(first.min(second), first.max(second));
+                MathNumber newMin = prodA.min(prodB).min(prodC).min(prodD);
+                MathNumber newMax = prodA.max(prodB).max(prodC).max(prodD);
 
+                return new Intervals(newMin, newMax);
             } else if (operator instanceof DivisionOperator) {
+                MathNumber aMin = a.getLow();
+                MathNumber aMax = a.getHigh();
+                MathNumber bMin = b.getLow();
+                MathNumber bMax = b.getHigh();
 
-                MathNumber first = lA.divide(lB);
-                MathNumber second = uA.divide(uB);
+                if (bMin.compareTo(MathNumber.ZERO) <= 0 && bMax.compareTo(MathNumber.ZERO) >= 0) {
+                    if (bMin.equals(MathNumber.ZERO) && bMax.equals(MathNumber.ZERO))
+                        return bottom();
+                    return top();
+                }
 
-                return new Intervals(first.min(second), first.max(second));
+                MathNumber divA = aMin.divide(bMin);
+                MathNumber divB = aMin.divide(bMax);
+                MathNumber divC = aMax.divide(bMin);
+                MathNumber divD = aMax.divide(bMax);
+
+                MathNumber newMin = divA.min(divB).min(divC).min(divD);
+                MathNumber newMax = divA.max(divB).max(divC).max(divD);
+
+                return new Intervals(newMin, newMax);
             }
         }
 

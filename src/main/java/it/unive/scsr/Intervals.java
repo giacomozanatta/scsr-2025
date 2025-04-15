@@ -97,13 +97,12 @@ public class Intervals
 		if (arg.isBottom())
 			return bottom();
 
-		// TODO: The semantics of negation should be implemented here!
 		if(operator instanceof NegatableOperator) {
-			MathNumber low = arg.interval.getLow();
-			MathNumber high = arg.interval.getHigh();
+			IntInterval interval = arg.interval;
+			MathNumber low = interval.getLow();
+			MathNumber high = interval.getHigh();
 
-			IntInterval negatedInterval = new IntInterval(high.multiply(MathNumber.MINUS_ONE), low.multiply(MathNumber.MINUS_ONE));
-			return new Intervals(negatedInterval);
+			return new Intervals(high.multiply(MathNumber.MINUS_ONE), low.multiply(MathNumber.MINUS_ONE));
 		}
 
 		return top();
@@ -160,7 +159,6 @@ public class Intervals
 		
 		return other.interval.includes(this.interval);
 	}
-
 
 	@Override
 	public Intervals top() {
@@ -226,7 +224,6 @@ public class Intervals
 	public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
 			SemanticOracle oracle) throws SemanticException {
 		
-		
 		if(left.isBottom() || right.isBottom())
 			return bottom();
 		
@@ -234,7 +231,6 @@ public class Intervals
 		IntInterval b = right.interval;
 
 		if(operator instanceof AdditionOperator)  {
-
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
 
@@ -242,11 +238,7 @@ public class Intervals
 			MathNumber uB = b.getHigh();
 
 			return new Intervals(lA.add(lB), uA.add(uB));
-
-		} else
-
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
-		if (operator instanceof SubtractionOperator) {
+		} else if (operator instanceof SubtractionOperator) {
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
 
@@ -271,7 +263,10 @@ public class Intervals
 
 			return new Intervals(newLower, newUpper);
 		} else if (operator instanceof DivisionOperator) {
+			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
 
 			if (lB.compareTo(MathNumber.ZERO) <= 0 && uB.compareTo(MathNumber.ZERO) >= 0) {
@@ -280,10 +275,10 @@ public class Intervals
 				return top();
 			}
 
-			MathNumber q1 = a.getLow().divide(lB);
-			MathNumber q2 = a.getLow().divide(uB);
-			MathNumber q3 = a.getHigh().divide(lB);
-			MathNumber q4 = a.getHigh().divide(uB);
+			MathNumber q1 = lA.divide(lB);
+			MathNumber q2 = lA.divide(uB);
+			MathNumber q3 = uA.divide(lB);
+			MathNumber q4 =uA.divide(uB);
 
 			MathNumber newLower = q1.min(q2).min(q3).min(q4);
 			MathNumber newUpper = q1.max(q2).max(q3).max(q4);

@@ -93,7 +93,9 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		if ( left.isPossiblyTainted() || right.isPossiblyTainted() )
+		if( left.isTop() || right.isTop() )
+			return top();
+		else if ( left.isAlwaysTainted() || right.isAlwaysTainted() )
 			return this.tainted();
 		else
 			return this.clean();

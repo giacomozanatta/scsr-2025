@@ -102,10 +102,10 @@ public class Intervals
 			MathNumber min = arg.interval.getLow();
 			MathNumber max = arg.interval.getHigh();
 
-			min.multiply(new MathNumber(-1));
-			max.multiply(new MathNumber(-1));
+			MathNumber low = new MathNumber( min.getNumber().negate() );
+			MathNumber high = new MathNumber( max.getNumber().negate() );
 
-			return new Intervals(max, min);
+			return new Intervals(low, high);
 		}
 		
 		return top();

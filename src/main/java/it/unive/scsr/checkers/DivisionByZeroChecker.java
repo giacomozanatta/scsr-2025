@@ -22,6 +22,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
@@ -68,26 +69,50 @@ SemanticCheck<
 								.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
 						
 						for (SymbolicExpression s : reachableIds) {
-							
+
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
-						
-			
-							// TODO: implement type checks, it is required a numerical type
-			
+// MY CODE STARTS HERE:
+							// TYPE CHECKER
+							boolean numericFound = types.stream().anyMatch(Type::isNumericType);
+							if (!numericFound) {
+							// If the type doesn't belong to numeric type
+								tool.warnOn(div, "DivisionByZeroChecker: the operand must have a numeric type, found " + types);
+								continue;
+							}
+
+							// DIVISION BY ZERO CHECKER
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
-							
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
-							
-							// TODO: add checks for division by zero
+
+							// Checks if interval is null
+							if (intervalAbstractValue == null) {
+								tool.warnOn(div, "DivisionByZeroChecker: intervalAbstractValue is null, skipping...");
+								continue;
+							}
+							// Checks if interval is bottom
+							if (intervalAbstractValue.isBottom()) {
+								tool.warnOn(div, "DivisionByZeroChecker: intervalAbstractValue is bottom, skipping...");
+								continue;
+							}
+
+							MathNumber low = intervalAbstractValue.interval.getLow();
+							MathNumber high = intervalAbstractValue.interval.getHigh();
+
+							if (low.equals(MathNumber.ZERO) && high.equals(MathNumber.ZERO)) {
+								tool.warnOn(div, "DivisionByZeroChecker: DEFINITE division by zero detected!");
+							} else if (low.compareTo(MathNumber.ZERO) <= 0 && high.compareTo(MathNumber.ZERO) >= 0) {
+								tool.warnOn(div, "DivisionByZeroChecker: POTENTIAL division by zero detected (interval includes 0)!");
+							}
 						}
+// END OF MY CODE
 					} catch (SemanticException e) {
 						e.printStackTrace();
 					}
-	
+
 
 			}
 		}
-		
+
 	}
 
 	// compute possible dynamic types / runtime types

@@ -121,8 +121,8 @@ public class Intervals
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
 		
-		MathNumber newLower = lA.min(lB);
-		MathNumber newUpper = uA.max(uB);
+		MathNumber newLower = lA.max(lB);
+		MathNumber newUpper = uA.min(uB);
 		
 		Intervals newInterval = new Intervals(newLower, newUpper);
 		
@@ -141,8 +141,8 @@ public class Intervals
 		MathNumber uA = a.getHigh();
 		MathNumber uB = b.getHigh();
 		
-		MathNumber newLower = lA.max(lB);
-		MathNumber newUpper = uA.min(uB);
+		MathNumber newLower = lA.min(lB);
+		MathNumber newUpper = uA.max(uB);
 		
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;

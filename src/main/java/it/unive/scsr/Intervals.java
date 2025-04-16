@@ -242,13 +242,32 @@ public class Intervals
 			
 		} else 
 			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
 		if( operator instanceof SubtractionOperator) {
-			
+
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+
+			return new Intervals(lA.subtract(uB), uA.subtract(lB));
+
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+
+			// TODO this requires more thinking
+			//[+, +] [+, +]
+			//[-, +] [+, +]
+			//[-, -] [+, +]
+			//
+			//[+, +] [-, +]
+			//[-, +] [-, +]
+			//[-, -] [-, +]
+			//
+			//[+, +] [-, -]
+			//[-, +] [-, -]
+			//[-, -] [-, -]
+
+
 		}
 			
 		return top();

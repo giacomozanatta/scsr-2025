@@ -53,17 +53,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	public boolean lessOrEqualAux(TaintThreeLevels other) throws SemanticException {
-		if( other == null )
-			return false;
-
-		if ( other.isTop() || other.isBottom() )
-			return false;
-		if ( this.isTop() || this.isBottom() )
-			return false;
-		if ( this.equals(other) )
-			return false;
-
-		return true;
+		return false;
 	}
 
 	@Override

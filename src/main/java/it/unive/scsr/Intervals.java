@@ -7,7 +7,6 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.imp.constructs.StringLength;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
@@ -16,6 +15,7 @@ import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.ModuloOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
+import it.unive.lisa.symbolic.value.operator.NegatableOperator;
 import it.unive.lisa.symbolic.value.operator.RemainderOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
@@ -113,7 +113,7 @@ public class Intervals
             } else {
                 return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
             }
-        } else if (operator instanceof StringLength) {
+        } else if (operator instanceof NegatableOperator) {
             return new Intervals(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
         } else {
             return top();
@@ -122,40 +122,49 @@ public class Intervals
 
     @Override
     public Intervals glbAux(Intervals other) throws SemanticException {
+        IntInterval a = this.interval;
+        IntInterval b = other.interval;
 
-        MathNumber interval1Low = this.interval.getLow();
-        MathNumber interval2Low = other.interval.getLow();
+        MathNumber lA = a.getLow();
+        MathNumber lB = b.getLow();
 
-        MathNumber interval1High = this.interval.getHigh();
-        MathNumber interval2High = other.interval.getHigh();
+        MathNumber uA = a.getHigh();
+        MathNumber uB = b.getHigh();
 
-        MathNumber minLow = interval1Low.min(interval2Low);
-        MathNumber maxHigh = interval1High.max(interval2High);
+        if (lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
+            return BOTTOM;
 
-        Intervals newInterval = new Intervals(minLow, maxHigh);
+        MathNumber newLower = lA.max(lB);
+        MathNumber newUpper = uA.min(uB);
 
-        return minLow.isMinusInfinity() && maxHigh.isPlusInfinity() ? top() : newInterval;
+        Intervals newInterval = new Intervals(newLower, newUpper);
+
+        return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : newInterval;
     }
 
     @Override
     public Intervals lubAux(Intervals other) throws SemanticException {
+        IntInterval a = this.interval;
+        IntInterval b = other.interval;
 
-        MathNumber interval1Low = this.interval.getLow();
-        MathNumber interval2Low = other.interval.getLow();
+        MathNumber lA = a.getLow();
+        MathNumber lB = b.getLow();
 
-        MathNumber interval1High = this.interval.getHigh();
-        MathNumber interval2High = other.interval.getHigh();
+        MathNumber uA = a.getHigh();
+        MathNumber uB = b.getHigh();
 
-        MathNumber maxLow = interval1Low.max(interval2Low);
-        MathNumber minHigh = interval1High.min(interval2High);
+        MathNumber newLower = lA.min(lB);
+        MathNumber newUpper = uA.max(uB);
 
-        Intervals newInterval = new Intervals(maxLow, minHigh);
-        return maxLow.isMinusInfinity() && minHigh.isPlusInfinity() ? top() : newInterval;
+        if (lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
+            return BOTTOM;
+
+        Intervals newInterval = new Intervals(newLower, newUpper);
+        return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : newInterval;
     }
 
     @Override
     public boolean lessOrEqualAux(Intervals other) throws SemanticException {
-
         return other.interval.includes(this.interval);
     }
 

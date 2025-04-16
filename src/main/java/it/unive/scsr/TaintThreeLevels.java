@@ -84,7 +84,12 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		return super.evalBinaryExpression(operator, left, right, pp, oracle);
+		// Since it is guaranteed that both left and right are not bottom, the following logic gets applied:
+		// 	- left == right -> left (this cover the case whether they are bot taint or clean
+		// 	- left != right -> top will be returned since the lub will be always top
+		// 		- taint & clean | top & clean | top & taint -> top
+		if (left == right) return left;
+		return top();
 	}
 	
 	@Override
@@ -103,5 +108,4 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 		if (this == CLEAN) return new StringRepresentation("_");
 		return new StringRepresentation("#");
 	}
-	
 }

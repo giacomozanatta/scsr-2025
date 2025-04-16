@@ -73,19 +73,24 @@ SemanticCheck<
 	
 	private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node ) {
 		Variable id = new Variable(((VariableRef) varRef).getStaticType(), ((VariableRef) varRef).getName(), ((VariableRef) varRef).getLocation());
-		
+// TYPE CHECKER
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
-				
-		// TODO: implement type checks, it is required a numerical type
-		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
-		
+
+		if (staticType.isUntyped()) {
+			dynamicTypes.addAll(getPossibleDynamicTypes(tool, graph, node, id, varRef));
+		} else {
+			dynamicTypes.add(staticType);
+		}
+
+		double min = getMinValue();
+		double max = getMaxValue();
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
 				Intervals intervalAbstractValue = state.getValueState().getState(id);	
-				
+// OVERFLOW & UNDERFLOW LOGIC
 				// TODO: implement logic for overflow/underflow checks
 				// hint: it depends to the NumericalSize size
 		}
@@ -122,8 +127,49 @@ SemanticCheck<
 		return possibleDynamicTypes;
 	}
 
-	
-		
-	
 
+	private boolean isNumeric(Type t) {
+		return isIntegerType(t) || isFloatingPointType(t);
+	}
+
+	private boolean isIntegerType(Type t) {
+		String name = t.toString().toLowerCase();
+		return name.startsWith("int") || name.startsWith("uint");
+	}
+
+	private boolean isFloatingPointType(Type t) {
+		String name = t.toString().toLowerCase();
+		return name.startsWith("float");
+	}
+
+	private double getMinValue() {
+		switch (size) {
+			case INT8:   return Byte.MIN_VALUE;
+			case INT16:  return Short.MIN_VALUE;
+			case INT32:  return Integer.MIN_VALUE;
+			case UINT8:  return 0;
+			case UINT16: return 0;
+			case UINT32: return 0;
+			case FLOAT8: return -1.0;
+			case FLOAT16: return -65504.0;
+			case FLOAT32: return -Float.MAX_VALUE;
+			default:      return Double.NEGATIVE_INFINITY;
+		}
+	}
+
+	private double getMaxValue() {
+		switch (size) {
+			case INT8:   return Byte.MAX_VALUE;
+			case INT16:  return Short.MAX_VALUE;
+			case INT32:  return Integer.MAX_VALUE;
+			case UINT8:  return 255;
+			case UINT16: return 65535;
+			case UINT32: return 4294967295L;
+			case FLOAT8: return 1.0;
+			case FLOAT16: return 65504.0;
+			case FLOAT32: return Float.MAX_VALUE;
+			default:      return Double.POSITIVE_INFINITY;
+		}
+	}
 }
+	

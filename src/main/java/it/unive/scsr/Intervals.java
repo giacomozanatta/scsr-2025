@@ -1,5 +1,7 @@
 package it.unive.scsr;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import it.unive.lisa.analysis.Lattice;
@@ -10,11 +12,9 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingDiv;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -97,10 +97,18 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		// TODO: The semantics of negation should be implemented here! 
+		// TODO: The semantics of negation should be implemented here!
+
+		IntInterval a = arg.interval;
 		
 		if(operator instanceof NegatableOperator) {
-			
+			MathNumber lA = a.getLow();
+			MathNumber uA = a.getHigh();
+
+			return new Intervals(
+					new MathNumber(0).subtract(uA),
+					new MathNumber(0).subtract(lA)
+			);
 		}
 		
 		return top();
@@ -254,23 +262,58 @@ public class Intervals
 
 		} else if( operator instanceof MultiplicationOperator) {
 
-			// TODO this requires more thinking
-			//[+, +] [+, +]
-			//[-, +] [+, +]
-			//[-, -] [+, +]
-			//
-			//[+, +] [-, +]
-			//[-, +] [-, +]
-			//[-, -] [-, +]
-			//
-			//[+, +] [-, -]
-			//[-, +] [-, -]
-			//[-, -] [-, -]
+			return evalMultiplication(left, right);
 
+		} else if (operator instanceof DivisionOperator) {
 
+			MathNumber lB = b.getLow();
+			MathNumber uB = b.getHigh();
+
+			MathNumber newLower;
+			MathNumber newUpper;
+
+			if (lB.isZero()) {
+				newUpper = MathNumber.PLUS_INFINITY;
+			} else {
+				newUpper = new MathNumber(1).divide(lB);
+			}
+
+			if (uB.isZero()) {
+				newLower = MathNumber.MINUS_INFINITY;
+			} else {
+				newLower = new MathNumber(1).divide(uB);
+			}
+
+			return evalMultiplication(left, new Intervals(newLower, newUpper));
 		}
-			
+
 		return top();
+	}
+
+	/**
+	 * Helper function to evaluate the multiplication of two intervals. I decided to create it
+	 * just because both the multiplication and the division use it
+	 */
+	private Intervals evalMultiplication(Intervals left, Intervals right) {
+		IntInterval a = left.interval;
+		IntInterval b = right.interval;
+
+		MathNumber lA = a.getLow();
+		MathNumber lB = b.getLow();
+
+		MathNumber uA = a.getHigh();
+		MathNumber uB = b.getHigh();
+
+		List<MathNumber> products = new ArrayList<>(List.of(
+				lA.multiply(lB),
+				lA.multiply(uB),
+				uA.multiply(lB),
+				uA.multiply(uB)
+		));
+
+		products.sort(MathNumber::compareTo);
+
+		return new Intervals(products.get(0), products.get(products.size() - 1));
 	}
 
 	@Override

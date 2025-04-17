@@ -10,11 +10,10 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.symbolic.value.operator.unary.StringLength;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -98,11 +97,12 @@ public class Intervals
 			throws SemanticException {
 		
 		// TODO: The semantics of negation should be implemented here! 
-		
-		if(operator instanceof NegatableOperator) {
-			
+
+		if(operator instanceof NumericNegation) {
+			if(!arg.isTop())
+				return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
 		}
-		
+
 		return top();
 	}
 	
@@ -245,10 +245,22 @@ public class Intervals
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
 			
 		if( operator instanceof SubtractionOperator) {
-			
+			return new Intervals(a.diff(b));
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+			if(a.is(0) || b.is(0))
+				return ZERO;
+
+			return new Intervals(a.mul(b));
+		} else if(operator instanceof DivisionOperator) {
+			if(b.is(0))
+				return BOTTOM;
+			else if(a.is(0))
+				return ZERO;
+			else if(left.isTop() || right.isTop())
+				return top();
+			else {
+				return new Intervals(a.div(b, true, false));
+			}
 		}
 			
 		return top();

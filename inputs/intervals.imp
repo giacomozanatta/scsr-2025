@@ -28,4 +28,39 @@ class intervals {
 			}
 			return c; 
 	}
+
+	complete(x) {
+	    def a = 0;
+	    def b = 0;
+	    def c = 0;
+	    def d = 0;
+	    def e = 0;
+
+	    if (x) {
+	        a = 1;
+	        b = 2;
+	        c = -5;
+	        d = 2;
+	        e = 4;
+        } else {
+            a = -4;
+            b = -6;
+            c = 0;
+            d = 5;
+            e = 6;
+        }
+
+        def op1 = a + b;
+        def op2 = a - b;
+        def op3 = b - a;
+        def op4 = a * b;
+        def op5 = b * a;
+        def op6 = a / b;
+        def op7 = b / a;
+        def op8 = a / c;
+        def op9 = -a;
+        def op10 = -b;
+        def op11 = -c;
+        def op12 = d / e;
+	}
 }

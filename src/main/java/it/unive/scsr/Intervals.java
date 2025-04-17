@@ -267,9 +267,14 @@ public class Intervals
 			MathNumber uB = b.getHigh();
 
 			MathNumber first = lA.multiply(lB);
-			MathNumber second = uA.multiply(uB);
+			MathNumber second = lA.multiply(uB);
+			MathNumber third = uA.multiply(lB);
+			MathNumber fourth = uA.multiply(uB);
 
-			return new Intervals(first.min(second), first.max(second));
+			MathNumber min = first.min(second).min(third).min(fourth);
+			MathNumber max = first.max(second).max(third).max(fourth);
+
+			return new Intervals(min, max);
 		} else if (operator instanceof DivisionOperator){
 
 			MathNumber lA = a.getLow();
@@ -279,9 +284,14 @@ public class Intervals
 			MathNumber uB = b.getHigh();
 
 			MathNumber first = lA.divide(lB);
-			MathNumber second = uA.divide(uB);
+			MathNumber second = lA.divide(uB);
+			MathNumber third = uA.divide(lB);
+			MathNumber fourth = uA.divide(uB);
 
-			return new Intervals(first.min(second), first.max(second));
+			MathNumber min = first.min(second).min(third).min(fourth);
+			MathNumber max = first.max(second).max(third).max(fourth);
+
+			return new Intervals(min, max);
 		}
 			
 		return top();

@@ -21,6 +21,8 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.IntInterval;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 
 public class OverflowChecker implements
@@ -91,8 +93,25 @@ SemanticCheck<
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
 				Intervals intervalAbstractValue = state.getValueState().getState(id);	
 // OVERFLOW & UNDERFLOW LOGIC
-				// TODO: implement logic for overflow/underflow checks
-				// hint: it depends to the NumericalSize size
+			if (intervalAbstractValue == null || intervalAbstractValue.isBottom())
+				continue;
+
+			IntInterval intv   = intervalAbstractValue.interval;
+			MathNumber  lowMn  = intv.getLow();
+			MathNumber  highMn = intv.getHigh();
+
+			double low  = Double.parseDouble(lowMn.toString());
+			double high = Double.parseDouble(highMn.toString());
+			// Underflow case
+			if (low < min) {
+				System.err.printf("Underflow occured in %s: %.3f < %.3f%n",
+						id.getName(), low,  min);
+			}
+			// Overflow case
+			if (high > max) {
+				System.err.printf("Overflow occured in %s: %.3f > %.3f%n",
+						id.getName(), high, max);
+			}
 		}
 		
 		

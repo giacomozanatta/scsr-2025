@@ -15,6 +15,7 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingDiv;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -97,17 +98,15 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		// TODO: The semantics of negation should be implemented here!
-
 		IntInterval a = arg.interval;
-		
-		if(operator instanceof NegatableOperator) {
+
+		if(operator instanceof NumericNegation) {
 			MathNumber lA = a.getLow();
 			MathNumber uA = a.getHigh();
 
 			return new Intervals(
-					new MathNumber(0).subtract(uA),
-					new MathNumber(0).subtract(lA)
+					MathNumber.ZERO.subtract(uA),
+					MathNumber.ZERO.subtract(lA)
 			);
 		}
 		
@@ -269,22 +268,29 @@ public class Intervals
 			MathNumber lB = b.getLow();
 			MathNumber uB = b.getHigh();
 
+			if (lB.leq(MathNumber.ZERO) && uB.geq(MathNumber.ZERO)) {
+				// Divisor interval includes zero
+				return bottom();
+			}
+
 			MathNumber newLower;
 			MathNumber newUpper;
 
 			if (lB.isZero()) {
 				newUpper = MathNumber.PLUS_INFINITY;
 			} else {
-				newUpper = new MathNumber(1).divide(lB);
+				newUpper = MathNumber.ONE.divide(lB);
 			}
 
 			if (uB.isZero()) {
 				newLower = MathNumber.MINUS_INFINITY;
 			} else {
-				newLower = new MathNumber(1).divide(uB);
+				newLower = MathNumber.ONE.divide(uB);
 			}
 
-			return evalMultiplication(left, new Intervals(newLower, newUpper));
+			Intervals result = evalMultiplication(left, new Intervals(newLower, newUpper));
+			// Round results: we're using integers
+			return new Intervals(result.interval.getLow().roundDown(), result.interval.getHigh().roundUp());
 		}
 
 		return top();

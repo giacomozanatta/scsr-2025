@@ -1,5 +1,7 @@
 package it.unive.scsr;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 
 import it.unive.lisa.analysis.Lattice;
@@ -11,10 +13,11 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -99,8 +102,11 @@ public class Intervals
 		
 		// TODO: The semantics of negation should be implemented here! 
 		
-		if(operator instanceof NegatableOperator) {
-			
+		if(operator instanceof NumericNegation) {
+			if (arg.isBottom())
+				return bottom();
+
+			return new Intervals(interval.getHigh().multiply(MathNumber.MINUS_ONE), interval.getLow().multiply(MathNumber.MINUS_ONE));
 		}
 		
 		return top();
@@ -223,34 +229,61 @@ public class Intervals
 	public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
 			SemanticOracle oracle) throws SemanticException {
 		
-		
-		if(left.isBottom() || right.isBottom())
+		// If one of the operands is BOTTOM, intervals field == null
+		if(left.isBottom() || right.isBottom()) 
 			return bottom();
 		
-		IntInterval a = left.interval;
+		// If one of the operands is TOP, intervals is equal to [-inf, +inf]
+		// In MathNumber, PLUS_INFINITY == (number == null, sign == 1)
+		// In MathNumber, MINUS_INFINITY == (number == null, sign == -1)
+		if(left.isTop() || right.isTop()) 
+			return top();
+		
+		// They can't be both neither TOP nor BOTTOM, so we can safely 
+		// access the intervals field
+		IntInterval a = left.interval; 
 		IntInterval b = right.interval;
 		
-		if(operator instanceof AdditionOperator)  {
-			
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
+		// Lower bounds of the intervals
+		MathNumber lA = a.getLow(); 
+		MathNumber lB = b.getLow();
+		
+		// Upper bounds of the intervals
+		MathNumber uA = a.getHigh();
+		MathNumber uB = b.getHigh();
+		
+		if(operator instanceof AdditionOperator)  
 			return new Intervals(lA.add(lB), uA.add(uB));
+
+		else if (operator instanceof SubtractionOperator)
+			return new Intervals(lA.subtract(uB), uA.subtract(lB));
+		
+		else if (operator instanceof MultiplicationOperator) {
 			
-		} else 
+			// If one of the operands is equals to [0, 0], the result will be [0, 0]
+			if (b.is(0) || a.is(0)) 
+				return Intervals.ZERO;
+
+			MathNumber[] bounds = {lA.multiply(lB), lA.multiply(uB), uA.multiply(lB), uA.multiply(uB)};
 			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
+			return new Intervals(Collections.min(Arrays.asList(bounds)), Collections.max(Arrays.asList(bounds)));
 			
-		if( operator instanceof SubtractionOperator) {
+		} else if (operator instanceof DivisionOperator) {
+
+			// DIVISION BY ZERO
+			if (b.is(0)) 
+				return bottom();
 			
-		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+			// ZERO DIVISION == [0, 0]
+			if (a.is(0)) 
+				return Intervals.ZERO;
+
+			MathNumber[] bounds = {lA.divide(lB), lA.divide(uB), uA.divide(lB), uA.divide(uB)};
+
+			return new Intervals(Collections.min(Arrays.asList(bounds)).roundDown(), 
+									Collections.max(Arrays.asList(bounds)).roundUp());
 		}
-			
+
 		return top();
 	}
 

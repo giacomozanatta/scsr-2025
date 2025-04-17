@@ -93,7 +93,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	protected TaintThreeLevels tainted() {
-		return TOP;
+		return TAINT;
 	}
 
 	@Override

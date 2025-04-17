@@ -48,7 +48,6 @@ public class Taint extends BaseTaint<Taint> {
 
 	@Override
 	public Taint top() {
-		
 		return TAINT;
 	}
 

@@ -10,11 +10,9 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.StringLength;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -100,9 +98,13 @@ public class Intervals
 		// TODO: The semantics of negation should be implemented here! 
 		
 		if(operator instanceof NegatableOperator) {
-			
+			if(!arg.isTop())
+				//return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
+				return new Intervals(arg.interval.getHigh().multiply(MathNumber.MINUS_ONE), arg.interval.getLow().multiply(MathNumber.MINUS_ONE));
+		} else {
+			if(operator instanceof StringLength)
+				return new Intervals(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
 		}
-		
 		return top();
 	}
 	
@@ -245,10 +247,51 @@ public class Intervals
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
 			
 		if( operator instanceof SubtractionOperator) {
-			
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+
+			return new Intervals(lA.subtract(uB), uA.subtract(lB));
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+			if(a.is(0) || b.is(0))
+				return ZERO;
+
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+
+			if(lA.compareTo(MathNumber.ZERO) >= 0 && lB.compareTo(MathNumber.ZERO) >= 0)
+				return new Intervals(lA.multiply(lB), uA.multiply(uB));
+
+			MathNumber ll = lA.multiply(lB);
+			MathNumber lh = lA.multiply(uB);
+			MathNumber hl = uA.multiply(lB);
+			MathNumber hh = uA.multiply(uB);
+
+			MathNumber[] arr = {ll, lh, hl, hh};
+			MathNumber max = arr[0], min = arr[0];
+			for(int i = 1; i <= arr.length; i++) {
+				if(arr[i].compareTo(max) >= 0)
+					max = arr[i];
+				if(arr[i].compareTo(min) <= 0)
+					min = arr[i];
+			}
+
+			return new Intervals(min, max);
+		} else if( operator instanceof DivisionOperator) {
+			if(b.is(0))
+				return BOTTOM;
+			else if(a.is(0))
+				return ZERO;
+			else if(left.isTop() || right.isTop())
+				return top();
+			else {
+
+			}
 		}
 			
 		return top();
@@ -315,7 +358,5 @@ public class Intervals
 		
 		return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest, oracle);
 	}
-	
-
 	
 }

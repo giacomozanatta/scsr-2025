@@ -70,7 +70,7 @@ SemanticCheck<
 						for (SymbolicExpression s : reachableIds) {
 							
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
-						
+
 			
 							// TODO: implement type checks, it is required a numerical type
 			

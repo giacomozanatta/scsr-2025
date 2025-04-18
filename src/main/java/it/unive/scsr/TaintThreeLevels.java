@@ -103,8 +103,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	public TaintThreeLevels wideningAux(
 			TaintThreeLevels other)
 			throws SemanticException {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 

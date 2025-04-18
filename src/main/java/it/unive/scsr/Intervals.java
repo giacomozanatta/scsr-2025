@@ -1,5 +1,6 @@
 package it.unive.scsr;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 import it.unive.lisa.analysis.Lattice;
@@ -248,24 +249,34 @@ public class Intervals
 
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
-			return new Intervals(lA.subtract(lB), uA.subtract(uB));
+			return new Intervals(lA.subtract(uB), uA.subtract(lB));
 		} else if( operator instanceof MultiplicationOperator) {
 
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
-
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
-			return new Intervals(lA.multiply(lB), uA.multiply(uB));
+			MathNumber [] x= {lA.multiply(lB),lA.multiply(uB),uA.multiply(lB),uA.multiply(uB)};
+			return getIntervals(x);
 		}else if( operator instanceof DivisionOperator) {
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
-
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
-			return new Intervals(lA.divide(lB), uA.divide(uB));
+			MathNumber [] x= {lA.divide(lB),lA.divide(uB),uA.divide(lB),uA.divide(uB)};
+			return getIntervals(x);
 		}
 		return top();
+	}
+
+	private Intervals getIntervals(MathNumber[] x) {
+		MathNumber min= x[0];
+		MathNumber max= x[0];
+		for(MathNumber i : x){
+			if(i.lt(min)) min = i;
+			else if(i.gt(max)) max = i;
+		}
+		return new Intervals(min, max);
 	}
 
 	@Override

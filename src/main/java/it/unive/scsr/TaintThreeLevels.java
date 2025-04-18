@@ -30,53 +30,73 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	 *   - BOTTOM: error state
 	 * 
 	 */
+
+	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels(0);
+	private static final TaintThreeLevels TAINT = new TaintThreeLevels(1);
+	private static final TaintThreeLevels CLEAN = new TaintThreeLevels(2);
+	private static final TaintThreeLevels TOP = new TaintThreeLevels(3);
+
+	private int taintLevel; // encoding: 0 == "bottom", 1 == "tainted", 2 == "clean", 3 == "top"
+
+	public TaintThreeLevels() {
+		this(3);
+	}
+
+	public TaintThreeLevels(int taintLevel) {
+		if (taintLevel < 0 || taintLevel > 3)
+			throw new IllegalArgumentException("Taint level must be between 0 and 3");
+		this.taintLevel = taintLevel;
+	}
 	
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
-		// TODO: to implement
-		return null;
+		if (this.equals(other))
+			return this;
+
+		if (this.equals(BOTTOM) && other.equals(BOTTOM))
+			return BOTTOM;
+
+		return TOP;
 	}
 
 	@Override
 	public boolean lessOrEqualAux(TaintThreeLevels other) throws SemanticException {
-		// TODO: to implement
-		return false;
-	}
+		if (other == TOP)
+			return true;
+		if (this == BOTTOM)
+			return true;
+
+        return this.equals(other);
+    }
 
 	@Override
 	public TaintThreeLevels top() {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 	@Override
 	public TaintThreeLevels bottom() {
-		// TODO: to implement
-		return null;
+		return BOTTOM;
 	}
 
 	@Override
 	protected TaintThreeLevels tainted() {
-		// TODO: to implement
-		return null;
+		return TAINT;
 	}
 
 	@Override
 	protected TaintThreeLevels clean() {
-		// TODO: to implement
-		return null;
+		return CLEAN;
 	}
 
 	@Override
 	public boolean isAlwaysTainted() {
-		// TODO: to implement
-		return false;
+		return this.equals(TAINT);
 	}
 
 	@Override
 	public boolean isPossiblyTainted() {
-		// TODO: to implement
-		return false;
+		return this.equals(TOP);
 	}
 	
 	public TaintThreeLevels evalBinaryExpression(
@@ -86,16 +106,19 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			ProgramPoint pp,
 			SemanticOracle oracle)
 			throws SemanticException {
-		// TODO: to implement
-		return null;
+		// TODO: to check
+
+		if (left.equals(right))
+			return left;
+
+		return TOP;
 	}
 	
 	@Override
 	public TaintThreeLevels wideningAux(
 			TaintThreeLevels other)
 			throws SemanticException {
-		// TODO: to implement
-		return null;
+		return TOP;
 	}
 
 
@@ -110,8 +133,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 	
 		@Override
 	public StructuredRepresentation representation() {
-		// return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
-		return null;
+		return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
 	}
 	
 }

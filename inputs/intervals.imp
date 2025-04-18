@@ -62,5 +62,12 @@ class intervals {
         def op10 = -b;
         def op11 = -c;
         def op12 = d / e;
+
+        def top = 5 % 2;
+        def opTop1 = top + a;
+        def opTop2 = top - a;
+        def opTop3 = top * a;
+        def opTop4 = top / a;
+        def opTop5 = top + top;
 	}
 }

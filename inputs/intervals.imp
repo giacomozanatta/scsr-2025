@@ -5,9 +5,10 @@ class intervals {
 		def j = -10;
 		def a = i + j;
 		def s = i - j;
-//		def m = i * j;
-//		def d = i / j;
-//      def l = -i;
+		def m = i * j;
+		def d = i / j;
+        def l = -i;
+        def hh= l * i;
 	}
 
 	branches(b) {

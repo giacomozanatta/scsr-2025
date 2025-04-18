@@ -222,8 +222,8 @@ public class Intervals
 			SemanticOracle oracle) throws SemanticException {
 		
 		
-		if(left.isBottom() || right.isBottom())
-			return bottom();
+		if((left.isTop() || isTop())&& !(operator instanceof DivisionOperator))
+			return top();
 		
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
@@ -241,7 +241,6 @@ public class Intervals
 		} else
 
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
 		if( operator instanceof SubtractionOperator) {
 
 			MathNumber lA = a.getLow();
@@ -259,6 +258,9 @@ public class Intervals
 			MathNumber [] x= {lA.multiply(lB),lA.multiply(uB),uA.multiply(lB),uA.multiply(uB)};
 			return getIntervals(x);
 		}else if( operator instanceof DivisionOperator) {
+			if(right.equals(ZERO))return BOTTOM;
+			if(left.equals(ZERO))return ZERO;
+			if((left.isTop() || isTop()))return TOP;
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
 			MathNumber uA = a.getHigh();

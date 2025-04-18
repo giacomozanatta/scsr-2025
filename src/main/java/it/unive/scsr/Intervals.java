@@ -276,17 +276,8 @@ public class Intervals
 			MathNumber newLower;
 			MathNumber newUpper;
 
-			if (lB.isZero()) {
-				newUpper = MathNumber.PLUS_INFINITY;
-			} else {
-				newUpper = MathNumber.ONE.divide(lB);
-			}
-
-			if (uB.isZero()) {
-				newLower = MathNumber.MINUS_INFINITY;
-			} else {
-				newLower = MathNumber.ONE.divide(uB);
-			}
+			newUpper = MathNumber.ONE.divide(lB);
+			newLower = MathNumber.ONE.divide(uB);
 
 			Intervals result = evalMultiplication(left, new Intervals(newLower, newUpper));
 			// Round results: we're using integers

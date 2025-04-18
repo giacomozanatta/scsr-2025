@@ -231,9 +231,12 @@ public class Intervals
 			ProgramPoint pp,
 			SemanticOracle oracle) {
 		
-		if ((left.isTop() || right.isTop()))
+		// for multiplication and division, we have some special cases to handle
+		// when one of the operands is top
+		if ((left.isTop() || right.isTop()) && !(operator instanceof MultiplicationOperator || operator instanceof DivisionOperator))
 			return top();
-
+			
+		// in all cases, if one of the operands is bottom, we return bottom
 		if (left.isBottom() || right.isBottom())
 			return bottom();
 		
@@ -260,9 +263,6 @@ public class Intervals
 			// dividing by the singleton interval [0,0] leads to bottom
 			if (right.isNonBottomSingletonWithValue(0))
 				return bottom();
-			// if the numerator is a singleton interval [0,0] the result is [0,0]
-			else if (left.isNonBottomSingletonWithValue(0))
-				return ZERO;
 			// in all other cases we can divide the two intervals using the IntInterval div method 
 			else
 				return new Intervals(left.interval.div(right.interval, false, false));

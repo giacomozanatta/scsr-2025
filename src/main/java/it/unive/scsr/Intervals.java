@@ -1,5 +1,6 @@
 package it.unive.scsr;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import it.unive.lisa.analysis.Lattice;
@@ -11,6 +12,7 @@ import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.NegatableOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
@@ -100,7 +102,10 @@ public class Intervals
 		// TODO: The semantics of negation should be implemented here! 
 		
 		if(operator instanceof NegatableOperator) {
-			
+			if (arg.isBottom())
+				return bottom();
+
+			return new Intervals(interval.getHigh().multiply(MathNumber.MINUS_ONE), interval.getLow().multiply(MathNumber.MINUS_ONE));
 		}
 		
 		return top();
@@ -229,26 +234,48 @@ public class Intervals
 		
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
+
+		MathNumber lA = a.getLow();
+		MathNumber lB = b.getLow();
+			
+		MathNumber uA = a.getHigh();
+		MathNumber uB = b.getHigh();
 		
 		if(operator instanceof AdditionOperator)  {
 			
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
 			return new Intervals(lA.add(lB), uA.add(uB));
-			
-		} else 
-			
+				
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
 			
-		if( operator instanceof SubtractionOperator) {
+		} else if( operator instanceof SubtractionOperator) {
+			
+			return new Intervals(lA.subtract(uB), uA.subtract(lB));
 			
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+
+			if (a.is(0) || b.is(0)) 
+				return Intervals.ZERO;
+
+			MathNumber[] possibleBounds = {lA.multiply(lB), lA.multiply(uB),uA.multiply(lB), uA.multiply(uB)};
+
+			MathNumber min = Arrays.stream(possibleBounds).min(MathNumber::compareTo).get();
+			MathNumber max = Arrays.stream(possibleBounds).max(MathNumber::compareTo).get();
+
+			return new Intervals(min, max);
+		
+		} else if (operator instanceof DivisionOperator) {
+
+			if (b.is(0)){
+				return bottom();
+			}
+			if (a.is(0)){
+				return Intervals.ZERO;
+			}
+			MathNumber[] possibleBounds = {lA.divide(lB), lA.divide(uB),uA.divide(lB), uA.divide(uB)};
+
+			MathNumber min = Arrays.stream(possibleBounds).min(MathNumber::compareTo).get();
+			MathNumber max = Arrays.stream(possibleBounds).max(MathNumber::compareTo).get();
+			return new Intervals(min.roundDown(), max.roundUp());
 		}
 			
 		return top();

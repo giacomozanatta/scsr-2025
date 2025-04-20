@@ -1,9 +1,10 @@
 package it.unive.scsr.checkers;
 
 
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.Set;
-
+import java.util.stream.Collectors;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
@@ -18,13 +19,15 @@ import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
 
-public class OverflowChecker implements
-SemanticCheck<
+import static it.unive.scsr.utils.Logging.defaultLogger;
+
+public class OverflowChecker implements SemanticCheck<
 		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 	
 	public enum NumericalSize {
@@ -48,27 +51,26 @@ SemanticCheck<
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node) {
+			CFG graph,
+			Statement node) {
 		
-		if (node instanceof Assignment) {
-			Assignment assignment = (Assignment) node;
-			Expression leftExpression = assignment.getLeft();
+		if (node instanceof Assignment assignment) {
+            Expression leftExpression = assignment.getLeft();
 			
-			// Checking if each variable reference is over/under-flowing
+			// Checking if each variable reference is over/under-flowing.
 			if (leftExpression instanceof VariableRef) {
 				checkVariableRef(tool, (VariableRef) leftExpression, graph, node);
 			}
 			
 		} else {
 
-			// Checking if each variable reference is over/under-flowing
+			// Checking if each variable reference is over/under-flowing.
 			if (node instanceof VariableRef) {
 				checkVariableRef(tool, (VariableRef) node, graph, node);
 			}
 		}
 		
 		return true;
-		
 	}
 	
 	private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node ) {
@@ -94,9 +96,13 @@ SemanticCheck<
 	}
 
 	// compute possible dynamic types / runtime types
-	private Set<Type> getPossibleDynamicTypes(
+	@SuppressWarnings("DataFlowIssue")
+    private Set<Type> getPossibleDynamicTypes(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node, Variable id, VariableRef varRef) {
+			CFG graph,
+			Statement node,
+			Variable id,
+			VariableRef varRef) {
 		
 			Set<Type> possibleDynamicTypes = new HashSet<>();
 			for (AnalyzedCFG<
@@ -110,8 +116,7 @@ SemanticCheck<
 					} else if(dynamicTypes.isUntyped()){
 						Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
 						if(runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
-							for( Type t : runtimeTypes)
-								possibleDynamicTypes.add(t);
+                            possibleDynamicTypes.addAll(runtimeTypes);
 					}
 				} catch (SemanticException e) {
 					System.err.println("Cannot check " + node);
@@ -121,9 +126,4 @@ SemanticCheck<
 			}	
 		return possibleDynamicTypes;
 	}
-
-	
-		
-	
-
 }

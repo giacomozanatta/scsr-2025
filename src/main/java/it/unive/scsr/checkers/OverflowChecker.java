@@ -72,13 +72,6 @@ public class OverflowChecker implements SemanticCheck<
 		
 		return true;
 	}
-	
-	private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node ) {
-		Variable id = new Variable(((VariableRef) varRef).getStaticType(), ((VariableRef) varRef).getName(), ((VariableRef) varRef).getLocation());
-		
-		Type staticType = id.getStaticType();
-		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
-				
 
 	// A numerical type is required. Current support is for UInt8Type, UInt16Type, UInt32Type, Int8Type, Int16Type, and
 	// Int32Type.
@@ -97,9 +90,26 @@ public class OverflowChecker implements SemanticCheck<
 						.collect(Collectors.toSet()));
 	}
 	
-		// TODO: implement type checks, it is required a numerical type
-		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
+	private void checkVariableRef(
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			VariableRef varRef,
+			CFG graph,
+			Statement node) {
+
+		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 		
+		var staticType = Set.of(id.getStaticType());
+		var dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
+
+		// Perform analysis only for some specific types, namely those checked in the "isSupportedType" method. If
+		// staticType is untyped, then dynamic types are checked.
+		if (!(isSupportedType(staticType) || isSupportedType(dynamicTypes))) {
+			defaultLogger.info(() -> MessageFormat
+					.format("Neither set {0} nor set {1} include types available for evaluations",
+							staticType,
+							dynamicTypes));
+			return;
+		}
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
@@ -109,8 +119,6 @@ public class OverflowChecker implements SemanticCheck<
 				// TODO: implement logic for overflow/underflow checks
 				// hint: it depends to the NumericalSize size
 		}
-		
-		
 	}
 
 	// compute possible dynamic types / runtime types

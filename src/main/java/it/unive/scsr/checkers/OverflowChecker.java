@@ -79,6 +79,24 @@ public class OverflowChecker implements SemanticCheck<
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
 				
+
+	// A numerical type is required. Current support is for UInt8Type, UInt16Type, UInt32Type, Int8Type, Int16Type, and
+	// Int32Type.
+	private boolean isSupportedType(final Set<Type> possibleTypes) {
+		// The only types available are integer representations. Checking for overflow and underflow of floats is more
+		// complex than checking for overflow and underflow of integers.
+		Set<Class<? extends Type>> availableTypes =
+				Set.of(UInt8Type.class, UInt16Type.class, UInt32Type.class,
+						Int8Type.class, Int16Type.class, Int32Type.class);
+
+		// The set of inferred types must be a subset of the available types.
+		return availableTypes
+				.containsAll(possibleTypes
+						.stream()
+						.map(Type::getClass)
+						.collect(Collectors.toSet()));
+	}
+	
 		// TODO: implement type checks, it is required a numerical type
 		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
 		

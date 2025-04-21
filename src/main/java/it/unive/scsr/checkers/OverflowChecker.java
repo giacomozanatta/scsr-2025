@@ -21,6 +21,7 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.scsr.Intervals;
 
 public class OverflowChecker implements
@@ -78,15 +79,24 @@ SemanticCheck<
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
 				
 		// TODO: implement type checks, it is required a numerical type
+		boolean isNumeric = dynamicTypes.stream().anyMatch(Type::isNumericType);
+
+		if(!isNumeric) {
+			tool.warnOn(graph, "Possible division by a non-numeric type: " + dynamicTypes);
+		}
 		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
 		
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
-				Intervals intervalAbstractValue = state.getValueState().getState(id);	
+				Intervals intervalAbstractValue = state.getValueState().getState(id);
 				
 				// TODO: implement logic for overflow/underflow checks
+
+			if (!intervalAbstractValue.isBottom() && intervalAbstractValue.interval != null) {
+				IntInterval interval = intervalAbstractValue.interval;
+			}
 				// hint: it depends to the NumericalSize size
 		}
 		

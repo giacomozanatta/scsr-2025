@@ -22,6 +22,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
@@ -70,15 +71,26 @@ SemanticCheck<
 						for (SymbolicExpression s : reachableIds) {
 							
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
-						
-			
+
 							// TODO: implement type checks, it is required a numerical type
-			
+
+							boolean isNumber = types.stream().anyMatch(Type::isNumericType);
+
+							if (!isNumber) {
+								tool.warnOn(div, "Possible division by a non-numeric type: " + types);
+								continue;
+							}
+
+
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 							
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 							
 							// TODO: add checks for division by zero
+
+							if (!intervalAbstractValue.isBottom() && intervalAbstractValue.interval.equals(MathNumber.ZERO)) {
+								tool.warnOn(div, "Division by zero: " + intervalAbstractValue);
+							}
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();

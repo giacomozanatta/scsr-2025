@@ -131,7 +131,9 @@ public class OverflowChecker implements SemanticCheck<
 	}
 
 	public void writeWarning(CheckTool tool, Statement node, StructuredRepresentation representation) {
-		// ...
+		tool.warn(new WarnMap(Set.of(
+				entry("location", node.getLocation().getCodeLocation()),
+				entry("abstractData", representation.toString()))).toString());
 	}
 
 	// compute possible dynamic types / runtime types

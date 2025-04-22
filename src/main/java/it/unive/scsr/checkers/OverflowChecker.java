@@ -1,6 +1,5 @@
 package it.unive.scsr.checkers;
 
-
 import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,6 +12,7 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
+import it.unive.lisa.checks.syntactic.CheckTool;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -22,9 +22,11 @@ import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.scsr.Intervals;
 
 import static it.unive.scsr.utils.Logging.defaultLogger;
+import static java.util.Map.entry;
 
 public class OverflowChecker implements SemanticCheck<
 		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
@@ -41,11 +43,9 @@ public class OverflowChecker implements SemanticCheck<
 		FLOAT32, // signed float 32-bit
 	}
 	
-	private NumericalSize size;
+	private final NumericalSize size;
 	
-	public OverflowChecker(NumericalSize size) {
-		this.size = size;
-	}
+	public OverflowChecker(NumericalSize size) { this.size = size; }
 
 	@Override
 	public boolean visit(
@@ -112,12 +112,26 @@ public class OverflowChecker implements SemanticCheck<
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
-				Intervals intervalAbstractValue = state.getValueState().getState(id);	
-				
-				// TODO: implement logic for overflow/underflow checks
-				// hint: it depends to the NumericalSize size
+
+			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state =
+					result.getAnalysisStateAfter(node).getState();
+
+			Intervals intervalAbstractValue = state.getValueState().getState(id);
+
+			// TODO: implement logic for overflow/underflow checks
+			// hint: it depends to the NumericalSize size
+			if (isSticky(intervalAbstractValue, size)) {
+				writeWarning(tool, node, intervalAbstractValue.representation());
+			}
 		}
+	}
+
+	private boolean isSticky(Intervals intervals, NumericalSize size) {
+		return true;
+	}
+
+	public void writeWarning(CheckTool tool, Statement node, StructuredRepresentation representation) {
+		// ...
 	}
 
 	// compute possible dynamic types / runtime types

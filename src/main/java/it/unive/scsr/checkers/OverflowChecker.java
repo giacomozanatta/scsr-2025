@@ -2,6 +2,7 @@ package it.unive.scsr.checkers;
 
 import java.text.MessageFormat;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
@@ -12,7 +13,6 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
-import it.unive.lisa.checks.syntactic.CheckTool;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
@@ -22,8 +22,8 @@ import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.checkers.overflow.checkers.SizeChecker;
 
 import static it.unive.scsr.utils.Logging.defaultLogger;
 import static java.util.Map.entry;
@@ -118,25 +118,28 @@ public class OverflowChecker implements SemanticCheck<
 
 			Intervals intervalAbstractValue = state.getValueState().getState(id);
 
-			// TODO: implement logic for overflow/underflow checks
-			// hint: it depends to the NumericalSize size
-			if (isSticky(intervalAbstractValue, size)) {
-				writeWarning(tool, node, intervalAbstractValue.representation());
+			// The overflow depends on the size of NumericalSize.
+			var stickiness = SizeChecker
+					.findBy(size)
+					.map(sizeChecker -> sizeChecker.isOverflowing(intervalAbstractValue))
+					.orElse(SizeChecker.OverflowingLevel.base());
+
+			if (stickiness.isOverflowing()) {
+				// Additional metadata to enable warning processing.
+				var warningSet = new HashSet<>(Set.of(
+						entry("location", node.getLocation().getCodeLocation()),
+						entry("abstractData", intervalAbstractValue.representation().toString())));
+
+				// To understand whether the overflow will definitely happen or not.
+				warningSet.add(Map.entry("definitely", String.valueOf(stickiness.definitely())));
+
+				// Finally, pointing out the warnings.
+				tool.warn(new WarnMap(warningSet).toString());
 			}
 		}
 	}
 
-	private boolean isSticky(Intervals intervals, NumericalSize size) {
-		return true;
-	}
-
-	public void writeWarning(CheckTool tool, Statement node, StructuredRepresentation representation) {
-		tool.warn(new WarnMap(Set.of(
-				entry("location", node.getLocation().getCodeLocation()),
-				entry("abstractData", representation.toString()))).toString());
-	}
-
-	// compute possible dynamic types / runtime types
+	// Compute possible dynamic types.
 	@SuppressWarnings("DataFlowIssue")
     private Set<Type> getPossibleDynamicTypes(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,

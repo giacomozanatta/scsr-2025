@@ -4,7 +4,6 @@ package it.unive.scsr.checkers;
 import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
@@ -78,16 +77,15 @@ public class OverflowChecker implements SemanticCheck<
 	private boolean isSupportedType(final Set<Type> possibleTypes) {
 		// The only types available are integer representations. Checking for overflow and underflow of floats is more
 		// complex than checking for overflow and underflow of integers.
-		Set<Class<? extends Type>> availableTypes =
+		final Set<Class<? extends Type>> availableTypes =
 				Set.of(UInt8Type.class, UInt16Type.class, UInt32Type.class,
 						Int8Type.class, Int16Type.class, Int32Type.class);
 
-		// The set of inferred types must be a subset of the available types.
-		return availableTypes
-				.containsAll(possibleTypes
-						.stream()
-						.map(Type::getClass)
-						.collect(Collectors.toSet()));
+		// The set of inferred types must intersect the available types with at least one element.
+        return possibleTypes
+                .stream()
+                .map(Type::getClass)
+                .anyMatch(availableTypes::contains);
 	}
 	
 	private void checkVariableRef(

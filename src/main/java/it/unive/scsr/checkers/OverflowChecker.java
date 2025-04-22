@@ -103,9 +103,10 @@ public class OverflowChecker implements SemanticCheck<
 		// staticType is untyped, then dynamic types are checked.
 		if (!(isSupportedType(staticType) || isSupportedType(dynamicTypes))) {
 			defaultLogger.info(() -> MessageFormat
-					.format("Neither set {0} nor set {1} include types available for evaluations",
+					.format("Neither set {0} nor set {1} include types available for evaluations at node {2}",
 							staticType,
-							dynamicTypes));
+							dynamicTypes,
+							node));
 			return;
 		}
 

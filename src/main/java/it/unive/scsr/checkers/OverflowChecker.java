@@ -29,158 +29,162 @@ import static it.unive.scsr.utils.Logging.defaultLogger;
 import static java.util.Map.entry;
 
 public class OverflowChecker implements SemanticCheck<
-		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
-	
-	public enum NumericalSize {
-		INT8,  // signed integer 8-bit
-		INT16, // signed integer 16-bit
-		INT32, // signed integer 32-bit
-		UINT8,  // unsigned integer 8-bit
-		UINT16, // unsigned integer 16-bit
-		UINT32, // unsigned integer 32-bit
-		FLOAT8, // signed float 8-bit
-		FLOAT16, // signed float 16-bit
-		FLOAT32, // signed float 32-bit
-	}
-	
-	private final NumericalSize size;
-	private final Map<CodeLocation, Intervals> exitStates = new HashMap<>();
+        SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 
-	public OverflowChecker(NumericalSize size) { this.size = size; }
+    public enum NumericalSize {
+        INT8,  // signed integer 8-bit
+        INT16, // signed integer 16-bit
+        INT32, // signed integer 32-bit
+        UINT8,  // unsigned integer 8-bit
+        UINT16, // unsigned integer 16-bit
+        UINT32, // unsigned integer 32-bit
+        FLOAT8, // signed float 8-bit
+        FLOAT16, // signed float 16-bit
+        FLOAT32, // signed float 32-bit
+    }
 
-	@Override
-	public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {}
+    private final NumericalSize size;
+    private final Map<CodeLocation, Intervals> exitStates = new HashMap<>();
 
-	@Override
-	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph,
-			Statement node) {
-		
-		if (node instanceof Assignment assignment) {
+    public OverflowChecker(NumericalSize size) {
+        this.size = size;
+    }
+
+    @Override
+    public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
+    }
+
+    @Override
+    public boolean visit(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+            CFG graph,
+            Statement node) {
+
+        if (node instanceof Assignment assignment) {
             Expression leftExpression = assignment.getLeft();
-			
-			// Checking if each variable reference is over/under-flowing.
-			if (leftExpression instanceof VariableRef) {
-				checkVariableRef(tool, (VariableRef) leftExpression, graph, node);
-			}
-			
-		} else {
 
-			// Checking if each variable reference is over/under-flowing.
-			if (node instanceof VariableRef) {
-				checkVariableRef(tool, (VariableRef) node, graph, node);
-			}
-		}
-		
-		return true;
-	}
+            // Checking if each variable reference is over/under-flowing.
+            if (leftExpression instanceof VariableRef) {
+                checkVariableRef(tool, (VariableRef) leftExpression, graph, node);
+            }
 
-	@Override
-	public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {}
+        } else {
 
-	// A numerical type is required. Current support is for UInt8Type, UInt16Type, UInt32Type, Int8Type, Int16Type, and
-	// Int32Type.
-	private boolean isSupportedType(final Set<Type> possibleTypes) {
-		// The only types available are integer representations. Checking for overflow and underflow of floats is more
-		// complex than checking for overflow and underflow of integers.
-		final Set<Class<? extends Type>> availableTypes =
-				Set.of(UInt8Type.class, UInt16Type.class, UInt32Type.class,
-						Int8Type.class, Int16Type.class, Int32Type.class);
+            // Checking if each variable reference is over/under-flowing.
+            if (node instanceof VariableRef) {
+                checkVariableRef(tool, (VariableRef) node, graph, node);
+            }
+        }
 
-		// The set of inferred types must intersect the available types with at least one element.
+        return true;
+    }
+
+    @Override
+    public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
+    }
+
+    // A numerical type is required. Current support is for UInt8Type, UInt16Type, UInt32Type, Int8Type, Int16Type, and
+    // Int32Type.
+    private boolean isSupportedType(final Set<Type> possibleTypes) {
+        // The only types available are integer representations. Checking for overflow and underflow of floats is more
+        // complex than checking for overflow and underflow of integers.
+        final Set<Class<? extends Type>> availableTypes =
+                Set.of(UInt8Type.class, UInt16Type.class, UInt32Type.class,
+                        Int8Type.class, Int16Type.class, Int32Type.class);
+
+        // The set of inferred types must intersect the available types with at least one element.
         return possibleTypes
                 .stream()
                 .map(Type::getClass)
                 .anyMatch(availableTypes::contains);
-	}
-	
-	private void checkVariableRef(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			VariableRef varRef,
-			CFG graph,
-			Statement node) {
+    }
 
-		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
-		
-		var staticType = Set.of(id.getStaticType());
-		var dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
+    private void checkVariableRef(
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+            VariableRef varRef,
+            CFG graph,
+            Statement node) {
 
-		// Perform analysis only for some specific types, namely those checked in the "isSupportedType" method. If
-		// staticType is untyped, then dynamic types are checked.
-		if (!(isSupportedType(staticType) || isSupportedType(dynamicTypes))) {
-			defaultLogger.info(() -> MessageFormat
-					.format("Neither set {0} nor set {1} include types available for evaluations at node {2}",
-							staticType,
-							dynamicTypes,
-							node));
+        Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 
-			// Returns without performing any parsing because the inferred type is not supported.
-			return;
-		}
+        var staticType = Set.of(id.getStaticType());
+        var dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
+        // Perform analysis only for some specific types, namely those checked in the "isSupportedType" method. If
+        // staticType is untyped, then dynamic types are checked.
+        if (!(isSupportedType(staticType) || isSupportedType(dynamicTypes))) {
+            defaultLogger.info(() -> MessageFormat
+                    .format("Neither set {0} nor set {1} include types available for evaluations at node {2}",
+                            staticType,
+                            dynamicTypes,
+                            node));
 
-			// Calculates the exit state for the specified node.
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state =
-					result.getAnalysisStateAfter(node).getState();
+            // Returns without performing any parsing because the inferred type is not supported.
+            return;
+        }
 
-			// Since this checker deals with the interval domain, the environment state of the value must be an
-			// interval.
-			var intervals = state.getValueState().getState(id);
-			exitStates.put(node.getLocation(), intervals);
+        for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
+                TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 
-			// The overflow depends on the size of NumericalSize.
-			var stickiness = SizeChecker
-					.findBy(size)
-					.map(sizeChecker -> sizeChecker.isOverflowing(intervals))
-					.orElse(SizeChecker.OverflowingLevel.base());
+            // Calculates the exit state for the specified node.
+            SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state =
+                    result.getAnalysisStateAfter(node).getState();
 
-			if (stickiness.isOverflowing()) {
-				// Additional metadata to enable warning processing.
-				var warningSet = new HashSet<>(Set.of(
-						entry("location", node.getLocation().getCodeLocation()),
-						entry("abstractData", intervals.representation().toString())));
+            // Since this checker deals with the interval domain, the environment state of the value must be an
+            // interval.
+            var intervals = state.getValueState().getState(id);
+            exitStates.put(node.getLocation(), intervals);
 
-				// To understand whether the overflow will definitely happen or not.
-				warningSet.add(Map.entry("definitely", String.valueOf(stickiness.definitely())));
+            // The overflow depends on the size of NumericalSize.
+            var stickiness = SizeChecker
+                    .findBy(size)
+                    .map(sizeChecker -> sizeChecker.isOverflowing(intervals))
+                    .orElse(SizeChecker.OverflowingLevel.base());
 
-				// Finally, pointing out the warnings.
-				tool.warn(new WarnMap(warningSet).toString());
-			}
-		}
-	}
+            if (stickiness.isOverflowing()) {
+                // Additional metadata to enable warning processing.
+                var warningSet = new HashSet<>(Set.of(
+                        entry("location", node.getLocation().getCodeLocation()),
+                        entry("abstractData", intervals.representation().toString())));
 
-	// Compute possible dynamic types.
-	@SuppressWarnings("DataFlowIssue")
+                // To understand whether the overflow will definitely happen or not.
+                warningSet.add(Map.entry("definitely", String.valueOf(stickiness.definitely())));
+
+                // Finally, pointing out the warnings.
+                tool.warn(new WarnMap(warningSet).toString());
+            }
+        }
+    }
+
+    // Compute possible dynamic types.
+    @SuppressWarnings("DataFlowIssue")
     private Set<Type> getPossibleDynamicTypes(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph,
-			Statement node,
-			Variable id,
-			VariableRef varRef) {
-		
-			Set<Type> possibleDynamicTypes = new HashSet<>();
-			for (AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(varRef).getState();
-				try {
-					Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
-					if(dynamicTypes != null && !dynamicTypes.isUntyped()) {
-						possibleDynamicTypes.add(dynamicTypes);
-					} else if(dynamicTypes.isUntyped()){
-						Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
-						if(runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
-                            possibleDynamicTypes.addAll(runtimeTypes);
-					}
-				} catch (SemanticException e) {
-					System.err.println("Cannot check " + node);
-					e.printStackTrace(System.err);
-				}
-	
-			}	
-		return possibleDynamicTypes;
-	}
+            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+            CFG graph,
+            Statement node,
+            Variable id,
+            VariableRef varRef) {
+
+        Set<Type> possibleDynamicTypes = new HashSet<>();
+        for (AnalyzedCFG<
+                SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
+                        TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
+            SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(varRef).getState();
+            try {
+                Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
+                if (dynamicTypes != null && !dynamicTypes.isUntyped()) {
+                    possibleDynamicTypes.add(dynamicTypes);
+                } else if (dynamicTypes.isUntyped()) {
+                    Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
+                    if (runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
+                        possibleDynamicTypes.addAll(runtimeTypes);
+                }
+            } catch (SemanticException e) {
+                System.err.println("Cannot check " + node);
+                e.printStackTrace(System.err);
+            }
+        }
+
+        return possibleDynamicTypes;
+    }
 }

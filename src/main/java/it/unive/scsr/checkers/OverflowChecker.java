@@ -44,7 +44,8 @@ public class OverflowChecker implements SemanticCheck<
 	}
 	
 	private final NumericalSize size;
-	
+	private final Map<CodeLocation, Intervals> exitStates = new HashMap<>();
+
 	public OverflowChecker(NumericalSize size) { this.size = size; }
 
 	@Override

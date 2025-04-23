@@ -49,6 +49,9 @@ public class OverflowChecker implements SemanticCheck<
 	public OverflowChecker(NumericalSize size) { this.size = size; }
 
 	@Override
+	public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {}
+
+	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph,
@@ -72,6 +75,9 @@ public class OverflowChecker implements SemanticCheck<
 		
 		return true;
 	}
+
+	@Override
+	public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {}
 
 	// A numerical type is required. Current support is for UInt8Type, UInt16Type, UInt32Type, Int8Type, Int16Type, and
 	// Int32Type.

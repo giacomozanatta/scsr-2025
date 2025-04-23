@@ -51,6 +51,11 @@ SemanticCheck<
 	public boolean visit(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
+
+		 // Method to analyze only the CFGs that correspond to the numeric size bound to this instance.
+
+		if (!isCfgRelevant(graph))
+			return true; // skip this node – keep visiting to allow other checks
 		
 		if (node instanceof Assignment) {
 			Assignment assignment = (Assignment) node;
@@ -78,7 +83,6 @@ SemanticCheck<
 // TYPE CHECKER
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
-
 		if (staticType.isUntyped()) {
 			dynamicTypes.addAll(getPossibleDynamicTypes(tool, graph, node, id, varRef));
 		} else {
@@ -88,6 +92,7 @@ SemanticCheck<
 		double min = getMinValue();
 		double max = getMaxValue();
 
+
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
@@ -96,25 +101,40 @@ SemanticCheck<
 			if (intervalAbstractValue == null || intervalAbstractValue.isBottom())
 				continue;
 
-			IntInterval intv   = intervalAbstractValue.interval;
-			MathNumber  lowMn  = intv.getLow();
-			MathNumber  highMn = intv.getHigh();
+			IntInterval intv = intervalAbstractValue.interval;
+			MathNumber lowMn = intv.getLow();
+			MathNumber highMn = intv.getHigh();
 
-			double low  = Double.parseDouble(lowMn.toString());
-			double high = Double.parseDouble(highMn.toString());
+			double low = toDouble(lowMn);
+			double high = toDouble(highMn);
+
+			// Skip warnings when an extremum is infinite or NaN
+			boolean lowFinite = Double.isFinite(low);
+			boolean highFinite = Double.isFinite(high);
+
 			// Underflow case
-			if (low < min) {
-				System.err.printf("Underflow occured in %s: %.3f < %.3f%n",
-						id.getName(), low,  min);
+			if (lowFinite && low < min) {
+				System.err.printf("[%s] Underflow in %s: %.3f < %.3f%n", size, id.getName(), low, min);
 			}
 			// Overflow case
-			if (high > max) {
-				System.err.printf("Overflow occured in %s: %.3f > %.3f%n",
-						id.getName(), high, max);
+			if (highFinite && high > max) {
+				System.err.printf("[%s] Overflow in %s: %.3f > %.3f%n", size, id.getName(), high, max);
 			}
 		}
-		
-		
+
+	}
+
+	private static double toDouble(MathNumber n) {
+		if (n == null)
+			return Double.NaN;
+
+		String s = n.toString();
+		if ("Inf".equals(s) || "+Inf".equals(s))
+			return Double.POSITIVE_INFINITY;
+		if ("-Inf".equals(s))
+			return Double.NEGATIVE_INFINITY;
+
+		return Double.parseDouble(s);
 	}
 
 	// compute possible dynamic types / runtime types
@@ -189,6 +209,10 @@ SemanticCheck<
 			case FLOAT32: return Float.MAX_VALUE;
 			default:      return Double.POSITIVE_INFINITY;
 		}
+	}
+	private boolean isCfgRelevant(CFG cfg) {
+		String name = cfg.getDescriptor().getName().toUpperCase();
+		return name.contains(size.name());   // es. “testINT8” ⇐⇒ INT8
 	}
 }
 	

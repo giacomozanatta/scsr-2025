@@ -100,8 +100,10 @@ SemanticCheck<
 
 							if (low.equals(MathNumber.ZERO) && high.equals(MathNumber.ZERO)) {
 								tool.warnOn(div, "DivisionByZeroChecker: DEFINITE division by zero detected!");
+								System.err.println("DEBUG: Definite division by zero at " + div.getLocation());
 							} else if (low.compareTo(MathNumber.ZERO) <= 0 && high.compareTo(MathNumber.ZERO) >= 0) {
 								tool.warnOn(div, "DivisionByZeroChecker: POTENTIAL division by zero detected (interval includes 0)!");
+								System.err.println("DEBUG: Potential division by zero at " + div.getLocation());
 							}
 						}
 // END OF MY CODE

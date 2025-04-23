@@ -1,0 +1,38 @@
+class overflow_underflow {
+
+	testINT8() {
+		def a = 127;
+		def b = a + 1;      // OVERFLOW
+		def c = -128;
+		def d = c - 1;      // UNDERFLOW
+		def e = 50 + 50;    // OK
+	}
+
+
+	testUINT8() {
+		def a = 255;
+		def b = a + 1;      // OVERFLOW
+		def c = 0;
+		def d = c - 1;      // UNDERFLOW
+		def e = 100 + 100;  // OK
+	}
+
+
+	testINT16() {
+		def a = 32767;
+		def b = a + 1;       // OVERFLOW
+		def c = -32768;
+		def d = c - 1;       // UNDERFLOW
+		def e = 1000 + 2000; // OK
+	}
+
+
+	testUINT16() {
+		def a = 65535;
+		def b = a + 1;        // OVERFLOW
+		def c = 0;
+		def d = c - 1;        // UNDERFLOW
+		def e = 35000 + 25000; // OK
+	}
+
+}

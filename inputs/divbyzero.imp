@@ -1,0 +1,83 @@
+class div_zero {
+
+	alwaysSafe() {
+		def a = 10;
+		def b = 2;
+		def c = a / b;  // safe: divisor is not zero
+	}
+
+	definitelyUnsafe() {
+		def a = 5;
+		def b = 0;
+		def c = a / b;  // unsafe: divisor is definitely zero
+	}
+
+	simpleUnsafe() {
+    	def a = 5;
+    	def b = 5 - a;
+    	def c = a / b;  // unsafe: divisor is definitely zero
+    }
+
+	conditionalSafe(cond) {
+		def a = 10;
+		def b = 1;
+
+		if (cond) {
+			b = 2;
+		}
+
+		def c = a / b;  // safe: b in [1,2] range, never zero
+	}
+
+	maybeUnsafe(cond) {
+		def a = 8;
+		def b = 1;
+
+		if (cond) {
+			b = 0;
+		}
+
+		def c = a / b;  // uncertain: b could be zero so potential div by zero
+	}
+
+	loopDependent(cond) {
+		def a = 100;
+		def b = 3;
+
+		while (cond) {
+			b = b - 1;
+		}
+
+		def c = a / b;  // b may reach zero so potential div by zero
+	}
+
+	paramTest(x) {
+		def a = 12;
+		def b = x;
+
+		def c = a / b;  // depends on input value of x
+	}
+
+	complexFlow(flag) {
+		def a = 50;
+		def b = 5;
+
+		if (flag) {
+			b = b - 5;
+		}
+
+		def c = a / b;  // b = 5 or 0 so potential div by zero
+	}
+
+	arrayTest(i) {
+		def arr = new int[3];
+		arr[0] = 1;
+		arr[1] = 2;
+		arr[2] = 0;
+
+		def a = 30;
+		def b = arr[i];  // b in [0,2] range, could be zero
+		def c = a / b;   // potential unless i = 2
+	}
+
+}

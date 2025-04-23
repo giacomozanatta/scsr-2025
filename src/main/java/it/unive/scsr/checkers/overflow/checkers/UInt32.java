@@ -12,4 +12,14 @@ public final class UInt32 extends SizeChecker {
     public OverflowingLevel isOverflowing(Intervals intervals) {
         throw new RuntimeException();
     }
+
+    @Override
+    public Long minLimit() {
+        return 0L;
+    }
+
+    @Override
+    public Long maxLimit() {
+        return 2147483647L;
+    }
 }

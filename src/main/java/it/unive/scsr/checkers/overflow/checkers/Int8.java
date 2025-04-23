@@ -12,4 +12,14 @@ public final class Int8 extends SizeChecker {
     public OverflowingLevel isOverflowing(Intervals intervals) {
         throw new RuntimeException();
     }
+
+    @Override
+    public Byte minLimit() {
+        return Byte.MIN_VALUE;
+    }
+
+    @Override
+    public Byte maxLimit() {
+        return Byte.MAX_VALUE;
+    }
 }

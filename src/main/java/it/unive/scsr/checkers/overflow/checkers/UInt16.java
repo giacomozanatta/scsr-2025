@@ -12,4 +12,14 @@ public final class UInt16 extends SizeChecker {
     public OverflowingLevel isOverflowing(Intervals intervals) {
         throw new RuntimeException();
     }
+
+    @Override
+    public Integer minLimit() {
+        return 0;
+    }
+
+    @Override
+    public Integer maxLimit() {
+        return 32767;
+    }
 }

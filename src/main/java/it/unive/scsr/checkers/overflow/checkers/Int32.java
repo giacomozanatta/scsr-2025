@@ -12,4 +12,14 @@ public final class Int32 extends SizeChecker {
     public OverflowingLevel isOverflowing(Intervals intervals) {
         throw new RuntimeException();
     }
+
+    @Override
+    public Integer minLimit() {
+        return Integer.MIN_VALUE;
+    }
+
+    @Override
+    public Integer maxLimit() {
+        return Integer.MAX_VALUE;
+    }
 }

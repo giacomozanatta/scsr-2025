@@ -28,8 +28,7 @@ import it.unive.scsr.checkers.overflow.checkers.SizeChecker;
 import static it.unive.scsr.utils.Logging.defaultLogger;
 import static java.util.Map.entry;
 
-public class OverflowChecker implements SemanticCheck<
-        SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 
     public enum NumericalSize {
         INT8,  // signed integer 8-bit
@@ -52,13 +51,11 @@ public class OverflowChecker implements SemanticCheck<
 
     @Override
     public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
+        exitStates.clear();
     }
 
     @Override
-    public boolean visit(
-            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-            CFG graph,
-            Statement node) {
+    public boolean visit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, CFG graph, Statement node) {
 
         if (node instanceof Assignment assignment) {
             Expression leftExpression = assignment.getLeft();
@@ -81,6 +78,33 @@ public class OverflowChecker implements SemanticCheck<
 
     @Override
     public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
+        record LocationIntervals(CodeLocation location, Intervals intervals) {}
+
+        exitStates.
+                entrySet()
+                .stream()
+                .map(entry -> new LocationIntervals(entry.getKey(), entry.getValue()))
+                .forEach(locationIntervals -> {
+                    // The overflow depends on the size of NumericalSize.
+                    var stickiness = SizeChecker
+                            .findBy(size)
+                            .map(sizeChecker -> sizeChecker.isOverflowing(locationIntervals.intervals))
+                            .orElse(SizeChecker.OverflowingLevel.base());
+
+                    if (stickiness.isOverflowing()) {
+                        // Additional metadata to enable warning processing.
+                        var warningSet = new HashSet<>(Set.of(
+                                entry("location", locationIntervals.location.getCodeLocation()),
+                                entry("abstractData", locationIntervals.intervals.representation().toString())));
+
+                        // To understand whether the overflow will definitely happen or not.
+                        warningSet.add(Map.entry("definitely", String.valueOf(stickiness.definitely())));
+
+                        // Finally, pointing out the warnings.
+                        tool.warn(new WarnMap(warningSet).toString());
+                    }
+                });
+
     }
 
     // A numerical type is required. Current support is for UInt8Type, UInt16Type, UInt32Type, Int8Type, Int16Type, and
@@ -99,11 +123,7 @@ public class OverflowChecker implements SemanticCheck<
                 .anyMatch(availableTypes::contains);
     }
 
-    private void checkVariableRef(
-            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-            VariableRef varRef,
-            CFG graph,
-            Statement node) {
+    private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node) {
 
         Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 
@@ -134,36 +154,12 @@ public class OverflowChecker implements SemanticCheck<
             // interval.
             var intervals = state.getValueState().getState(id);
             exitStates.put(node.getLocation(), intervals);
-
-            // The overflow depends on the size of NumericalSize.
-            var stickiness = SizeChecker
-                    .findBy(size)
-                    .map(sizeChecker -> sizeChecker.isOverflowing(intervals))
-                    .orElse(SizeChecker.OverflowingLevel.base());
-
-            if (stickiness.isOverflowing()) {
-                // Additional metadata to enable warning processing.
-                var warningSet = new HashSet<>(Set.of(
-                        entry("location", node.getLocation().getCodeLocation()),
-                        entry("abstractData", intervals.representation().toString())));
-
-                // To understand whether the overflow will definitely happen or not.
-                warningSet.add(Map.entry("definitely", String.valueOf(stickiness.definitely())));
-
-                // Finally, pointing out the warnings.
-                tool.warn(new WarnMap(warningSet).toString());
-            }
         }
     }
 
     // Compute possible dynamic types.
     @SuppressWarnings("DataFlowIssue")
-    private Set<Type> getPossibleDynamicTypes(
-            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-            CFG graph,
-            Statement node,
-            Variable id,
-            VariableRef varRef) {
+    private Set<Type> getPossibleDynamicTypes(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, CFG graph, Statement node, Variable id, VariableRef varRef) {
 
         Set<Type> possibleDynamicTypes = new HashSet<>();
         for (AnalyzedCFG<

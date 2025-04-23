@@ -80,6 +80,8 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
     public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
         record LocationIntervals(CodeLocation location, Intervals intervals) {}
 
+        // Extract the position for each detected interval domain. After collecting each pair consisting of a value
+        // domain and its location, semantic checking is performed. If the value overflows, a warning is generated.
         exitStates.
                 entrySet()
                 .stream()
@@ -104,7 +106,6 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                         tool.warn(new WarnMap(warningSet).toString());
                     }
                 });
-
     }
 
     // A numerical type is required. Current support is for UInt8Type, UInt16Type, UInt32Type, Int8Type, Int16Type, and
@@ -143,18 +144,18 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
             return;
         }
 
-        for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-                TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
+        tool.getResultOf(graph).forEach(result -> {
+            // Computes the exit state for the specified node.
+            var env = new Analyzer<>(result)
+                    .exitStateOrThrow();
 
-            // Calculates the exit state for the specified node.
-            SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state =
-                    result.getAnalysisStateAfter(node).getState();
-
-            // Since this checker deals with the interval domain, the environment state of the value must be an
-            // interval.
-            var intervals = state.getValueState().getState(id);
-            exitStates.put(node.getLocation(), intervals);
-        }
+            if (env.knowsIdentifier(id)) {
+                // Since this checker deals with the interval domain, the environment state of the value must be an
+                // interval.
+                var intervals = env.getState(id);
+                exitStates.put(id.getCodeLocation(), intervals);
+            }
+        });
     }
 
     // Compute possible dynamic types.

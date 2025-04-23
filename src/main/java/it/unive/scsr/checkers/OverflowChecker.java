@@ -114,6 +114,8 @@ public class OverflowChecker implements SemanticCheck<
 							staticType,
 							dynamicTypes,
 							node));
+
+			// Returns without performing any parsing because the inferred type is not supported.
 			return;
 		}
 

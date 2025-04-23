@@ -1,9 +1,8 @@
 package it.unive.scsr.checkers;
 
 import java.text.MessageFormat;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
@@ -14,6 +13,7 @@ import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
@@ -122,22 +122,26 @@ public class OverflowChecker implements SemanticCheck<
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 
+			// Calculates the exit state for the specified node.
 			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state =
 					result.getAnalysisStateAfter(node).getState();
 
-			Intervals intervalAbstractValue = state.getValueState().getState(id);
+			// Since this checker deals with the interval domain, the environment state of the value must be an
+			// interval.
+			var intervals = state.getValueState().getState(id);
+			exitStates.put(node.getLocation(), intervals);
 
 			// The overflow depends on the size of NumericalSize.
 			var stickiness = SizeChecker
 					.findBy(size)
-					.map(sizeChecker -> sizeChecker.isOverflowing(intervalAbstractValue))
+					.map(sizeChecker -> sizeChecker.isOverflowing(intervals))
 					.orElse(SizeChecker.OverflowingLevel.base());
 
 			if (stickiness.isOverflowing()) {
 				// Additional metadata to enable warning processing.
 				var warningSet = new HashSet<>(Set.of(
 						entry("location", node.getLocation().getCodeLocation()),
-						entry("abstractData", intervalAbstractValue.representation().toString())));
+						entry("abstractData", intervals.representation().toString())));
 
 				// To understand whether the overflow will definitely happen or not.
 				warningSet.add(Map.entry("definitely", String.valueOf(stickiness.definitely())));

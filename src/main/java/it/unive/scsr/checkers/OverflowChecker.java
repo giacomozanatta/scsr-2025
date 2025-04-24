@@ -2,9 +2,8 @@ package it.unive.scsr.checkers;
 
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import it.unive.lisa.analysis.AnalyzedCFG;
-import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
@@ -21,7 +20,6 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.overflow.checkers.SizeChecker;
 
@@ -78,7 +76,8 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
 
     @Override
     public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
-        record LocationIntervals(CodeLocation location, Intervals intervals) {}
+        record LocationIntervals(CodeLocation location, Intervals intervals) {
+        }
 
         // Extract the position for each detected interval domain. After collecting each pair consisting of a value
         // domain and its location, semantic checking is performed. If the value overflows, a warning is generated.
@@ -129,7 +128,11 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
         Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 
         var staticType = Set.of(id.getStaticType());
-        var dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
+        var dynamicTypes = tool
+                .getResultOf(graph)
+                .stream()
+                .flatMap(result -> new Analyzer<>(result).getDynamicTypes(id, varRef).stream())
+                .collect(Collectors.toSet());
 
         // Perform analysis only for some specific types, namely those checked in the "isSupportedType" method. If
         // staticType is untyped, then dynamic types are checked.
@@ -156,32 +159,5 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                 exitStates.put(id.getCodeLocation(), intervals);
             }
         });
-    }
-
-    // Compute possible dynamic types.
-    @SuppressWarnings("DataFlowIssue")
-    private Set<Type> getPossibleDynamicTypes(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, CFG graph, Statement node, Variable id, VariableRef varRef) {
-
-        Set<Type> possibleDynamicTypes = new HashSet<>();
-        for (AnalyzedCFG<
-                SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-                        TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-            SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(varRef).getState();
-            try {
-                Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
-                if (dynamicTypes != null && !dynamicTypes.isUntyped()) {
-                    possibleDynamicTypes.add(dynamicTypes);
-                } else if (dynamicTypes.isUntyped()) {
-                    Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
-                    if (runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
-                        possibleDynamicTypes.addAll(runtimeTypes);
-                }
-            } catch (SemanticException e) {
-                System.err.println("Cannot check " + node);
-                e.printStackTrace(System.err);
-            }
-        }
-
-        return possibleDynamicTypes;
     }
 }

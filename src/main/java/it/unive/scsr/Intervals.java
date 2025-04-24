@@ -21,7 +21,8 @@ import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.scsr.intervals.BinaryFunctions;
 
-public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Comparable<Intervals> {
+public class Intervals implements
+        BaseNonRelationalValueDomain<Intervals>, Comparable<Intervals> {
 
     /**
      * The interval represented by this domain element.

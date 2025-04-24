@@ -20,6 +20,7 @@ import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.scsr.intervals.BinaryFunctions;
+import it.unive.scsr.intervals.NumericInterval;
 
 public class Intervals implements
         BaseNonRelationalValueDomain<Intervals>, Comparable<Intervals> {
@@ -27,17 +28,17 @@ public class Intervals implements
     /**
      * The interval represented by this domain element.
      */
-    public final IntInterval interval;
+    public final NumericInterval interval;
 
     /**
      * The abstract zero ({@code [0, 0]}) element.
      */
-    public static final Intervals ZERO = new Intervals(IntInterval.ZERO);
+    public static final Intervals ZERO = new Intervals(NumericInterval.ZERO);
 
     /**
      * The abstract top ({@code [-Inf, +Inf]}) element.
      */
-    public static final Intervals TOP = new Intervals(IntInterval.INFINITY);
+    public static final Intervals TOP = new Intervals(NumericInterval.INFINITY);
 
     /**
      * The abstract bottom element.
@@ -49,8 +50,7 @@ public class Intervals implements
      *
      * @param interval the underlying {@link IntInterval}
      */
-    public Intervals(
-            IntInterval interval) {
+    public Intervals(NumericInterval interval) {
         this.interval = interval;
     }
 
@@ -60,10 +60,8 @@ public class Intervals implements
      * @param lower the lower bound
      * @param upper the higher bound
      */
-    public Intervals(
-            MathNumber lower,
-            MathNumber upper) {
-        this(new IntInterval(lower, upper));
+    public Intervals(MathNumber lower, MathNumber upper) {
+        this(new NumericInterval(lower, upper));
     }
 
     /**
@@ -72,17 +70,17 @@ public class Intervals implements
      * @param low  the lower bound
      * @param high the higher bound
      */
-    public Intervals(
-            int low,
-            int high) {
-        this(new IntInterval(low, high));
+    public Intervals(int low, int high) {
+        this(new NumericInterval(
+                new NumericInterval.IntervalNumber.Long(low),
+                new NumericInterval.IntervalNumber.Long(high)));
     }
 
     /**
      * Builds the top interval.
      */
     public Intervals() {
-        this(IntInterval.INFINITY);
+        this(NumericInterval.INFINITY);
     }
 
     @Override
@@ -92,7 +90,7 @@ public class Intervals implements
         if (arg.isTop()) return arg;
 
         // If one of the elements is NaN, the lower element is returned since the computation cannot continue.
-        if (arg.interval.getLow().isNaN() || arg.interval.getHigh().isNaN()) return BOTTOM;
+        if (arg.interval.low.isNaN() || arg.interval.high.isNaN()) return BOTTOM;
 
         if (operator instanceof NumericNegation) {
             // Given a MathNumber element, the negation is calculated taking into account the possibility of handling an
@@ -103,7 +101,7 @@ public class Intervals implements
                             new MathNumber(n.getNumber().negate());
 
             // The minimum and maximum elements are reversed.
-            return new Intervals(f.apply(arg.interval.getHigh()), f.apply(arg.interval.getLow()));
+            return new Intervals(f.apply(arg.interval.high), f.apply(arg.interval.low));
         }
 
         return TOP;
@@ -112,14 +110,14 @@ public class Intervals implements
     @Override
     public Intervals glbAux(Intervals other) {
 
-        IntInterval a = this.interval;
-        IntInterval b = other.interval;
+        NumericInterval a = this.interval;
+        NumericInterval b = other.interval;
 
-        MathNumber lA = a.getLow();
-        MathNumber lB = b.getLow();
+        MathNumber lA = a.low;
+        MathNumber lB = b.low;
 
-        MathNumber uA = a.getHigh();
-        MathNumber uB = b.getHigh();
+        MathNumber uA = a.high;
+        MathNumber uB = b.high;
 
         if (lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
             return BOTTOM;
@@ -135,14 +133,14 @@ public class Intervals implements
     @Override
     public Intervals lubAux(Intervals other) {
 
-        IntInterval a = this.interval;
-        IntInterval b = other.interval;
+        NumericInterval a = this.interval;
+        NumericInterval b = other.interval;
 
-        MathNumber lA = a.getLow();
-        MathNumber lB = b.getLow();
+        MathNumber lA = a.low;
+        MathNumber lB = b.low;
 
-        MathNumber uA = a.getHigh();
-        MathNumber uB = b.getHigh();
+        MathNumber uA = a.high;
+        MathNumber uB = b.high;
 
         MathNumber newLower = lA.min(lB);
         MathNumber newUpper = uA.max(uB);
@@ -188,7 +186,7 @@ public class Intervals implements
     @Override
     public StructuredRepresentation representation() {
         if (this.isBottom()) return Lattice.bottomRepresentation();
-        return new StringRepresentation("[" + this.interval.getLow() + "," + this.interval.getHigh() + "]");
+        return new StringRepresentation("[" + this.interval.low + "," + this.interval.high + "]");
     }
 
     @Override
@@ -242,20 +240,21 @@ public class Intervals implements
     }
 
     @Override
-    public Intervals wideningAux(
-            Intervals other) {
+    public Intervals wideningAux(Intervals other) {
         MathNumber newLower, newUpper;
-        if (other.interval.getHigh().compareTo(interval.getHigh()) > 0)
-            //  high value is increasing
+        if (other.interval.high.compareTo(interval.high) > 0) {
+            // High value is increasing.
             newUpper = MathNumber.PLUS_INFINITY;
-        else
-            newUpper = interval.getHigh();
+        } else {
+            newUpper = interval.high;
+        }
 
-        if (other.interval.getLow().compareTo(interval.getLow()) < 0)
-            //  low value is decreasing
+        if (other.interval.low.compareTo(interval.low) < 0) {
+            // Low value is decreasing.
             newLower = MathNumber.MINUS_INFINITY;
-        else
-            newLower = interval.getLow();
+        } else {
+            newLower = interval.low;
+        }
 
         return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : new Intervals(newLower, newUpper);
     }
@@ -263,8 +262,8 @@ public class Intervals implements
     @Override
     public Intervals narrowingAux(
             Intervals other) {
-        MathNumber newHigh = interval.getHigh().isInfinite() ? other.interval.getHigh() : interval.getHigh();
-        MathNumber newLow = interval.getLow().isInfinite() ? other.interval.getLow() : interval.getLow();
+        MathNumber newHigh = interval.high.isInfinite() ? other.interval.high : interval.high;
+        MathNumber newLow = interval.low.isInfinite() ? other.interval.low : interval.low;
         return new Intervals(newLow, newHigh);
     }
 

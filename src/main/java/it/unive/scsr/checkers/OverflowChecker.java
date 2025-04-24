@@ -96,6 +96,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                         // Additional metadata to enable warning processing.
                         var warningSet = new HashSet<>(Set.of(
                                 entry("location", locationIntervals.location.getCodeLocation()),
+                                entry("numericalSize", size.name().toLowerCase()),
                                 entry("abstractData", locationIntervals.intervals.representation().toString())));
 
                         // To understand whether the overflow will definitely happen or not.

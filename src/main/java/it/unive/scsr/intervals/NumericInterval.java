@@ -2,29 +2,39 @@ package it.unive.scsr.intervals;
 
 import it.unive.lisa.util.numeric.MathNumber;
 
-import java.util.Objects;
+import java.math.BigDecimal;
 
-public class NumericInterval {
+public class NumericInterval implements Comparable<NumericInterval> {
 
     public sealed interface IntervalNumber {
 
         Number number();
 
         /**
-         * Converts this {@code IntervalNumber} to a {@code MathNumber}. If the {@code IntervalNumber} is a {@code Long}
-         * or {@code Double}, a new {@code MathNumber} is created directly from its primitive value. Otherwise, it's
-         * assumed to be a {@code BigDecimal} and a new {@code MathNumber} is created from its {@code BigDecimal} value.
+         * Converts this {@link IntervalNumber} to a {@link MathNumber}. If the {@link IntervalNumber} is a {@link Long}
+         * or {@link Double}, a new {@link MathNumber} is created directly from its primitive value.
          *
-         * @return A new {@code MathNumber} representing the value of this interval.
+         * @return A new {@link MathNumber} representing the value of this interval.
          */
         default MathNumber toMathNumber() {
-            if (this instanceof Long allowed) new MathNumber(allowed.value);
-            if (this instanceof Double allowed) new MathNumber(allowed.value);
-            return new MathNumber((java.math.BigDecimal) this.number());
+            if (this instanceof Long allowed) return new MathNumber(allowed.value);
+            return new MathNumber((java.lang.Double) this.number());
         }
 
         /**
-         * Represents an interval number with a {@code long} value.
+         * Converts this {@link IntervalNumber} to a {@link BigDecimal}. If the {@link IntervalNumber} is a {@link Long}
+         * or {@link Double}, a new {@link MathNumber} is created directly from its primitive value.
+         *
+         * @return A new {@link MathNumber} representing the value of this interval.
+         */
+        default BigDecimal toBigDecimal() {
+            if (this instanceof Long allowed) new BigDecimal(allowed.value);
+            return BigDecimal.valueOf((java.lang.Double) this.number());
+        }
+
+        /**
+         * Represents an interval number with a {@code long} value. This is mainly used to over-approximate any discrete
+         * number.
          *
          * @param value The {@code long} value of the interval.
          */
@@ -37,7 +47,8 @@ public class NumericInterval {
         }
 
         /**
-         * Represents an interval number with a {@code double} value.
+         * Represents an interval number with a {@code double} value. This is mainly used to over-approximate any
+         * continuous number.
          *
          * @param value The {@code double} value of the interval.
          */
@@ -48,40 +59,30 @@ public class NumericInterval {
                 return value;
             }
         }
-
-
-        /**
-         * Represents an interval number with a {@code BigDecimal} value.
-         *
-         * @param value The {@code BigDecimal} value of the interval.
-         */
-        record BigDecimal(java.math.BigDecimal value) implements IntervalNumber {
-
-            @Override
-            public Number number() {
-                return value;
-            }
-        }
     }
 
+    public static final NumericInterval ZERO = new NumericInterval(MathNumber.ZERO, MathNumber.ZERO);
     public static final NumericInterval INFINITY =
             new NumericInterval(MathNumber.MINUS_INFINITY, MathNumber.PLUS_INFINITY);
 
     public final MathNumber low;
     public final MathNumber high;
 
-    private NumericInterval(MathNumber low, MathNumber high) {
-        this.low = low;
-        this.high = high;
+    public NumericInterval(MathNumber low, MathNumber high) {
+        if (low.isNaN() || high.isNaN()) {
+            this.low = MathNumber.NaN;
+            this.high = MathNumber.NaN;
+        } else if (low.compareTo(high) <= 0) {
+            this.low = low;
+            this.high = high;
+        } else {
+            this.low = high;
+            this.high = low;
+        }
     }
 
     public NumericInterval(IntervalNumber low, IntervalNumber high) {
-        // Force the specified argument to be NonNull.
-        Objects.requireNonNull(low);
-        Objects.requireNonNull(high);
-
-        this.low = low.toMathNumber();
-        this.high = high.toMathNumber();
+        this(low.toMathNumber(), high.toMathNumber());
     }
 
     public boolean lowIsMinusInfinity() {
@@ -112,6 +113,10 @@ public class NumericInterval {
         return isSingleton() && low.is(n);
     }
 
+    public boolean includes(NumericInterval other) {
+        return low.compareTo(other.low) <= 0 && high.compareTo(other.high) >= 0;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -125,5 +130,11 @@ public class NumericInterval {
         int result = low.hashCode();
         result = 31 * result + high.hashCode();
         return result;
+    }
+
+    @Override
+    public int compareTo(NumericInterval o) {
+        int cmp = low.compareTo(o.low);
+        return cmp != 0 ? cmp : high.compareTo(o.high);
     }
 }

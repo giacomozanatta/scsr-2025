@@ -105,8 +105,8 @@ public class Pentagons
 			for (Identifier bound : entry.getValue()) {
 				Intervals intervalState = other.intervals.getState(entry.getKey());
 				Intervals boundIntervalState = other.intervals.getState(bound);
-				if (!intervalState.isBottom() && !boundIntervalState.isBottom() && intervalState.interval.getHigh()
-						.compareTo(boundIntervalState.interval.getLow()) < 0)
+				if (!intervalState.isBottom() && !boundIntervalState.isBottom() && intervalState.interval.high
+						.compareTo(boundIntervalState.interval.low) < 0)
 					closure.add(bound);
 			}
 			if (!closure.isEmpty())
@@ -118,8 +118,8 @@ public class Pentagons
 		for (Entry<Identifier, UpperBounds> entry : other.upperbounds) {
 			Set<Identifier> closure = new HashSet<>();
 			for (Identifier bound : entry.getValue())
-				if (intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(intervals.getState(bound).interval.getLow()) < 0)
+				if (intervals.getState(entry.getKey()).interval.high
+						.compareTo(intervals.getState(bound).interval.low) < 0)
 					closure.add(bound);
 			if (!closure.isEmpty())
 				// glb is the union
@@ -140,8 +140,8 @@ public class Pentagons
 		for(Entry<Identifier, UpperBounds> entry : other.upperbounds) {
 			for(Identifier bound : entry.getValue()) {
 				if(!(this.upperbounds.getState(entry.getKey()).contains(bound)
-						|| this.intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(this.intervals.getState(bound).interval.getLow()) < 0)) {
+						|| this.intervals.getState(entry.getKey()).interval.high
+						.compareTo(this.intervals.getState(bound).interval.low) < 0)) {
 					return false;
 				}
 				
@@ -277,8 +277,8 @@ public class Pentagons
 			Set<Identifier> closure = new HashSet<>();
 			for (Identifier id2 : intervals.getKeys())
 				if (!id1.equals(id2))
-					if (intervals.getState(id1).interval.getHigh()
-							.compareTo(intervals.getState(id2).interval.getLow()) < 0)
+					if (intervals.getState(id1).interval.high
+							.compareTo(intervals.getState(id2).interval.low) < 0)
 						closure.add(id2);
 			if (!closure.isEmpty())
 				// glb is the union

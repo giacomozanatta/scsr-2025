@@ -12,10 +12,10 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals> {
 
     // Record to group the extremes involved in the binary operation between intervals.
     private record Group(Intervals left, Intervals right) {
-        MathNumber ll() { return left.interval.getLow(); }
-        MathNumber hl() { return left.interval.getHigh(); }
-        MathNumber lr() { return right.interval.getLow(); }
-        MathNumber hr() { return right.interval.getHigh(); }
+        MathNumber ll() { return left.interval.low; }
+        MathNumber hl() { return left.interval.high; }
+        MathNumber lr() { return right.interval.low; }
+        MathNumber hr() { return right.interval.high; }
     }
 
     public static final BinaryFunctions INSTANCE = new BinaryFunctions();
@@ -106,8 +106,8 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals> {
         if (output.isBottom() || output.isTop()) return output;
 
         // Whenever the number to the left or right of the range is NaN, the bottom element of the lattice is returned.
-        var low = output.interval.getLow();
-        var high = output.interval.getHigh();
+        var low = output.interval.low;
+        var high = output.interval.high;
         if (low.isNaN() || high.isNaN()) return Intervals.BOTTOM;
         return output;
     }

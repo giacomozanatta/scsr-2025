@@ -63,8 +63,8 @@ public sealed abstract class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
         }
 
         var interval = intervals.interval;
-        var min = interval.getLow();
-        var max = interval.getHigh();
+        var min = interval.low;
+        var max = interval.high;
 
         if (min.isInfinite() || max.isInfinite()) {
             // Since it is not top, it is possible to know the "overflow direction". However, this requires additional

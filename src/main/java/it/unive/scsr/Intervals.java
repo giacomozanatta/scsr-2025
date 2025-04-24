@@ -86,8 +86,7 @@ public class Intervals implements
     }
 
     @Override
-    public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
-            throws SemanticException {
+    public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle) {
         // If the specified argument is bottom or top, the input is returned as output without performing any
         // calculations.
         if (arg.isTop()) return arg;
@@ -111,7 +110,7 @@ public class Intervals implements
     }
 
     @Override
-    public Intervals glbAux(Intervals other) throws SemanticException {
+    public Intervals glbAux(Intervals other) {
 
         IntInterval a = this.interval;
         IntInterval b = other.interval;
@@ -134,7 +133,7 @@ public class Intervals implements
     }
 
     @Override
-    public Intervals lubAux(Intervals other) throws SemanticException {
+    public Intervals lubAux(Intervals other) {
 
         IntInterval a = this.interval;
         IntInterval b = other.interval;
@@ -157,7 +156,7 @@ public class Intervals implements
     }
 
     @Override
-    public boolean lessOrEqualAux(Intervals other) throws SemanticException {
+    public boolean lessOrEqualAux(Intervals other) {
         return other
                 .interval
                 .includes(this.interval);
@@ -211,15 +210,14 @@ public class Intervals implements
     // logic for evaluating expressions below
 
     @Override
-    public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle)
-            throws SemanticException {
+    public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle) {
         if (constant.getValue() instanceof Integer i) return new Intervals(i, i);
         return top();
     }
 
     @Override
     public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
-                                          SemanticOracle oracle) throws SemanticException {
+                                          SemanticOracle oracle) {
         return Optional
                 .ofNullable(BinaryFunctions.INSTANCE.findBy(operator))
                 .map(f -> f.apply(left, right))
@@ -245,8 +243,7 @@ public class Intervals implements
 
     @Override
     public Intervals wideningAux(
-            Intervals other)
-            throws SemanticException {
+            Intervals other) {
         MathNumber newLower, newUpper;
         if (other.interval.getHigh().compareTo(interval.getHigh()) > 0)
             //  high value is increasing
@@ -265,8 +262,7 @@ public class Intervals implements
 
     @Override
     public Intervals narrowingAux(
-            Intervals other)
-            throws SemanticException {
+            Intervals other) {
         MathNumber newHigh = interval.getHigh().isInfinite() ? other.interval.getHigh() : interval.getHigh();
         MathNumber newLow = interval.getLow().isInfinite() ? other.interval.getLow() : interval.getLow();
         return new Intervals(newLow, newHigh);

@@ -69,7 +69,8 @@ class div_zero {
 		def b = 5;
 
 		if (flag) {
-			b = b - 5;
+			b = b - 3;
+			b = b - 2;
 		}
 
 		def c = a / b;  // b = 5 or 0 so potential div by zero

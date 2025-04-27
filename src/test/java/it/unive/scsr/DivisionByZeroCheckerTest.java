@@ -44,8 +44,8 @@ public class DivisionByZeroCheckerTest {
                 FullStackToken.getSingleton());
 
         // Add semantic check for each numerical size
-        for (NumericalSize size : NumericalSize.values())
-            conf.semanticChecks.add(new DivisionByZeroChecker(size));
+       // for (NumericalSize size : NumericalSize.values())  adds redundancy if num size = size
+            conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.FLOAT16));
 
         // Launch LiSA
         LiSA lisa = new LiSA(conf);

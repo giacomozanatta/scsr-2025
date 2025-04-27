@@ -37,15 +37,15 @@ class overflow_underflow {
 
 
 	testINT32() {
-		def a = 2147483647;
+		def a = 2147483647.0;
 		def b = a + 1;        // OVERFLOW
-		def c = -2147483648;
+		def c = -2147483648.0;
 		def d = c - 1;        // UNDERFLOW
 	}
 
 
 	testUINT32() {
-		def a = 4294967295;
+		def a = 4294967295.0;
 		def b = a + 1;        // OVERFLOW
 		def c = 0;
 		def d = c - 1;        // UNDERFLOW
@@ -81,4 +81,59 @@ class overflow_underflow {
 		def f = e / 0.00001;       // underflow to near zero
 	}
 
+// CONDITIONED TEST CASES
+
+         // UINT8 possible overflow
+	conditionalOverflowINT8(cond) {
+		def a = 100;
+		if (cond) {
+			a = 127;
+		}
+		def b = a + 1;  // possible overflow if a = 127
+	}
+
+	// UINT8 possible underflow
+	conditionalUnderflowUINT8(flag) {
+		def x = 10;
+		if (flag) {
+			x = 0;
+		}
+		def y = x - 1;  // y ∈ {-1, 9} → possibile UNDERFLOW
+	}
+
+	// UINT16 possible overflow
+	loopOverflowUINT16(cond) {
+		def a = 0;
+		while (cond) {
+			a = a + 10000;
+		}
+		def b = a + 10000; // may be greater than 65535 so potential overflow
+	}
+
+	// INT16 possible overflow
+	preventedOverflowINT16(limit) {
+		def a = 32000;
+		if (limit < 0) {
+			a = a + 1000;  // safe if branch is not executed
+		}
+		def b = a + 500; // b is within [32500, 33500], overflow occurs if branch executed
+	}
+
+	// UINT32 possible underflow
+	preventedUnderflowUINT32(limit) {
+		def a = 1000;
+		if (limit < 0) {
+			a = a - 2000;  // may underflow if branch is executed
+		}
+		def b = a - 500;  // b is within [-1500, 500], possible underflow
+	}
+
+	// FLOAT16 possible underflow
+	floatUnderflowByCondition(small) {
+		def f = 1.0;
+		if (small) {
+			f = 0.00001;
+		}
+		def result = f * 0.00001;  // possible underflow to denormalized numbers
+	}
 }

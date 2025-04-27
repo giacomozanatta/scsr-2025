@@ -1,0 +1,89 @@
+package it.unive.scsr.intervals.numbers;
+
+import it.unive.lisa.util.numeric.MathNumber;
+import it.unive.scsr.utils.Sets;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+
+public sealed interface IntervalNumber
+        extends Comparable<IntervalNumber>
+        permits Numeric, Infinity, NaN {
+
+    default MathNumber toMathNumber() {
+        return new MathNumber(toOptionalDecimal().orElseThrow());
+    }
+
+    default Optional<BigDecimal> toOptionalDecimal() {
+        return (this instanceof Numeric<?> number) ?
+                Optional.of(number.toDecimal()) :
+                Optional.empty();
+    }
+
+    default boolean isZero() {
+        // Only numeric values that are neither positive nor negative are zero.
+        return this instanceof Numeric<?> numeric &&
+                !(numeric.isPositive() || numeric.isNegative());
+    }
+
+    @Override
+    default int compareTo(IntervalNumber other) {
+        // First, handle the case where the two IntervalNumbers are equal. If they are equal, the comparison result is
+        // 0.
+        if (equals(other)) return 0;
+
+        // Define a lambda function to compare Numeric IntervalNumbers. This function takes a Numeric IntervalNumber as
+        // input and compares its decimal value to the decimal value of the 'other' IntervalNumber. It also handles
+        // cases where 'other' is NaN or Infinity.
+        Function<Numeric<?>, Integer> numericCompare = numeric -> switch (other) {
+            case NaN ignored -> 1;
+            case Infinity infinity -> infinity.isNegative() ? 1 : -1;
+            case Numeric<?> otherNumeric -> numeric.toDecimal().compareTo(otherNumeric.toDecimal());
+        };
+
+        // Define a lambda function to compare Infinity IntervalNumbers. This function takes an Infinity IntervalNumber
+        // as input and compares it to 'other'. It handles cases where 'other' is NaN.
+        Function<Infinity, Integer> infinityCompare = infinity -> {
+            if (infinity.isPositive()) return 1;
+            return other instanceof NaN ? 1 : -1;
+        };
+
+        return switch (this) {
+            case NaN ignored -> -1; // NaN is always considered smaller than any other IntervalNumber.
+            case Numeric<?> numeric -> numericCompare.apply(numeric);
+            case Infinity infinity -> infinityCompare.apply(infinity);
+        };
+    }
+
+    IntervalNumber add(IntervalNumber other);
+
+    IntervalNumber subtract(IntervalNumber other);
+
+    IntervalNumber multiply(IntervalNumber other);
+
+    IntervalNumber divide(IntervalNumber other);
+
+    static Optional<IntervalNumber> ofPrimitive(Number number) {
+        // Returns null instead of throwing an exception.
+        if (number == null) return Optional.empty();
+
+        // Definition of continuous and discrete types.
+        var continuousTypes = Set.of(Double.class, Float.class);
+        var discreteTypes = Set.of(Byte.class, Short.class, Integer.class, Long.class);
+        var allowedTypes = Sets.from(continuousTypes, discreteTypes);
+
+        // If the specified number is not assigned, an optional empty value is returned, otherwise the best
+        // over-approximation for a discrete or continuous number is returned.
+        if (!allowedTypes.contains(number.getClass())) return Optional.empty();
+        return continuousTypes.contains(number.getClass()) ?
+                Optional.of(new DecimalNumber(BigDecimal.valueOf(number.doubleValue()))) :
+                Optional.of(new IntegerNumber(BigInteger.valueOf(number.longValue())));
+    }
+
+    static IntervalNumber ofPrimitiveOrThrow(Number number) {
+        return ofPrimitive(number).orElseThrow();
+    }
+}

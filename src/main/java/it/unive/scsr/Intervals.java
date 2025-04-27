@@ -21,6 +21,7 @@ import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.scsr.intervals.BinaryFunctions;
 import it.unive.scsr.intervals.NumericInterval;
+import it.unive.scsr.intervals.numbers.IntervalNumber;
 
 public class Intervals implements
         BaseNonRelationalValueDomain<Intervals>, Comparable<Intervals> {
@@ -29,11 +30,6 @@ public class Intervals implements
      * The interval represented by this domain element.
      */
     public final NumericInterval interval;
-
-    /**
-     * The abstract zero ({@code [0, 0]}) element.
-     */
-    public static final Intervals ZERO = new Intervals(NumericInterval.ZERO);
 
     /**
      * The abstract top ({@code [-Inf, +Inf]}) element.
@@ -62,18 +58,6 @@ public class Intervals implements
      */
     public Intervals(MathNumber lower, MathNumber upper) {
         this(new NumericInterval(lower, upper));
-    }
-
-    /**
-     * Builds the interval.
-     *
-     * @param low  the lower bound
-     * @param high the higher bound
-     */
-    public Intervals(int low, int high) {
-        this(new NumericInterval(
-                new NumericInterval.IntervalNumber.Long(low),
-                new NumericInterval.IntervalNumber.Long(high)));
     }
 
     /**
@@ -209,8 +193,15 @@ public class Intervals implements
 
     @Override
     public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle) {
-        if (constant.getValue() instanceof Integer i) return new Intervals(i, i);
-        return top();
+        // ...
+        if (!(constant.getValue() instanceof Number)) return top();
+
+        // ...
+        return IntervalNumber
+                .ofPrimitive((Number) constant.getValue())
+                .map(NumericInterval::new)
+                .map(Intervals::new)
+                .orElse(top());
     }
 
     @Override

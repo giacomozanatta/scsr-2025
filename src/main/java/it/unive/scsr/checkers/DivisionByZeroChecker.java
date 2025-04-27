@@ -77,6 +77,7 @@ SemanticCheck<
 							if (!numericFound) {
 							// If the type doesn't belong to numeric type
 								tool.warnOn(div, "DivisionByZeroChecker: the operand must have a numeric type, found " + types);
+                                System.err.println("DEBUG: DivisionByZeroChecker: the operand must have a numeric type, found " + types);
 								continue;
 							}
 

@@ -1,0 +1,99 @@
+class taint_complex {
+
+	source() {
+		return -42;
+	}
+
+	sanitizer(v) {
+		return 0;
+	}
+
+	sink(v) {
+	}
+
+	complex1() {
+		def x = this.source();
+		def y = 0;
+		def z = x + y;
+
+		if (x > 0) {
+			z = this.sanitizer(z);
+		}
+
+		this.sink(z);  // could be tainted (sanitization is conditioned), I expect TOP
+	}
+
+	complex2(b1, b2) {
+		def a = 0;
+		if (b1) {
+			a = this.source();
+		}
+
+		def b = this.sanitizer(a);
+		if (b2) {
+			a = b; // a is sanitized based on the condition
+		}
+
+		this.sink(a); // could be tainted or clean, so I expect TOP
+	}
+
+	complex3(b) {
+		def t = this.source();
+		def c = 1;
+
+		while (b) {
+			c = c + 1;
+			if (c > 3) {
+				t = this.sanitizer(t);
+			}
+		}
+
+		this.sink(t); // based on the outcome of the while loop it could be tainted
+	}
+
+	complex4() {
+		def a = this.source();
+		def b = a + 1;
+		def c = b * 2;
+		def d = c / 2 - 1;
+
+		this.sink(d); // tainted value propagation
+	}
+
+	complex5() {
+		def x = 0;
+		def y = this.source();
+
+		if (x == 0) {
+			y = this.sanitizer(y);
+		}
+
+		def z = x + y;
+
+		this.sink(z); // always sanitized, I expect clean
+	}
+
+	complex6() {
+		def arr = new int[3];
+
+		arr[0] = 5;
+		arr[1] = this.source();  // this is tainted
+		arr[2] = 10;
+
+		this.sink(arr[0]); // clean
+		this.sink(arr[1]); // tainted
+		this.sink(arr[2]); // clean
+	}
+
+	complex7(i) {
+		def arr = new int[2];
+
+		arr[0] = 0;
+		arr[1] = this.source();  // tainted
+
+		def val = arr[i];  // i is dynamic so can't be determined if tainted or clean
+
+		this.sink(val); // TOP: could be tainted or clean
+	}
+
+}

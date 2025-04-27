@@ -35,4 +35,50 @@ class overflow_underflow {
 		def e = 35000 + 25000; // OK
 	}
 
+
+	testINT32() {
+		def a = 2147483647;
+		def b = a + 1;        // OVERFLOW
+		def c = -2147483648;
+		def d = c - 1;        // UNDERFLOW
+	}
+
+
+	testUINT32() {
+		def a = 4294967295;
+		def b = a + 1;        // OVERFLOW
+		def c = 0;
+		def d = c - 1;        // UNDERFLOW
+	}
+
+
+	testFLOAT8() {
+		def a = 240.0;
+		def b = a * 2.0;    // OVERFLOW
+		def c = -240.0;
+		def d = c * 2.0;    // UNDERFLOW
+		def e = 0.1;
+		def f = e / 1000.0; // UNDERFLOW to denormalized numbers
+	}
+
+
+	testFLOAT16() {
+		def a = 65000.0;
+		def b = a * 2.0;       // OVERFLOW
+		def c = -65000.0;
+		def d = c * 2.0;       // UNDERFLOW
+		def e = 0.00001;
+		def f = e / 1000.0;    // underflow to denormalized numbers
+	}
+
+
+	testFLOAT32() {
+		def a = 340000000000000000000000000000000000000.0;
+		def b = a * 10.0;      // OVERFLOW
+		def c = -340000000000000000000000000000000000000.0;
+		def d = c * 10.0;      // UNDERFLOW
+		def e = 0.00000000000000000000000000000000000001;
+		def f = e / 0.00001;       // underflow to near zero
+	}
+
 }

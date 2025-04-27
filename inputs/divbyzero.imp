@@ -1,5 +1,11 @@
 class div_zero {
 
+    notNumerical() {
+    def a = 8;
+    def b = "hello";
+    def c = a / b;      // NaN: b is not a numeric type
+    }
+
 	alwaysSafe() {
 		def a = 10;
 		def b = 2;

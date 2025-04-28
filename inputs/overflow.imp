@@ -1,5 +1,10 @@
 class overflow_underflow {
 
+    warningINT8() {
+    def z = "hello";        // STRING
+    def w = 99 + z;         // UNDEF. TYPE
+    }
+
 	testINT8() {
 		def a = 127;
 		def b = a + 1;      // OVERFLOW
@@ -7,7 +12,6 @@ class overflow_underflow {
 		def d = c - 1;      // UNDERFLOW
 		def e = 50 + 50;    // OK
 	}
-
 
 	testUINT8() {
 		def a = 255;

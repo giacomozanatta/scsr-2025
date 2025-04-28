@@ -88,15 +88,19 @@ SemanticCheck<
 		} else {
 			dynamicTypes.add(staticType);
 		}
-
+		boolean isNumeric = dynamicTypes.stream().anyMatch(this::isNumeric);
+		if (!isNumeric) {
+			System.err.printf("[WARNING] Variable '%s' in %s has the following non-numeric type: %s%n", id.getName(), id.getCodeLocation(), dynamicTypes);
+			return;
+		}
 		double min = getMinValue();
 		double max = getMaxValue();
-
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
-				Intervals intervalAbstractValue = state.getValueState().getState(id);	
+				Intervals intervalAbstractValue = state.getValueState().getState(id);
+
 // OVERFLOW & UNDERFLOW LOGIC
 			if (intervalAbstractValue == null || intervalAbstractValue.isBottom())
 				continue;
@@ -114,11 +118,11 @@ SemanticCheck<
 
 			// Underflow case
 			if (lowFinite && low < min) {
-				System.err.printf("[%s] Underflow in %s: %.3f < %.3f%n", size, id.getName(), low, min);
+				System.err.printf("[%s] Underflow in %s: %.3f < %.3f location %s%n", size, id.getName(), low, min, id.getCodeLocation());
 			}
 			// Overflow case
 			if (highFinite && high > max) {
-				System.err.printf("[%s] Overflow in %s: %.3f > %.3f%n", size, id.getName(), high, max);
+				System.err.printf("[%s] Overflow in %s: %.3f > %.3f location %s%n", size, id.getName(), high, max, id.getCodeLocation());
 			}
 		}
 
@@ -167,9 +171,9 @@ SemanticCheck<
 	}
 
 
-	private boolean isNumeric(Type t) {
-		return isIntegerType(t) || isFloatingPointType(t);
-	}
+    private boolean isNumeric(Type t) {
+        return isIntegerType(t) || isFloatingPointType(t);
+    }
 
 	private boolean isIntegerType(Type t) {
 		String name = t.toString().toLowerCase();
@@ -212,7 +216,7 @@ SemanticCheck<
 	}
 	private boolean isCfgRelevant(CFG cfg) {
 		String name = cfg.getDescriptor().getName().toUpperCase();
-		return name.contains(size.name());   // es. “testINT8” ⇐⇒ INT8
+		return name.contains(size.name());   // ex. “testINT8” < - > INT8
 	}
 }
 	

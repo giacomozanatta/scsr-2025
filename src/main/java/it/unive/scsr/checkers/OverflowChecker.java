@@ -216,7 +216,7 @@ SemanticCheck<
 	}
 	private boolean isCfgRelevant(CFG cfg) {
 		String name = cfg.getDescriptor().getName().toUpperCase();
-		return name.contains(size.name());   // ex. “testINT8” < - > INT8
+		return name.endsWith(size.name());
 	}
 }
 	

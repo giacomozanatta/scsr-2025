@@ -87,7 +87,7 @@ class overflow_underflow {
 
 // CONDITIONED TEST CASES
 
-         // UINT8 possible overflow
+         // INT8 possible overflow
 	conditionalOverflowINT8(cond) {
 		def a = 100;
 		if (cond) {

@@ -58,9 +58,9 @@ class overflow_underflow {
 
 	testFLOAT8() {
 		def a = 239.0;
-		def b = a * 2.0;    // OVERFLOW
+		def b = a * 2.783;    // OVERFLOW
 		def c = -239.0;
-		def d = c * 2.0;    // UNDERFLOW
+		def d = c * 2.539;    // UNDERFLOW
 		def e = 0.1;
 		def f = e / 1000.0; // UNDERFLOW to denormalized numbers
 	}

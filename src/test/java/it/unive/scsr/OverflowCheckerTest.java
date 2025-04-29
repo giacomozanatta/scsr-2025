@@ -36,7 +36,7 @@ public class OverflowCheckerTest {
         // Configure abstract state
         conf.abstractState = DefaultConfiguration.simpleState(
                 DefaultConfiguration.defaultHeapDomain(),                  // PointBasedHeap
-                new ValueEnvironment<>(new Intervals()),                   // Uses intervals
+                new ValueEnvironment<>(new Intervals()),                   // Uses interval
                 DefaultConfiguration.defaultTypeDomain());
 
         // Configure interprocedural analysis

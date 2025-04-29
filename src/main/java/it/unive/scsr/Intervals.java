@@ -212,10 +212,13 @@ public class Intervals
 	@Override
 	public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		if(constant.getValue() instanceof Integer) {
-			Integer i = (Integer) constant.getValue();
-			Intervals singletonInterval = new Intervals(i,i);
-			return singletonInterval;
+		// EDIT FOR OVERFLOW CHECKER
+		Object value = constant.getValue();
+
+		if (value instanceof Number n) {
+			MathNumber mn = new MathNumber(n.doubleValue());
+			return new Intervals(mn, mn);        // return singleton
+		// END OF THE EDIT
 		}
 		
 		return top();

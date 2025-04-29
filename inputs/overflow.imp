@@ -41,7 +41,7 @@ class overflow_underflow {
 
 
 	testINT32() {
-		def a = 2147483647.0;
+		def a = 2147483647;
 		def b = a + 1;        // OVERFLOW
 		def c = -2147483648.0;
 		def d = c - 1;        // UNDERFLOW
@@ -57,9 +57,9 @@ class overflow_underflow {
 
 
 	testFLOAT8() {
-		def a = 240.0;
+		def a = 239.0;
 		def b = a * 2.0;    // OVERFLOW
-		def c = -240.0;
+		def c = -239.0;
 		def d = c * 2.0;    // UNDERFLOW
 		def e = 0.1;
 		def f = e / 1000.0; // UNDERFLOW to denormalized numbers
@@ -102,7 +102,7 @@ class overflow_underflow {
 		if (flag) {
 			x = 0;
 		}
-		def y = x - 1;  // y ∈ {-1, 9} → possibile UNDERFLOW
+		def y = x - 1;  // y ∈ {-1, 9} → possible UNDERFLOW
 	}
 
 	// UINT16 possible overflow

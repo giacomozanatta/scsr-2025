@@ -24,6 +24,16 @@ public sealed interface IntervalNumber
         return this instanceof Infinity;
     }
 
+    default boolean isSigNum() {
+        // This is only true when dealing with an instance of Numeric<?> or Infinity.
+        return this instanceof SigNum;
+    }
+
+    default SigNum asSigNum() {
+        // If it does not respond to "isSigNum", calling this method will throw an exception.
+        return (SigNum) this;
+    }
+
     default IntervalNumber min(IntervalNumber other) {
         return Stream
                 .of(this, other)

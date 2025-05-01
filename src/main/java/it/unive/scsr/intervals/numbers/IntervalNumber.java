@@ -15,7 +15,7 @@ public sealed interface IntervalNumber
 
     @FunctionalInterface
     interface Computation {
-        IntervalNumber perform(IntervalNumber first, IntervalNumber second);
+        Optional<IntervalNumber> perform(IntervalNumber first, IntervalNumber second);
     }
 
     /**

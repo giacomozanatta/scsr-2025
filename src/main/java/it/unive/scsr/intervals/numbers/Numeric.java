@@ -90,7 +90,7 @@ public sealed abstract class Numeric<T> implements SigNum permits IntegerNumber,
     }
 
     private IntervalNumber finalize(IntervalNumber result, IntervalNumber other, Computation orElse) {
-        return (result.isNaN() && orElse != null) ? orElse.perform(this, other) : result;
+        return (result.isNaN() && orElse != null) ? orElse.perform(this, other).orElse(result) : result;
     }
 
     private Numeric<?> bestApproximation(Numeric<?> otherNumeric, Operation operation) {

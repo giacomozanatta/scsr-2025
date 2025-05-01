@@ -2,7 +2,6 @@ package it.unive.scsr.intervals.numbers;
 
 import java.util.Objects;
 
-// TODO: handle by respecting limit definitions.
 public sealed abstract class Infinity
         implements SigNum
         permits MinusInfinity, PlusInfinity {
@@ -10,21 +9,20 @@ public sealed abstract class Infinity
     @Override
     public final IntervalNumber add(IntervalNumber other, Computation orElse) {
         if (other instanceof Numeric<?> || equals(other)) return this;
-        return orElse == null ? NaN.INSTANCE : orElse.perform(this, other);
+        return finalize(other, orElse);
     }
 
     @Override
     public final IntervalNumber subtract(IntervalNumber other, Computation orElse) {
         if (other instanceof Numeric<?>) return this;
 
-        var nan = NaN.INSTANCE;
-        if (!(other instanceof Infinity otherInfinity)) return orElse == null ? nan : orElse.perform(this, other);
-        return !sameSign(otherInfinity) ? this : orElse == null ? nan : orElse.perform(this, other);
+        if (!(other instanceof Infinity otherInfinity)) return finalize(other, orElse);
+        return !sameSign(otherInfinity) ? this : finalize(other, orElse);
     }
 
     @Override
     public final IntervalNumber multiply(IntervalNumber other, Computation orElse) {
-        if (other.isNaN() || other.isZero()) return orElse == null ? NaN.INSTANCE : orElse.perform(this, other);
+        if (other.isNaN() || other.isZero()) return finalize(other, orElse);
         return sameSign((SigNum) other) ? PlusInfinity.INSTANCE : MinusInfinity.INSTANCE;
     }
 
@@ -35,7 +33,7 @@ public sealed abstract class Infinity
         }
 
         // In a division only non-zero numeric values can appear as denominators, otherwise NaN is returned.
-        return orElse == null ? NaN.INSTANCE : orElse.perform(this, other);
+        return finalize(other, orElse);
     }
 
     @Override
@@ -54,5 +52,10 @@ public sealed abstract class Infinity
     @Override
     public final int hashCode() {
         return Objects.hashCode(this.getClass());
+    }
+
+    private IntervalNumber finalize(IntervalNumber other, Computation orElse) {
+        var nan = NaN.INSTANCE;
+        return orElse != null ? orElse.perform(this, other).orElse(nan) : nan;
     }
 }

@@ -86,18 +86,12 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
     @Override
     public Intervals lubAux(Intervals other) {
-        return this
-                .interval
-                .union(other.interval)
-                .map(Intervals::new)
-                .orElse(BOTTOM);
+        return new Intervals(this.interval.union(other.interval));
     }
 
     @Override
     public boolean lessOrEqualAux(Intervals other) {
-        return other
-                .interval
-                .includes(this.interval);
+        return other.interval.includes(this.interval);
     }
 
     @Override
@@ -185,7 +179,8 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
     @Override
     public Intervals wideningAux(Intervals other) {
-        IntervalNumber newLower, newUpper;
+        SigNum newLower;
+        SigNum newUpper;
         if (other.interval.high.compareTo(interval.high) > 0) {
             // High value is increasing.
             newUpper = PlusInfinity.INSTANCE;
@@ -200,14 +195,14 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
             newLower = interval.low;
         }
 
-        return new Intervals((SigNum) newLower, (SigNum) newUpper);
+        return new Intervals(newLower, newUpper);
     }
 
     @Override
     public Intervals narrowingAux(
             Intervals other) {
-        SigNum newHigh = (SigNum) (interval.high instanceof PlusInfinity ? other.interval.high : interval.high);
-        SigNum newLow = (SigNum) (interval.low instanceof MinusInfinity ? other.interval.low : interval.low);
+        SigNum newHigh = interval.high instanceof PlusInfinity ? other.interval.high : interval.high;
+        SigNum newLow = interval.low instanceof MinusInfinity ? other.interval.low : interval.low;
         return new Intervals(newLow, newHigh);
     }
 

@@ -1,140 +1,84 @@
 package it.unive.scsr.intervals;
 
-import it.unive.lisa.util.numeric.MathNumber;
-import it.unive.scsr.utils.Sets;
+import it.unive.scsr.intervals.numbers.*;
 
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 public class NumericInterval implements Comparable<NumericInterval> {
 
-    public sealed interface IntervalNumber {
-
-        Number number();
-
-        /**
-         * Converts this {@link IntervalNumber} to a {@link MathNumber}. If the {@link IntervalNumber} is a {@link Long}
-         * or {@link Double}, a new {@link MathNumber} is created directly from its primitive value.
-         *
-         * @return A new {@link MathNumber} representing the value of this interval.
-         */
-        default MathNumber toMathNumber() {
-            if (this instanceof Long allowed) return new MathNumber(allowed.value);
-            return new MathNumber((java.lang.Double) this.number());
-        }
-
-        /**
-         * Represents an interval number with a {@code long} value. This is mainly used to over-approximate any discrete
-         * number.
-         *
-         * @param value The {@code long} value of the interval.
-         */
-        record Long(long value) implements IntervalNumber {
-
-            @Override
-            public Number number() {
-                return value;
-            }
-        }
-
-        /**
-         * Represents an interval number with a {@code double} value. This is mainly used to over-approximate any
-         * continuous number.
-         *
-         * @param value The {@code double} value of the interval.
-         */
-        record Double(double value) implements IntervalNumber {
-
-            @Override
-            public Number number() {
-                return value;
-            }
-        }
-
-        /**
-         * Attempts to build an {@link IntervalNumber} from a given {@link Number}. This method checks the runtime type
-         * of the input {@link Number} against a set of allowed types. If the type is not allowed, an empty
-         * {@link Optional} is returned. If the type is within a set of continuous number types (e.g., Float, Double),
-         * an {@link IntervalNumber} wrapping a {@link Double} representation of the input is returned within an
-         * {@link Optional}. Otherwise (assuming the type is within the allowed set and not continuous, implying an
-         * integral type), an {@link IntervalNumber} wrapping a {@link Long} representation is returned within an
-         * {@link Optional}.
-         *
-         * @param number The {@link Number} to attempt to build an {@link IntervalNumber} from.
-         * @return An {@link  Optional} containing the built {@link IntervalNumber} if the input {@link Number}'s type
-         * is allowed; otherwise, an empty {@link Optional}.
-         */
-        static Optional<IntervalNumber> build(Number number) {
-            if (!ALLOWED_TYPES.contains(number.getClass())) return Optional.empty();
-            if (CONTINUOUS_TYPES.contains(number.getClass())) return Optional.of(new Double(number.doubleValue()));
-            return Optional.of(new Long(number.longValue()));
-        }
-    }
-
-    public static final Set<Class<? extends Number>> CONTINUOUS_TYPES = Set.of(Double.class, Float.class);
-    public static final Set<Class<? extends Number>> DISCRETE_TYPES =
-            Set.of(Byte.class, Short.class, Integer.class, Long.class);
-
-    public static final Set<Class<? extends Number>> ALLOWED_TYPES = Sets.from(CONTINUOUS_TYPES, DISCRETE_TYPES);
-
-    public static final NumericInterval ZERO = new NumericInterval(MathNumber.ZERO, MathNumber.ZERO);
     public static final NumericInterval INFINITY =
-            new NumericInterval(MathNumber.MINUS_INFINITY, MathNumber.PLUS_INFINITY);
+            new NumericInterval(MinusInfinity.INSTANCE, PlusInfinity.INSTANCE);
 
-    public final MathNumber low;
-    public final MathNumber high;
+    public final SigNum low;
+    public final SigNum high;
 
-    public NumericInterval(MathNumber low, MathNumber high) {
-        if (low.isNaN() || high.isNaN()) {
-            this.low = MathNumber.NaN;
-            this.high = MathNumber.NaN;
-        } else if (low.compareTo(high) <= 0) {
-            this.low = low;
-            this.high = high;
-        } else {
-            this.low = high;
-            this.high = low;
-        }
+    public NumericInterval(SigNum low, SigNum high) {
+        // The low parameter must be less than high, and if they are equal, they must not be Infinity instances.
+        if (low.greaterThan(high)) throw new IllegalArgumentException();
+        if (low.equals(high) && low.isInfinity()) throw new IllegalArgumentException();
+
+        this.low = low;
+        this.high = high;
     }
 
-    public NumericInterval(IntervalNumber low, IntervalNumber high) {
-        this(low.toMathNumber(), high.toMathNumber());
-    }
-
-    public NumericInterval(IntervalNumber singletonNumber) {
-        this(singletonNumber.toMathNumber(), singletonNumber.toMathNumber());
-    }
-
-    public boolean lowIsMinusInfinity() {
-        return low.isMinusInfinity();
-    }
-
-    public boolean highIsPlusInfinity() {
-        return high.isPlusInfinity();
-    }
-
-    public boolean isInfinite() {
-        return isInfinity() || (highIsPlusInfinity() || lowIsMinusInfinity());
+    public NumericInterval(Numeric<?> singletonNumber) {
+        this(singletonNumber, singletonNumber);
     }
 
     public boolean isFinite() {
-        return !isInfinite();
+        return low instanceof Numeric<?> && high instanceof Numeric<?>;
     }
 
     public boolean isInfinity() {
-        return this == INFINITY;
+        return low.isInfinity() && high.isInfinity();
     }
 
     public boolean isSingleton() {
         return isFinite() && low.equals(high);
     }
 
-    public boolean is(int n) {
-        return isSingleton() && low.is(n);
+    public boolean is(Numeric<?> numeric) {
+        return isSingleton() && low.equals(numeric);
     }
 
     public boolean includes(NumericInterval other) {
         return low.compareTo(other.low) <= 0 && high.compareTo(other.high) >= 0;
+    }
+
+    public Optional<NumericInterval> negate() {
+        if (low instanceof SigNum lowSig && high instanceof SigNum highSig) {
+            return Optional.of(new NumericInterval(highSig.negate(), lowSig.negate()));
+        }
+
+        // If any of the elements is NaN, the optional empty is returned since the interval cannot be negated.
+        return Optional.empty();
+    }
+
+    public Optional<NumericInterval> intersection(NumericInterval other) {
+        // It is assumed, due to the constraints on the constructor, that the lower and upper bounds of the ranges are
+        // instances of SigNum.
+        SigNum newLower = this.low.max(other.low).asSigNum();
+        SigNum newUpper = this.high.min(other.high).asSigNum();
+
+        // If intersection is not possible, an empty optional is returned.
+        return newLower.greaterThan(newUpper) ?
+                Optional.empty() :
+                Optional.of(new NumericInterval(newLower, newUpper));
+    }
+
+    public NumericInterval union(NumericInterval other) {
+        // There can always be an interval that includes both ranges.
+        return new NumericInterval(
+                this.low.min(other.low).asSigNum(),
+                this.high.max(other.high).asSigNum());
+    }
+
+    public Optional<NumericInterval> add(NumericInterval other) {
+        // Perform addition between two intervals. The order is somewhat preserved so that the smallest element on the
+        // left is added to the smallest element on the right to get the smallest number. The same reasoning applies to
+        // get the largest number.
+        return buildOrEmpty(this.low.add(other.low), this.high.add(other.high));
     }
 
     @Override
@@ -142,13 +86,13 @@ public class NumericInterval implements Comparable<NumericInterval> {
         if (o == null || getClass() != o.getClass()) return false;
 
         NumericInterval that = (NumericInterval) o;
-        return low.equals(that.low) && high.equals(that.high);
+        return Objects.equals(low, that.low) && Objects.equals(high, that.high);
     }
 
     @Override
     public int hashCode() {
-        int result = low.hashCode();
-        result = 31 * result + high.hashCode();
+        int result = Objects.hashCode(low);
+        result = 31 * result + Objects.hashCode(high);
         return result;
     }
 
@@ -156,5 +100,14 @@ public class NumericInterval implements Comparable<NumericInterval> {
     public int compareTo(NumericInterval o) {
         int cmp = low.compareTo(o.low);
         return cmp != 0 ? cmp : high.compareTo(o.high);
+    }
+
+    private static Optional<NumericInterval> buildOrEmpty(IntervalNumber low, IntervalNumber high) {
+        // ...
+        try {
+            return Optional.of(new NumericInterval(low.asSigNum(), high.asSigNum()));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 }

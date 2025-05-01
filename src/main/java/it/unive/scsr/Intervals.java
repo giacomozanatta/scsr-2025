@@ -2,7 +2,6 @@ package it.unive.scsr;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
@@ -16,15 +15,13 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
-import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.scsr.intervals.BinaryFunctions;
 import it.unive.scsr.intervals.NumericInterval;
-import it.unive.scsr.intervals.numbers.IntervalNumber;
+import it.unive.scsr.intervals.numbers.*;
 
-public class Intervals implements
-        BaseNonRelationalValueDomain<Intervals>, Comparable<Intervals> {
+public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Comparable<Intervals> {
 
     /**
      * The interval represented by this domain element.
@@ -56,15 +53,8 @@ public class Intervals implements
      * @param lower the lower bound
      * @param upper the higher bound
      */
-    public Intervals(MathNumber lower, MathNumber upper) {
+    public Intervals(SigNum lower, SigNum upper) {
         this(new NumericInterval(lower, upper));
-    }
-
-    /**
-     * Builds the top interval.
-     */
-    public Intervals() {
-        this(NumericInterval.INFINITY);
     }
 
     @Override
@@ -73,68 +63,34 @@ public class Intervals implements
         // calculations.
         if (arg.isTop()) return arg;
 
-        // If one of the elements is NaN, the lower element is returned since the computation cannot continue.
-        if (arg.interval.low.isNaN() || arg.interval.high.isNaN()) return BOTTOM;
-
         if (operator instanceof NumericNegation) {
             // Given a MathNumber element, the negation is calculated taking into account the possibility of handling an
             // infinite element.
-            Function<MathNumber, MathNumber> f = n ->
-                    n.isInfinite() ?
-                            (n.isMinusInfinity() ? MathNumber.PLUS_INFINITY : MathNumber.MINUS_INFINITY) :
-                            new MathNumber(n.getNumber().negate());
-
-            // The minimum and maximum elements are reversed.
-            return new Intervals(f.apply(arg.interval.high), f.apply(arg.interval.low));
+            return interval
+                    .negate()
+                    .map(Intervals::new)
+                    .orElse(BOTTOM);
         }
 
-        return TOP;
+        return top();
     }
 
     @Override
     public Intervals glbAux(Intervals other) {
-
-        NumericInterval a = this.interval;
-        NumericInterval b = other.interval;
-
-        MathNumber lA = a.low;
-        MathNumber lB = b.low;
-
-        MathNumber uA = a.high;
-        MathNumber uB = b.high;
-
-        if (lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
-            return BOTTOM;
-
-        MathNumber newLower = lA.max(lB);
-        MathNumber newUpper = uA.min(uB);
-
-        Intervals newInterval = new Intervals(newLower, newUpper);
-
-        return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : newInterval;
+        return this
+                .interval
+                .intersection(other.interval)
+                .map(Intervals::new)
+                .orElse(BOTTOM);
     }
 
     @Override
     public Intervals lubAux(Intervals other) {
-
-        NumericInterval a = this.interval;
-        NumericInterval b = other.interval;
-
-        MathNumber lA = a.low;
-        MathNumber lB = b.low;
-
-        MathNumber uA = a.high;
-        MathNumber uB = b.high;
-
-        MathNumber newLower = lA.min(lB);
-        MathNumber newUpper = uA.max(uB);
-
-        if (lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
-            return BOTTOM;
-
-        Intervals newInterval = new Intervals(newLower, newUpper);
-        return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() :
-                newInterval;
+        return this
+                .interval
+                .union(other.interval)
+                .map(Intervals::new)
+                .orElse(BOTTOM);
     }
 
     @Override
@@ -143,7 +99,6 @@ public class Intervals implements
                 .interval
                 .includes(this.interval);
     }
-
 
     @Override
     public Intervals top() {
@@ -189,16 +144,14 @@ public class Intervals implements
         return interval.compareTo(o.interval);
     }
 
-    // logic for evaluating expressions below
-
     @Override
     public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle) {
-        // ...
-        if (!(constant.getValue() instanceof Number)) return top();
+        // Cover all possible primitive numbers that can be deduced by analyzing the CFG.
+        if (!(constant.getValue() instanceof Number number)) return top();
 
-        // ...
+        // If there is a number that cannot be enclosed in a IntervalNumber, then top is returned.
         return IntervalNumber
-                .ofPrimitive((Number) constant.getValue())
+                .ofPrimitive(number)
                 .map(NumericInterval::new)
                 .map(Intervals::new)
                 .orElse(top());
@@ -210,7 +163,7 @@ public class Intervals implements
         return Optional
                 .ofNullable(BinaryFunctions.INSTANCE.findBy(operator))
                 .map(f -> f.apply(left, right))
-                .orElse(TOP);
+                .orElse(top());
     }
 
     @Override
@@ -232,29 +185,29 @@ public class Intervals implements
 
     @Override
     public Intervals wideningAux(Intervals other) {
-        MathNumber newLower, newUpper;
+        IntervalNumber newLower, newUpper;
         if (other.interval.high.compareTo(interval.high) > 0) {
             // High value is increasing.
-            newUpper = MathNumber.PLUS_INFINITY;
+            newUpper = PlusInfinity.INSTANCE;
         } else {
             newUpper = interval.high;
         }
 
         if (other.interval.low.compareTo(interval.low) < 0) {
             // Low value is decreasing.
-            newLower = MathNumber.MINUS_INFINITY;
+            newLower = MinusInfinity.INSTANCE;
         } else {
             newLower = interval.low;
         }
 
-        return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : new Intervals(newLower, newUpper);
+        return new Intervals((SigNum) newLower, (SigNum) newUpper);
     }
 
     @Override
     public Intervals narrowingAux(
             Intervals other) {
-        MathNumber newHigh = interval.high.isInfinite() ? other.interval.high : interval.high;
-        MathNumber newLow = interval.low.isInfinite() ? other.interval.low : interval.low;
+        SigNum newHigh = (SigNum) (interval.high instanceof PlusInfinity ? other.interval.high : interval.high);
+        SigNum newLow = (SigNum) (interval.low instanceof MinusInfinity ? other.interval.low : interval.low);
         return new Intervals(newLow, newHigh);
     }
 

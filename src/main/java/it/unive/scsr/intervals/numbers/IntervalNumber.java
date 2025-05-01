@@ -1,6 +1,5 @@
 package it.unive.scsr.intervals.numbers;
 
-import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.utils.Sets;
 
 import java.math.BigDecimal;
@@ -8,25 +7,45 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public sealed interface IntervalNumber
         extends Comparable<IntervalNumber>
-        permits Numeric, Infinity, NaN {
-
-    default MathNumber toMathNumber() {
-        return new MathNumber(toOptionalDecimal().orElseThrow());
-    }
-
-    default Optional<BigDecimal> toOptionalDecimal() {
-        return (this instanceof Numeric<?> number) ?
-                Optional.of(number.toDecimal()) :
-                Optional.empty();
-    }
+        permits NaN, SigNum {
 
     default boolean isZero() {
         // Only numeric values that are neither positive nor negative are zero.
         return this instanceof Numeric<?> numeric &&
                 !(numeric.isPositive() || numeric.isNegative());
+    }
+
+    default boolean isInfinity() {
+        // Only Infinity instances can be PlusInfinity or MinusInfinity.
+        return this instanceof Infinity;
+    }
+
+    default IntervalNumber min(IntervalNumber other) {
+        return Stream
+                .of(this, other)
+                .min(IntervalNumber::compareTo)
+                .orElseThrow();
+    }
+
+    default IntervalNumber max(IntervalNumber other) {
+        return Stream
+                .of(this, other)
+                .max(IntervalNumber::compareTo)
+                .orElseThrow();
+    }
+
+    default boolean lessThan(IntervalNumber other) {
+        // A negative integer means that this object is less than the specified object.
+        return compareTo(other) < 0;
+    }
+
+    default boolean greaterThan(IntervalNumber other) {
+        // A negative integer means that this object is less than the specified object.
+        return compareTo(other) > 0;
     }
 
     @Override
@@ -66,7 +85,7 @@ public sealed interface IntervalNumber
 
     IntervalNumber divide(IntervalNumber other);
 
-    static Optional<IntervalNumber> ofPrimitive(Number number) {
+    static Optional<Numeric<?>> ofPrimitive(Number number) {
         // Returns null instead of throwing an exception.
         if (number == null) return Optional.empty();
 
@@ -83,7 +102,7 @@ public sealed interface IntervalNumber
                 Optional.of(new IntegerNumber(BigInteger.valueOf(number.longValue())));
     }
 
-    static IntervalNumber ofPrimitiveOrThrow(Number number) {
+    static Numeric<?> ofPrimitiveOrThrow(Number number) {
         return ofPrimitive(number).orElseThrow();
     }
 }

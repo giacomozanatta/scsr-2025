@@ -270,6 +270,33 @@ public class Intervals
 
 			return new Intervals(newLower, newUpper);
 		}
+		else if (operator.toString().equals("/")) {
+
+			MathNumber lA = a.getLow();
+			MathNumber uA = a.getHigh();
+			MathNumber lB = b.getLow();
+			MathNumber uB = b.getHigh();
+
+			if (lB.compareTo(MathNumber.ZERO) <= 0 && uB.compareTo(MathNumber.ZERO) >= 0) {
+				// unsafe division: denominator includes zero
+				return top();
+			}
+
+			MathNumber[] results = new MathNumber[] {
+					lA.divide(lB), lA.divide(uB),
+					uA.divide(lB), uA.divide(uB)
+			};
+
+			MathNumber newLow = results[0];
+			MathNumber newHigh = results[0];
+
+			for (MathNumber r : results) {
+				newLow = newLow.min(r);
+				newHigh = newHigh.max(r);
+			}
+
+			return new Intervals(newLow, newHigh);
+		}
 
 		return top();
 	}

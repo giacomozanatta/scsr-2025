@@ -62,7 +62,7 @@ class overflow_underflow {
 		def c = -239.0;
 		def d = c * 2.539;    // UNDERFLOW
 		def e = 0.1;
-		def f = e / 1000.0; // UNDERFLOW to denormalized numbers
+		def f = e / 1000.0;   // within the bounds
 	}
 
 
@@ -71,8 +71,8 @@ class overflow_underflow {
 		def b = a * 2.0;       // OVERFLOW
 		def c = -65000.0;
 		def d = c * 2.0;       // UNDERFLOW
-		def e = 0.00001;
-		def f = e / 1000.0;    // underflow to denormalized numbers
+		def e = 0.1;
+		def f = e / 0.000001;    // OVERFLOW
 	}
 
 
@@ -82,7 +82,7 @@ class overflow_underflow {
 		def c = -340000000000000000000000000000000000000.0;
 		def d = c * 10.0;      // UNDERFLOW
 		def e = 0.00000000000000000000000000000000000001;
-		def f = e / 0.00001;       // underflow to near zero
+		def f = e / 0.0001;       // underflow to near zero
 	}
 
 // CONDITIONED TEST CASES
@@ -102,7 +102,7 @@ class overflow_underflow {
 		if (flag) {
 			x = 0;
 		}
-		def y = x - 1;  // y ∈ {-1, 9} → possible UNDERFLOW
+		def y = x - 1;  // y belongs to [-1, 9] so possible UNDERFLOW
 	}
 
 	// UINT16 possible overflow
@@ -138,6 +138,6 @@ class overflow_underflow {
 		if (small) {
 			f = 0.00001;
 		}
-		def result = f * 0.00001;  // possible underflow to denormalized numbers
+		def result = f * 0.00001;  // possible underflow
 	}
 }

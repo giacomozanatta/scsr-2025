@@ -2,16 +2,10 @@ package it.unive.scsr.intervals.numbers;
 
 import java.util.Objects;
 
+// TODO: handle by respecting limit definitions.
 public sealed abstract class Infinity
-        implements IntervalNumber, SigNum
+        implements SigNum
         permits MinusInfinity, PlusInfinity {
-
-    public Infinity reverse() {
-        return switch (this) {
-            case PlusInfinity ignored -> MinusInfinity.INSTANCE;
-            case MinusInfinity ignored -> PlusInfinity.INSTANCE;
-        };
-    }
 
     @Override
     public final IntervalNumber add(IntervalNumber other) {
@@ -40,6 +34,14 @@ public sealed abstract class Infinity
 
         // In a division only non-zero numeric values can appear as denominators, otherwise NaN is returned.
         return NaN.INSTANCE;
+    }
+
+    @Override
+    public SigNum negate() {
+        return switch (this) {
+            case PlusInfinity ignored -> MinusInfinity.INSTANCE;
+            case MinusInfinity ignored -> PlusInfinity.INSTANCE;
+        };
     }
 
     @Override

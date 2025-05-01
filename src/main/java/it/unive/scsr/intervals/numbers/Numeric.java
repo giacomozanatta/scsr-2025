@@ -6,8 +6,9 @@ import java.math.RoundingMode;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+// TODO: handle by respecting limit definitions.
 public sealed abstract class Numeric<T>
-        implements IntervalNumber, SigNum
+        implements SigNum
         permits IntegerNumber, DecimalNumber {
 
     private enum Operation {
@@ -25,6 +26,16 @@ public sealed abstract class Numeric<T>
         this.number = number;
     }
 
+    @SuppressWarnings("unchecked")
+    public T value() {
+        return (T) number;
+    }
+
+    public BigDecimal toDecimal() {
+        return new BigDecimal(String.valueOf(number))
+                .setScale(SCALE, ROUNDING_MODE);
+    }
+
     @Override
     public IntervalNumber add(IntervalNumber other) {
         return switch (other) {
@@ -38,7 +49,7 @@ public sealed abstract class Numeric<T>
     public IntervalNumber subtract(IntervalNumber other) {
         return switch (other) {
             case NaN nan -> nan;
-            case Infinity infinity -> infinity.reverse();
+            case Infinity infinity -> infinity.negate();
             case Numeric<?> numeric -> bestApproximation(numeric, Operation.SUBTRACT);
         };
     }
@@ -64,14 +75,9 @@ public sealed abstract class Numeric<T>
         };
     }
 
-    @SuppressWarnings("unchecked")
-    public T value() {
-        return (T) number;
-    }
-
-    public BigDecimal toDecimal() {
-        return new BigDecimal(String.valueOf(number))
-                .setScale(SCALE, ROUNDING_MODE);
+    @Override
+    public SigNum negate() {
+        return bestApproximation(new IntegerNumber(BigInteger.ONE.negate()), Operation.MULTIPLY);
     }
 
     @Override

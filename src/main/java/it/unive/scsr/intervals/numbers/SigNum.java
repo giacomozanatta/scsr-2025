@@ -4,7 +4,12 @@ import java.util.function.Predicate;
 
 import static it.unive.scsr.intervals.numbers.Numeric.ZERO;
 
-public sealed interface SigNum permits Numeric, Infinity {
+public sealed interface SigNum
+        extends IntervalNumber
+        permits Numeric, Infinity {
+
+    SigNum negate();
+
     default boolean isPositive() {
         return switch (this) {
             case Numeric<?> numeric -> numeric.toDecimal().compareTo(ZERO) > 0;

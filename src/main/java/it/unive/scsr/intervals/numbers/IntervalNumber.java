@@ -13,6 +13,11 @@ public sealed interface IntervalNumber
         extends Comparable<IntervalNumber>
         permits NaN, SigNum {
 
+    @FunctionalInterface
+    interface Computation {
+        IntervalNumber perform(IntervalNumber first, IntervalNumber second);
+    }
+
     /**
      * @return <code>true</code> when this instance is zero, <code>false</code> otherwise.
      */

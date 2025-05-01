@@ -6,7 +6,6 @@ import java.math.RoundingMode;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-// TODO: handle by respecting limit definitions.
 public sealed abstract class Numeric<T>
         implements SigNum
         permits IntegerNumber, DecimalNumber {
@@ -63,6 +62,7 @@ public sealed abstract class Numeric<T>
         };
     }
 
+    // TODO: handle by respecting limit definitions.
     @Override
     public IntervalNumber divide(IntervalNumber other) {
         // Determine the result of dividing 'this' IntervalNumber by 'other'. Returns a DecimalNumber in the Infinity

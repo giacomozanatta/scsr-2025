@@ -13,22 +13,33 @@ public sealed interface IntervalNumber
         extends Comparable<IntervalNumber>
         permits NaN, SigNum {
 
+    /**
+     * @return <code>true</code> when this instance is zero, <code>false</code> otherwise.
+     */
     default boolean isZero() {
         // Only numeric values that are neither positive nor negative are zero.
         return this instanceof Numeric<?> numeric &&
                 !(numeric.isPositive() || numeric.isNegative());
     }
 
+    /**
+     * @return <code>true</code> when this instance is <code>Infinity</code>, <code>false</code> otherwise.
+     */
     default boolean isInfinity() {
-        // Only Infinity instances can be PlusInfinity or MinusInfinity.
         return this instanceof Infinity;
     }
 
-    default boolean isSigNum() {
-        // This is only true when dealing with an instance of Numeric<?> or Infinity.
-        return this instanceof SigNum;
+    /**
+     * @return <code>true</code> when this instance is <code>NaN</code>, <code>false</code> otherwise.
+     */
+    default boolean isNaN() {
+        return this instanceof NaN;
     }
 
+    /**
+     * @return this instance as <code>SigNum</code>.
+     * @throws ClassCastException when this is not an instance of <code>SigNum</code>.
+     */
     default SigNum asSigNum() {
         // If it does not respond to "isSigNum", calling this method will throw an exception.
         return (SigNum) this;

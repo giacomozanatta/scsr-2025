@@ -1,12 +1,11 @@
 package it.unive.scsr.checkers.overflow.checkers;
 
-import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker;
+import it.unive.scsr.intervals.numbers.Numeric;
 
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static it.unive.scsr.utils.Logging.defaultLogger;
@@ -48,10 +47,6 @@ public sealed abstract class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
         Supplier<OverflowingLevel> possibleOverflow = () -> new OverflowingLevel(true, false);
         Supplier<OverflowingLevel> definiteOverflow = () -> new OverflowingLevel(true, true);
 
-        // Converts a Number to its double value for use in over-approximation scenarios. Useful when precision is not
-        // critical and a uniform numeric type (double) is desired.
-        Function<Number, Double> overApproximate = Number::doubleValue;
-
         if (intervals.isBottom()) {
             // TODO: handle bottom in a better way.
             return OverflowingLevel.base();
@@ -66,7 +61,7 @@ public sealed abstract class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
         var min = interval.low;
         var max = interval.high;
 
-        if (min.isInfinite() || max.isInfinite()) {
+        if (min.isInfinity() || max.isInfinity()) {
             // Since it is not top, it is possible to know the "overflow direction". However, this requires additional
             // data to track.
             possibleOverflow.get();
@@ -74,15 +69,13 @@ public sealed abstract class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
 
         // From this point on the interval is finite, that is, the lower and upper bounds are represented by finite
         // numbers.
-        var minApproximation = overApproximate.apply(minLimit());
-        var maxApproximation = overApproximate.apply(maxLimit());
-        var isUnderflow = min.lt(new MathNumber(minApproximation));
-        var isOverflow = max.gt(new MathNumber(maxApproximation));
+        var isUnderflow = min.lessThan(minLimit());
+        var isOverflow = max.greaterThan(maxLimit());
 
         if (isUnderflow || isOverflow) {
             // Whenever the value is still outside the limit, the overflow is definite.
-            var alwaysDown = max.lt(new MathNumber(minLimit().longValue()));
-            var alwaysUp = min.gt(new MathNumber(maxLimit().longValue()));
+            var alwaysDown = max.lessThan(minLimit());
+            var alwaysUp = min.greaterThan(maxLimit());
 
             // If the direction is consistently down or up, return the definite overflow value. Otherwise, return the
             // possible overflow value, accounting for uncertainty.
@@ -95,9 +88,9 @@ public sealed abstract class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
         return OverflowingLevel.base();
     }
 
-    public abstract Number minLimit();
+    public abstract Numeric<?> minLimit();
 
-    public abstract Number maxLimit();
+    public abstract Numeric<?> maxLimit();
 
     /**
      * Try to find the most appropriate checker based on the numerical size.

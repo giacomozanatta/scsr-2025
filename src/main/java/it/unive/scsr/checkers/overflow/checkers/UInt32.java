@@ -1,6 +1,8 @@
 package it.unive.scsr.checkers.overflow.checkers;
 
 import it.unive.scsr.checkers.OverflowChecker;
+import it.unive.scsr.intervals.numbers.IntervalNumber;
+import it.unive.scsr.intervals.numbers.Numeric;
 
 public final class UInt32 extends SizeChecker {
     public UInt32(OverflowChecker.NumericalSize size) {
@@ -8,12 +10,12 @@ public final class UInt32 extends SizeChecker {
     }
 
     @Override
-    public Long minLimit() {
-        return 0L;
+    public Numeric<?> minLimit() {
+        return IntervalNumber.ofPrimitiveOrThrow(0);
     }
 
     @Override
-    public Long maxLimit() {
-        return 2147483647L;
+    public Numeric<?> maxLimit() {
+        return IntervalNumber.ofPrimitiveOrThrow(2147483647);
     }
 }

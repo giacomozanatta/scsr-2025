@@ -103,13 +103,29 @@ public sealed interface IntervalNumber
         };
     }
 
-    IntervalNumber add(IntervalNumber other);
+    default IntervalNumber add(IntervalNumber other) {
+        return add(other, null);
+    }
 
-    IntervalNumber subtract(IntervalNumber other);
+    default IntervalNumber subtract(IntervalNumber other) {
+        return subtract(other, null);
+    }
 
-    IntervalNumber multiply(IntervalNumber other);
+    default IntervalNumber multiply(IntervalNumber other) {
+        return multiply(other, null);
+    }
 
-    IntervalNumber divide(IntervalNumber other);
+    default IntervalNumber divide(IntervalNumber other) {
+        return divide(other, null);
+    }
+
+    IntervalNumber add(IntervalNumber other, Computation orElse);
+
+    IntervalNumber subtract(IntervalNumber other, Computation orElse);
+
+    IntervalNumber multiply(IntervalNumber other, Computation orElse);
+
+    IntervalNumber divide(IntervalNumber other, Computation orElse);
 
     static Optional<Numeric<?>> ofPrimitive(Number number) {
         // Returns null instead of throwing an exception.

@@ -54,6 +54,14 @@ public sealed abstract class Infinity
         return Objects.hashCode(this.getClass());
     }
 
+    @Override
+    public String toString() {
+        return switch (this) {
+            case PlusInfinity ignored -> "+Inf";
+            case MinusInfinity ignored -> "-Inf";
+        };
+    }
+
     private IntervalNumber finalize(IntervalNumber other, Computation orElse) {
         var nan = NaN.INSTANCE;
         return orElse != null ? orElse.perform(this, other).orElse(nan) : nan;

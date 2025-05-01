@@ -86,7 +86,7 @@ public sealed abstract class Numeric<T> implements SigNum permits IntegerNumber,
 
     @Override
     public String toString() {
-        return "Numeric{" + "number=" + number + '}';
+        return number.toString();
     }
 
     private IntervalNumber finalize(IntervalNumber result, IntervalNumber other, Computation orElse) {

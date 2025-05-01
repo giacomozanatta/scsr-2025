@@ -22,4 +22,9 @@ public record NaN() implements IntervalNumber {
     public IntervalNumber divide(IntervalNumber other, Computation orElse) {
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "NaN";
+    }
 }

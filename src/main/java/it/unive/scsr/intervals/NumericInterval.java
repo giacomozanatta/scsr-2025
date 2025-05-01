@@ -75,29 +75,35 @@ public class NumericInterval implements Comparable<NumericInterval> {
                 this.high.max(other.high).asSigNum());
     }
 
-    public Optional<NumericInterval> add(NumericInterval other) {
+    public Optional<NumericInterval> add(NumericInterval other, IntervalNumber.Computation operation) {
         // Perform addition between two intervals. The order is somewhat preserved so that the smallest element on the
         // left is added to the smallest element on the right to get the smallest number. The same reasoning applies to
         // get the largest number.
-        return buildOrEmpty(this.low.add(other.low), this.high.add(other.high));
+        return buildOrEmpty(
+                this.low.add(other.low, operation),
+                this.high.add(other.high, operation));
     }
 
-    public Optional<NumericInterval> subtract(NumericInterval other) {
+    public Optional<NumericInterval> subtract(NumericInterval other, IntervalNumber.Computation operation) {
         // Perform subtraction between two intervals. The order here is not "linearly" preserved in the sense that to
         // get the smallest element, the lower element of the left interval is related to the larger element of the
         // right interval. For the largest element the reasoning is similar, that is, the largest element of the left
         // interval is related to the smallest element of the right interval.
-        return buildOrEmpty(this.low.subtract(other.high), this.high.subtract(other.low));
+
+        // TODO:explain note about infinity,
+        return buildOrEmpty(
+                this.low.subtract(other.high, operation),
+                this.high.subtract(other.low, operation));
     }
 
-    public Optional<NumericInterval> multiply(NumericInterval other) {
+    public Optional<NumericInterval> multiply(NumericInterval other, IntervalNumber.Computation operation) {
         // All possible combinations are calculated to obtain the minimum number for the smallest element and the
         // maximum number for the largest element.
         var multiplications =
-                List.of(this.low.multiply(other.low),
-                        this.low.multiply(other.high),
-                        this.high.multiply(other.low),
-                        this.high.multiply(other.high));
+                List.of(this.low.multiply(other.low, operation),
+                        this.low.multiply(other.high, operation),
+                        this.high.multiply(other.low, operation),
+                        this.high.multiply(other.high, operation));
 
         // Returns the most accurate approximation for the multiplication operation between two ranges.
         return buildOrEmpty(
@@ -105,14 +111,14 @@ public class NumericInterval implements Comparable<NumericInterval> {
                 multiplications.stream().max(IntervalNumber::compareTo).orElseThrow());
     }
 
-    public Optional<NumericInterval> divide(NumericInterval other) {
+    public Optional<NumericInterval> divide(NumericInterval other, IntervalNumber.Computation operation) {
         // All possible combinations are calculated to obtain the minimum number for the smallest element and the
         // maximum number for the largest element.
         var divisions =
-                List.of(this.low.divide(other.low),
-                        this.low.divide(other.high),
-                        this.high.divide(other.low),
-                        this.high.divide(other.high));
+                List.of(this.low.divide(other.low, operation),
+                        this.low.divide(other.high, operation),
+                        this.high.divide(other.low, operation),
+                        this.high.divide(other.high, operation));
 
         // Returns the most accurate approximation for the division operation between two ranges.
         return buildOrEmpty(

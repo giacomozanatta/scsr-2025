@@ -8,32 +8,34 @@ public sealed abstract class Infinity
         permits MinusInfinity, PlusInfinity {
 
     @Override
-    public final IntervalNumber add(IntervalNumber other) {
+    public final IntervalNumber add(IntervalNumber other, Computation orElse) {
         if (other instanceof Numeric<?> || equals(other)) return this;
-        return NaN.INSTANCE;
+        return orElse == null ? NaN.INSTANCE : orElse.perform(this, other);
     }
 
     @Override
-    public final IntervalNumber subtract(IntervalNumber other) {
+    public final IntervalNumber subtract(IntervalNumber other, Computation orElse) {
         if (other instanceof Numeric<?>) return this;
-        if (!(other instanceof Infinity otherInfinity)) return NaN.INSTANCE;
-        return !sameSign(otherInfinity) ? this : NaN.INSTANCE;
+
+        var nan = NaN.INSTANCE;
+        if (!(other instanceof Infinity otherInfinity)) return orElse == null ? nan : orElse.perform(this, other);
+        return !sameSign(otherInfinity) ? this : orElse == null ? nan : orElse.perform(this, other);
     }
 
     @Override
-    public final IntervalNumber multiply(IntervalNumber other) {
-        if (other instanceof NaN || other.isZero()) return NaN.INSTANCE;
+    public final IntervalNumber multiply(IntervalNumber other, Computation orElse) {
+        if (other.isNaN() || other.isZero()) return orElse == null ? NaN.INSTANCE : orElse.perform(this, other);
         return sameSign((SigNum) other) ? PlusInfinity.INSTANCE : MinusInfinity.INSTANCE;
     }
 
     @Override
-    public final IntervalNumber divide(IntervalNumber other) {
+    public final IntervalNumber divide(IntervalNumber other, Computation orElse) {
         if (other instanceof Numeric<?> otherNumeric && !otherNumeric.isZero()) {
             return sameSign(otherNumeric) ? PlusInfinity.INSTANCE : MinusInfinity.INSTANCE;
         }
 
         // In a division only non-zero numeric values can appear as denominators, otherwise NaN is returned.
-        return NaN.INSTANCE;
+        return orElse == null ? NaN.INSTANCE : orElse.perform(this, other);
     }
 
     @Override

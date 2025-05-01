@@ -6,9 +6,7 @@ import java.math.RoundingMode;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-public sealed abstract class Numeric<T>
-        implements SigNum
-        permits IntegerNumber, DecimalNumber {
+public sealed abstract class Numeric<T> implements SigNum permits IntegerNumber, DecimalNumber {
 
     private enum Operation {
         ADD, SUBTRACT, MULTIPLY, DIVIDE
@@ -31,48 +29,44 @@ public sealed abstract class Numeric<T>
     }
 
     public BigDecimal toDecimal() {
-        return new BigDecimal(String.valueOf(number))
-                .setScale(SCALE, ROUNDING_MODE);
+        return new BigDecimal(String.valueOf(number)).setScale(SCALE, ROUNDING_MODE);
     }
 
     @Override
-    public IntervalNumber add(IntervalNumber other) {
-        return switch (other) {
+    public IntervalNumber add(IntervalNumber other, Computation orElse) {
+        return finalize(switch (other) {
             case NaN nan -> nan;
             case Infinity infinity -> infinity;
             case Numeric<?> numeric -> bestApproximation(numeric, Operation.ADD);
-        };
+        }, other, orElse);
     }
 
     @Override
-    public IntervalNumber subtract(IntervalNumber other) {
-        return switch (other) {
+    public IntervalNumber subtract(IntervalNumber other, Computation orElse) {
+        return finalize(switch (other) {
             case NaN nan -> nan;
             case Infinity infinity -> infinity.negate();
             case Numeric<?> numeric -> bestApproximation(numeric, Operation.SUBTRACT);
-        };
+        }, other, orElse);
     }
 
     @Override
-    public IntervalNumber multiply(IntervalNumber other) {
-        return switch (other) {
+    public IntervalNumber multiply(IntervalNumber other, Computation orElse) {
+        return finalize(switch (other) {
             case NaN nan -> nan;
             case Infinity infinity -> infinity.multiply(this);
             case Numeric<?> numeric -> bestApproximation(numeric, Operation.MULTIPLY);
-        };
+        }, other, orElse);
     }
 
     // TODO: handle by respecting limit definitions.
     @Override
-    public IntervalNumber divide(IntervalNumber other) {
-        // Determine the result of dividing 'this' IntervalNumber by 'other'. Returns a DecimalNumber in the Infinity
-        // case because infinity is considered the boundary for all numbers, not just integers, making the result
-        // conceptually zero in that context.
-        return switch (other) {
+    public IntervalNumber divide(IntervalNumber other, Computation orElse) {
+        return finalize(switch (other) {
             case NaN nan -> nan;
-            case Infinity ignored -> new DecimalNumber(Numeric.ZERO);
+            case Infinity ignored -> new IntegerNumber(BigInteger.ZERO);
             case Numeric<?> numeric -> numeric.isZero() ? NaN.INSTANCE : bestApproximation(numeric, Operation.DIVIDE);
-        };
+        }, other, orElse);
     }
 
     @Override
@@ -92,9 +86,11 @@ public sealed abstract class Numeric<T>
 
     @Override
     public String toString() {
-        return "Numeric{" +
-                "number=" + number +
-                '}';
+        return "Numeric{" + "number=" + number + '}';
+    }
+
+    private IntervalNumber finalize(IntervalNumber result, IntervalNumber other, Computation orElse) {
+        return (result.isNaN() && orElse != null) ? orElse.perform(this, other) : result;
     }
 
     private Numeric<?> bestApproximation(Numeric<?> otherNumeric, Operation operation) {
@@ -110,8 +106,8 @@ public sealed abstract class Numeric<T>
             case DecimalNumber ignored -> decimalApproximation.apply(this, otherNumeric);
             case IntegerNumber otherInteger -> switch (this) {
                 case DecimalNumber ignored -> decimalApproximation.apply(this, otherNumeric);
-                case IntegerNumber thisInteger -> new IntegerNumber(numericMethod(BigInteger.class, operation)
-                        .apply(thisInteger.value(), otherInteger.value()));
+                case IntegerNumber thisInteger ->
+                        new IntegerNumber(numericMethod(BigInteger.class, operation).apply(thisInteger.value(), otherInteger.value()));
 
             };
         };

@@ -134,8 +134,8 @@ class overflow_underflow {
 		def b = a - 500;  // b is within [-1500, 500], possible underflow
 	}
 
-	// FLOAT16 possible underflow
-	underflowByConditionFLOAT16(small) {
+	// FLOAT16 no underflow/overflow
+	noUnderflowByConditionFLOAT16(small) {
 		def f = 1.0;
 		if (small) {
 			f = 0.07;

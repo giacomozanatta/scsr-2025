@@ -15,6 +15,15 @@ public sealed interface IntervalNumber
 
     @FunctionalInterface
     interface Computation {
+        /**
+         * This is a callback that will be called whenever a call to the math operation returns a NaN instance, to be
+         * more precise in some cases.
+         *
+         * @param first  The first operand for the binary expression.
+         * @param second The second operand for the binary expression.
+         * @return A {@link Optional} with a value when the expression is capable of evaluating to something other than
+         * NaN, otherwise it is empty.
+         */
         Optional<IntervalNumber> perform(IntervalNumber first, IntervalNumber second);
     }
 
@@ -46,7 +55,6 @@ public sealed interface IntervalNumber
      * @throws ClassCastException when this is not an instance of <code>SigNum</code>.
      */
     default SigNum asSigNum() {
-        // If it does not respond to "isSigNum", calling this method will throw an exception.
         return (SigNum) this;
     }
 

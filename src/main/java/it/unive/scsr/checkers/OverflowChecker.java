@@ -17,8 +17,8 @@ import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
-import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.overflow.checkers.SizeChecker;
@@ -108,20 +108,12 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                 });
     }
 
-    // A numerical type is required. Current support is for UInt8Type, UInt16Type, UInt32Type, Int8Type, Int16Type, and
-    // Int32Type.
     private boolean isSupportedType(final Set<Type> possibleTypes) {
-        // The only types available are integer representations. Checking for overflow and underflow of floats is more
-        // complex than checking for overflow and underflow of integers.
-        final Set<Class<? extends Type>> availableTypes =
-                Set.of(UInt8Type.class, UInt16Type.class, UInt32Type.class,
-                        Int8Type.class, Int16Type.class, Int32Type.class);
-
-        // The set of inferred types must intersect the available types with at least one element.
+        // The set of inferred types must contain at least one NumericType.
         return possibleTypes
                 .stream()
                 .map(Type::getClass)
-                .anyMatch(availableTypes::contains);
+                .anyMatch(NumericType.class::isAssignableFrom);
     }
 
     private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node) {

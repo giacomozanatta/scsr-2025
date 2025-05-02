@@ -124,17 +124,14 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
     @Override
     public int compareTo(Intervals o) {
-        if (isBottom())
-            return o.isBottom() ? 0 : -1;
-        if (isTop())
-            return o.isTop() ? 0 : 1;
+        if (isBottom()) return o.isBottom() ? 0 : -1;
+        if (isTop()) return o.isTop() ? 0 : 1;
 
-        if (o.isBottom())
-            return 1;
+        // This element is neither TOP nor BOTTOM.
+        if (o.isBottom()) return 1;
+        if (o.isTop()) return -1;
 
-        if (isTop())
-            return -1;
-
+        // This element and the given one are neither TOP nor BOTTOM.
         return interval.compareTo(o.interval);
     }
 

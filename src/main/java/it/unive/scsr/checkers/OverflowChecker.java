@@ -115,14 +115,21 @@ public class OverflowChecker implements
 			// Skip warnings when an extremum is infinite or NaN
 			boolean lowFinite = Double.isFinite(low);
 			boolean highFinite = Double.isFinite(high);
-
-			// Underflow case
-			if (lowFinite && low < min) {
-				System.err.printf("[%s] Underflow in %s: %.3f < %.3f location %s%n", size, id.getName(), low, min, id.getCodeLocation());
+			// Definite and possible underflow cases
+			if (lowFinite && low < min && high <= min) {
+				System.err.printf("[%s] Underflow in %s: %.3f < %.3f location %s%n",
+						size, id.getName(), low, min, id.getCodeLocation());
+			} else if (lowFinite && low < min) {
+				System.err.printf("[%s] Possible underflow in %s: %.3f < %.3f location %s%n",
+						size, id.getName(), low, min, id.getCodeLocation());
 			}
-			// Overflow case
-			if (highFinite && high > max) {
-				System.err.printf("[%s] Overflow in %s: %.3f > %.3f location %s%n", size, id.getName(), high, max, id.getCodeLocation());
+			// Definite and possible overflow cases
+			if (highFinite && high > max && low >= max) {
+				System.err.printf("[%s] Overflow in %s: %.3f > %.3f location %s%n",
+						size, id.getName(), high, max, id.getCodeLocation());
+			} else if (highFinite && high > max) {
+				System.err.printf("[%s] Possible overflow in %s: %.3f > %.3f location %s%n",
+						size, id.getName(), high, max, id.getCodeLocation());
 			}
 		}
 

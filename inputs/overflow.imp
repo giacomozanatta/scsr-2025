@@ -1,3 +1,4 @@
+// LIBERALATO ALESSANDRO - 908093
 class overflow_underflow {
 
     warningINT8() {
@@ -71,8 +72,9 @@ class overflow_underflow {
 		def b = a * 2.0;       // OVERFLOW
 		def c = -65000.0;
 		def d = c * 2.0;       // UNDERFLOW
-		def e = 0.1;
-		def f = e / 0.000001;    // OVERFLOW
+		def e = -1000.0;
+		def f = e / 0.05;      // OK
+		def g = f - 65000;     // UNDERFLOW
 	}
 
 
@@ -81,13 +83,13 @@ class overflow_underflow {
 		def b = a * 10.0;      // OVERFLOW
 		def c = -340000000000000000000000000000000000000.0;
 		def d = c * 10.0;      // UNDERFLOW
-		def e = 0.00000000000000000000000000000000000001;
-		def f = e / 0.0001;       // underflow to near zero
+		def e = 100000000000000000000000000000000000000.0;
+		def f = (e / 10.0000000000001) * a;       // OVERFLOW
 	}
 
 // CONDITIONED TEST CASES
 
-         // INT8 possible overflow
+    // INT8 possible overflow
 	conditionalOverflowINT8(cond) {
 		def a = 100;
 		if (cond) {

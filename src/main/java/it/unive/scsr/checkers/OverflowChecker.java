@@ -29,15 +29,15 @@ import static java.util.Map.entry;
 public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 
     public enum NumericalSize {
-        INT8,  // signed integer 8-bit
-        INT16, // signed integer 16-bit
-        INT32, // signed integer 32-bit
-        UINT8,  // unsigned integer 8-bit
-        UINT16, // unsigned integer 16-bit
-        UINT32, // unsigned integer 32-bit
-        FLOAT8, // signed float 8-bit
-        FLOAT16, // signed float 16-bit
-        FLOAT32, // signed float 32-bit
+        INT8,
+        INT16,
+        INT32,
+        UINT8,
+        UINT16,
+        UINT32,
+        FLOAT8,
+        FLOAT16,
+        FLOAT32,
     }
 
     private final NumericalSize size;
@@ -126,8 +126,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
 
     private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node) {
 
-        Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
-
+        var id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
         var staticType = Set.of(id.getStaticType());
         var dynamicTypes = tool
                 .getResultOf(graph)

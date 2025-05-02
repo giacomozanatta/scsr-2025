@@ -1,10 +1,10 @@
 package it.unive.scsr.intervals;
 
-import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.intervals.numbers.IntervalNumber;
 import it.unive.scsr.utils.BiFunctionDispatcher;
 
-import java.util.Collection;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class BinaryFunctions extends BiFunctionDispatcher<Intervals> {
@@ -15,120 +15,52 @@ public class BinaryFunctions extends BiFunctionDispatcher<Intervals> {
     protected BiFunction<Intervals, Intervals, Intervals> buildAdditionFunction() {
         return (left, right) -> left
                 .interval
-                .add(right.interval)
+                .add(right.interval, null)
                 .map(Intervals::new)
-                .orElse(Intervals.BOTTOM);
+                .orElse(Intervals.TOP);
     }
 
     @Override
     protected BiFunction<Intervals, Intervals, Intervals> buildSubtractionFunction() {
         return (left, right) -> left
                 .interval
-                .subtract(right.interval)
+                .subtract(right.interval, null)
                 .map(Intervals::new)
-                .orElse(Intervals.BOTTOM);
+                .orElse(Intervals.TOP);
     }
 
     @Override
     protected BiFunction<Intervals, Intervals, Intervals> buildMultiplicationFunction() {
-//        return (left, right) -> {
-//            // When multiplying MathNumber, zero and infinity cannot be multiplied together. Here, instead of returning
-//            // the closest approximation, zero is returned.
-//            BiFunction<MathNumber, MathNumber, MathNumber> multiply = (x, y) ->
-//                    Optional.of(x.multiply(y))
-//                            .filter(number -> !number.isNaN())
-//                            .orElse(MathNumber.ZERO);
-//
-//            // All possible combinations are calculated to obtain the minimum number for the smallest element and the
-//            // maximum number for the largest element.
-//            var group = new Group(left, right);
-//            var multiplications =
-//                    List.of(multiply.apply(group.ll(), group.lr()),
-//                            multiply.apply(group.ll(), group.hr()),
-//                            multiply.apply(group.hl(), group.lr()),
-//                            multiply.apply(group.hl(), group.hr()));
-//
-//            // Returns the most accurate approximation for the multiplication operation between two ranges.
-//            return new Intervals(min(multiplications), max(multiplications));
-//        };
+        // When multiplying MathNumber, zero and infinity cannot be multiplied together. Here, instead of returning the
+        // closest approximation, zero is returned.
+        IntervalNumber.Computation computation = (first, second) -> {
+            if (first.isZero() && second.isInfinity()) return Optional.of(first);
+            if (second.isZero() && first.isInfinity()) return Optional.of(second);
+
+            // It is impossible to be more specific than returning zero when a multiplication is between zero and any
+            // other IntervalNumber, including Infinity.
+            return Optional.empty();
+        };
 
         return (left, right) -> left
                 .interval
-                .multiply(right.interval)
+                .multiply(right.interval, computation)
                 .map(Intervals::new)
-                .orElse(Intervals.BOTTOM);
+                .orElse(Intervals.TOP);
     }
 
     @Override
     protected BiFunction<Intervals, Intervals, Intervals> buildDivisionFunction() {
-//        return (left, right) -> {
-//            // When the correct interval is a singleton and contains zero, it is known for sure that the division is by
-//            // zero, that is the bottom element can be returned.
-//            if (right.interval.is(0)) return Intervals.BOTTOM;
-//
-//            // When the division returns to the NaN element the following approach is adopted:
-//            //  - When the divisor can be zero, a NaN element is returned since the division cannot be calculated
-//            //  - When both operands are infinite, instead of returning a NaN element, the sign operation is applied
-//            BiFunction<MathNumber, MathNumber, MathNumber> canDivide = (x, y) ->
-//                    Optional.of(x.divide(y))
-//                            .filter(number -> !number.isNaN())
-//                            .orElseGet(() -> {
-//                                if (y.isZero()) return MathNumber.NaN;
-//                                if (x.isPositive() == y.isPositive()) return MathNumber.PLUS_INFINITY;
-//                                return MathNumber.MINUS_INFINITY;
-//                            });
-//
-//            // All possible combinations are calculated to obtain the minimum number for the smallest element and the
-//            // maximum number for the largest element.
-//            var group = new Group(left, right);
-//            var divisions =
-//                    List.of(canDivide.apply(group.ll(), group.lr()),
-//                            canDivide.apply(group.ll(), group.hr()),
-//                            canDivide.apply(group.hl(), group.lr()),
-//                            canDivide.apply(group.hl(), group.hr()));
-//
-//            // Returns the most accurate approximation for the division operation between two ranges.
-//            return new Intervals(min(divisions), max(divisions));
-//        };
+        return (left, right) -> {
+            // When the correct interval is a singleton and contains zero, it is known for sure that the division is by
+            // zero, that is the bottom element can be returned.
+            if (right.interval.is(IntervalNumber.ofPrimitiveOrThrow(0))) return Intervals.BOTTOM;
 
-        return (left, right) -> left
-                .interval
-                .divide(right.interval)
-                .map(Intervals::new)
-                .orElse(Intervals.BOTTOM);
-    }
-
-    @Override
-    protected Intervals polishResult(Intervals output) {
-        // If the calculation of the upper or lower element cannot proceed.
-        if (output.isBottom() || output.isTop()) return output;
-
-        // Whenever the number to the left or right of the range is NaN, the bottom element of the lattice is returned.
-        var low = output.interval.low;
-        var high = output.interval.high;
-        if (low.isNaN() || high.isNaN()) return Intervals.BOTTOM;
-        return output;
-    }
-
-    // Selects the minimum element from the given numbers. If the minimum element is NaN, instead of considering it a
-    // computational error, the largest over-approximation for the minimum element is returned.
-    private MathNumber min(Collection<MathNumber> numbers) {
-        return numbers
-                .stream()
-                .min(MathNumber::compareTo)
-                .filter(mathNumber -> !mathNumber.isNaN())
-                .orElse(MathNumber.MINUS_INFINITY)
-                .roundDown();
-    }
-
-    // Selects the maximum element from the given numbers. If the maximum element is NaN, instead of considering it a
-    // computational error, the largest over-approximation for the maximum element is returned.
-    private MathNumber max(Collection<MathNumber> numbers) {
-        return numbers
-                .stream()
-                .max(MathNumber::compareTo)
-                .filter(mathNumber -> !mathNumber.isNaN())
-                .orElse(MathNumber.PLUS_INFINITY)
-                .roundUp();
+            return left
+                    .interval
+                    .divide(right.interval, null)
+                    .map(Intervals::new)
+                    .orElse(Intervals.TOP);
+        };
     }
 }

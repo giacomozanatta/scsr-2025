@@ -6,12 +6,14 @@ import java.util.Optional;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
+import it.unive.lisa.analysis.lattices.Satisfiability;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
@@ -196,6 +198,22 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
         return new Intervals(newLow, newHigh);
     }
 
+    @Override
+    public Satisfiability satisfiesBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp, SemanticOracle oracle) {
+        // Extract the numeric range from the left and right expression.
+        var leftInterval = left.interval;
+        var rightInterval = right.interval;
+
+        // If the operator is an instance of ComparisonEq, then equality is tested only when the intervals are
+        // singletons, otherwise nothing can be said.
+        if (operator instanceof ComparisonEq) {
+            return leftInterval.isSingleton() && rightInterval.isSingleton() ?
+                    leftInterval.equals(rightInterval) ? Satisfiability.SATISFIED : Satisfiability.NOT_SATISFIED :
+                    Satisfiability.UNKNOWN;
+        }
+
+        return Satisfiability.UNKNOWN;
+    }
 
     @Override
     public ValueEnvironment<Intervals> assumeBinaryExpression(ValueEnvironment<Intervals> environment,

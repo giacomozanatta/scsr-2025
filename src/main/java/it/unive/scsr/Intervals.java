@@ -59,14 +59,9 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
     @Override
     public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle) {
-        // If the specified argument is bottom or top, the input is returned as output without performing any
-        // calculations.
-        if (arg.isTop()) return arg;
-
         if (operator instanceof NumericNegation) {
-            // Given a MathNumber element, the negation is calculated taking into account the possibility of handling an
-            // infinite element.
-            return interval
+            return arg
+                    .interval
                     .negate()
                     .map(Intervals::new)
                     .orElse(BOTTOM);
@@ -96,7 +91,6 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
     @Override
     public Intervals top() {
-        // The top element of the lattice is [-inf, +inf].
         return TOP;
     }
 
@@ -107,7 +101,6 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
     @Override
     public Intervals bottom() {
-        // The bottom element of the lattice is an element with a null interval.
         return BOTTOM;
     }
 

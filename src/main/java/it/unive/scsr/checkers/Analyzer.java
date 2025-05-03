@@ -7,6 +7,7 @@ import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
@@ -41,6 +42,10 @@ public class Analyzer<V extends ValueDomain<V>> {
         }
     }
 
+    public SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>> getAnalysisStateAfter(Statement statement) {
+        return analyzer.getAnalysisStateAfter(statement).getState();
+    }
+
     /**
      * @param id        An identifier of a real program variable.
      * @param reference A reference to a variable of the current CFG, identified by its name.
@@ -49,7 +54,7 @@ public class Analyzer<V extends ValueDomain<V>> {
      */
     public Set<Type> getDynamicTypes(Variable id, VariableRef reference) {
         try {
-            var state = analyzer.getAnalysisStateAfter(reference).getState();
+            var state = getAnalysisStateAfter(reference);
             var dynamicType = state.getDynamicTypeOf(id, reference, state);
 
             if (!dynamicType.isUntyped()) return Set.of(dynamicType);

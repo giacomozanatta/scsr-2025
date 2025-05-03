@@ -2,14 +2,15 @@ package it.unive.scsr.checkers;
 
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
+import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.analysis.value.ValueDomain;
+import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.VariableRef;
-import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 
@@ -46,21 +47,13 @@ public class Analyzer<V extends ValueDomain<V>> {
         return analyzer.getAnalysisStateAfter(statement).getState();
     }
 
-    /**
-     * @param id        An identifier of a real program variable.
-     * @param reference A reference to a variable of the current CFG, identified by its name.
-     * @return The set of possible types that the given variable can "hold". If the types cannot be inferred, an empty
-     * set is returned.
-     */
-    public Set<Type> getDynamicTypes(Variable id, VariableRef reference) {
+    public Set<Type> getDynamicTypes(SymbolicExpression expression, ProgramPoint programPoint, SemanticOracle oracle) {
         try {
-            var state = getAnalysisStateAfter(reference);
-            var dynamicType = state.getDynamicTypeOf(id, reference, state);
-
+            var dynamicType = oracle.getDynamicTypeOf(expression, programPoint, oracle);
             if (!dynamicType.isUntyped()) return Set.of(dynamicType);
 
-            return state
-                    .getRuntimeTypesOf(id, reference, state)
+            return oracle
+                    .getRuntimeTypesOf(expression, programPoint, oracle)
                     .stream()
                     .filter(t -> t != Untyped.INSTANCE)
                     .collect(Collectors.toSet());

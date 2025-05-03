@@ -126,7 +126,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
         var dynamicTypes = tool
                 .getResultOf(graph)
                 .stream()
-                .flatMap(result -> new Analyzer<>(result).getDynamicTypes(id, varRef).stream())
+                .flatMap(result -> new Analyzer<>(result).getDynamicTypes(id, varRef, new Analyzer<>(result).getAnalysisStateAfter(varRef)).stream())
                 .collect(Collectors.toSet());
 
         // Perform analysis only for some specific types, namely those checked in the "isSupportedType" method. If

@@ -28,6 +28,28 @@ import static java.util.Map.entry;
 
 public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 
+    // Represents the exit state of an analysis, containing abstract data and the overflow level.
+    public record ExitState(Intervals abstractData, SizeChecker.OverflowingLevel result) {
+        @Override
+        public String toString() {
+            var abstractEntry = Map.entry("abstract", abstractData.representation().toString());
+            var overflowingEntry = Map.entry("overflowing", String.valueOf(result.isOverflowing()));
+            var definitelyEntry = Map.entry("definitely", String.valueOf(result.definitely()));
+            return new WarnMap(Set.of(abstractEntry, overflowingEntry, definitelyEntry)).toString();
+        }
+    }
+
+    // Represents the key for an exit state, composed of a code location, a variable, and its numerical size.
+    public record ExitKey(CodeLocation codeLocation, Variable variable, NumericalSize size) {
+        @Override
+        public String toString() {
+            var codeLocationEntry = Map.entry("location", codeLocation.getCodeLocation());
+            var variableEntry = Map.entry("variable", variable.getName());
+            var sizeEntry = Map.entry("size", size.name().toLowerCase());
+            return new WarnMap(Set.of(codeLocationEntry, variableEntry, sizeEntry)).toString();
+        }
+    }
+
     public enum NumericalSize {
         INT8,
         INT16,
@@ -41,7 +63,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
     }
 
     private final NumericalSize size;
-    private final Map<CodeLocation, Intervals> exitStates = new HashMap<>();
+    private final Map<ExitKey, Set<ExitState>> exitStates = new HashMap<>();
 
     public OverflowChecker(NumericalSize size) {
         this.size = size;
@@ -76,36 +98,17 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
 
     @Override
     public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
-        record LocationIntervals(CodeLocation location, Intervals intervals) {
-        }
+        exitStates.forEach((key, value) -> {
+            // Extracts information from the key and results from the input value.
+            var info = key.toString();
+            var data = Arrays.toString(value
+                    .stream()
+                    .map(ExitState::toString)
+                    .toArray());
 
-        // Extract the position for each detected interval domain. After collecting each pair consisting of a value
-        // domain and its location, semantic checking is performed. If the value overflows, a warning is generated.
-        exitStates.
-                entrySet()
-                .stream()
-                .map(entry -> new LocationIntervals(entry.getKey(), entry.getValue()))
-                .forEach(locationIntervals -> {
-                    // The overflow depends on the size of NumericalSize.
-                    var stickiness = SizeChecker
-                            .findBy(size)
-                            .map(sizeChecker -> sizeChecker.isOverflowing(locationIntervals.intervals))
-                            .orElse(SizeChecker.OverflowingLevel.base());
-
-                    if (stickiness.isOverflowing()) {
-                        // Additional metadata to enable warning processing.
-                        var warningSet = new HashSet<>(Set.of(
-                                entry("location", locationIntervals.location.getCodeLocation()),
-                                entry("numericalSize", size.name().toLowerCase()),
-                                entry("abstractData", locationIntervals.intervals.representation().toString())));
-
-                        // To understand whether the overflow will definitely happen or not.
-                        warningSet.add(Map.entry("definitely", String.valueOf(stickiness.definitely())));
-
-                        // Finally, pointing out the warnings.
-                        tool.warn(new WarnMap(warningSet).toString());
-                    }
-                });
+            // Log the warnings using the provided tool.
+            tool.warn(new WarnMap(Set.of(entry("info", info), entry("data", data))).toString());
+        });
     }
 
     private boolean isSupportedType(final Set<Type> possibleTypes) {
@@ -148,7 +151,20 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                 // Since this checker deals with the interval domain, the environment state of the value must be an
                 // interval.
                 var intervals = env.getState(id);
-                exitStates.put(id.getCodeLocation(), intervals);
+
+                // The overflow depends on the size of NumericalSize.
+                var stickiness = SizeChecker
+                        .findBy(size)
+                        .map(sizeChecker -> sizeChecker.isOverflowing(intervals))
+                        .orElse(SizeChecker.OverflowingLevel.base());
+
+                if (stickiness.definitely()) {
+                    // Add the result only when a definite overflow has been detected.
+                    var key = new ExitKey(id.getCodeLocation(), id, size);
+                    var currentSet = exitStates.getOrDefault(key, new HashSet<>());
+                    currentSet.add(new ExitState(intervals, stickiness));
+                    exitStates.put(key, currentSet);
+                }
             }
         });
     }

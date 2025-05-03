@@ -48,8 +48,9 @@ public class DivisionByZeroChecker implements
         for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
                 TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 
-            var state = result.getAnalysisStateAfter(div.getRight());
-            var comExprIterator = state.getComputedExpressions().iterator();
+            var analyzedCFG = result.getAnalysisStateAfter(div.getRight());
+            var state = analyzedCFG.getState();
+            var comExprIterator = analyzedCFG.getComputedExpressions().iterator();
 
             if (comExprIterator.hasNext()) {
 
@@ -57,18 +58,17 @@ public class DivisionByZeroChecker implements
 
                 try {
 
-                    var reachableIds =
-                            new HashSet<>(state.getState().reachableFrom(divisor, div, state.getState()).elements);
+                    var reachableIds = new HashSet<>(state.reachableFrom(divisor, div, state).elements);
 
                     for (SymbolicExpression s : reachableIds) {
 
-                        Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
+                        Set<Type> types = getPossibleDynamicTypes(s, div, state);
 
                         // TODO: implement type checks, it is required a numerical type
 
-                        ValueEnvironment<Intervals> valueState = state.getState().getValueState();
+                        ValueEnvironment<Intervals> valueState = state.getValueState();
 
-                        Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
+                        Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state);
 
                         // TODO: add checks for division by zero
                     }

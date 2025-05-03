@@ -60,15 +60,15 @@ public class DivisionByZeroChecker implements
 
                     var reachableIds = new HashSet<>(state.reachableFrom(divisor, div, state).elements);
 
-                    for (SymbolicExpression s : reachableIds) {
+                    for (SymbolicExpression symbolicExpression : reachableIds) {
 
-                        Set<Type> types = getPossibleDynamicTypes(s, div, state);
+                        Set<Type> types = analyzer.getDynamicTypes(symbolicExpression, div, state);
 
                         // TODO: implement type checks, it is required a numerical type
 
                         ValueEnvironment<Intervals> valueState = state.getValueState();
 
-                        Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state);
+                        Intervals intervalAbstractValue = valueState.eval((ValueExpression) symbolicExpression, div, state);
 
                         // TODO: add checks for division by zero
                     }

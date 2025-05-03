@@ -15,8 +15,10 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class Analyzer<V extends ValueDomain<V>> {
 
@@ -45,6 +47,17 @@ public class Analyzer<V extends ValueDomain<V>> {
 
     public SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>> getAnalysisStateAfter(Statement statement) {
         return analyzer.getAnalysisStateAfter(statement).getState();
+    }
+
+    public List<SymbolicExpression> getComputedExpression(Statement statement) {
+        var expressionsSpliterator = analyzer
+                .getAnalysisStateAfter(statement)
+                .getComputedExpressions()
+                .spliterator();
+
+        return StreamSupport
+                .stream(expressionsSpliterator, false)
+                .toList();
     }
 
     public Set<Type> getDynamicTypes(SymbolicExpression expression, ProgramPoint programPoint, SemanticOracle oracle) {

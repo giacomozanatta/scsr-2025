@@ -48,13 +48,13 @@ public class DivisionByZeroChecker implements
         for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
                 TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 
-            var analyzedCFG = result.getAnalysisStateAfter(div.getRight());
-            var state = analyzedCFG.getState();
-            var comExprIterator = analyzedCFG.getComputedExpressions().iterator();
+            var analyzer = new Analyzer<>(result);
+            var state = analyzer.getAnalysisStateAfter(div.getRight());
+            var expressions = analyzer.getComputedExpression(div.getRight());
 
-            if (comExprIterator.hasNext()) {
+            if (!expressions.isEmpty()) {
 
-                var divisor = comExprIterator.next();
+                var divisor = expressions.getFirst();
 
                 try {
 

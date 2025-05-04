@@ -122,8 +122,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
     private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node) {
 
         var id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
-        var staticType = Set.of(id.getStaticType());
-        var dynamicTypes = tool
+        var types = tool
                 .getResultOf(graph)
                 .stream()
                 .flatMap(result -> new Analyzer<>(result).inferTypes(id, varRef, new Analyzer<>(result).getAnalysisStateAfter(varRef)).stream())
@@ -131,11 +130,10 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
 
         // Perform analysis only for some specific types, namely those checked in the "isSupportedType" method. If
         // staticType is untyped, then dynamic types are checked.
-        if (!(isSupportedType(staticType) || isSupportedType(dynamicTypes))) {
+        if (!(isSupportedType(types))) {
             defaultLogger.info(() -> MessageFormat
-                    .format("Neither set {0} nor set {1} include types available for evaluations at node {2}",
-                            staticType,
-                            dynamicTypes,
+                    .format("Set {0} does not include types available for evaluations at node {1}",
+                            types,
                             node));
 
             // Returns without performing any parsing because the inferred type is not supported.

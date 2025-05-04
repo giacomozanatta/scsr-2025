@@ -60,17 +60,33 @@ public class Analyzer<V extends ValueDomain<V>> {
                 .toList();
     }
 
+    /**
+     * If the static type cannot be inferred from the specified expression, its dynamic types are retrieved. If the
+     * dynamic types cannot be inferred, the runtime types are retrieved.
+     *
+     * @param expression   The expression to type.
+     * @param programPoint The program point where the types are required.
+     * @param oracle       The oracle for inter-domain communication.
+     * @return <code>Set</code> of types that have been inferred. It may be empty.
+     */
     public Set<Type> inferTypes(SymbolicExpression expression, ProgramPoint programPoint, SemanticOracle oracle) {
         try {
-            var dynamicType = oracle.getDynamicTypeOf(expression, programPoint, oracle);
-            if (!dynamicType.isUntyped()) return Set.of(dynamicType);
+            // Try to deduce the static type.
+            var staticType = expression.getStaticType();
+            if (staticType != null && !staticType.isUntyped()) return Set.of(staticType);
 
+            // Try to deduce dynamic types.
+            var dynamicType = oracle.getDynamicTypeOf(expression, programPoint, oracle);
+            if (dynamicType != null && !dynamicType.isUntyped()) return Set.of(dynamicType);
+
+            // Try to infer runtime types.
             return oracle
                     .getRuntimeTypesOf(expression, programPoint, oracle)
                     .stream()
-                    .filter(t -> t != Untyped.INSTANCE)
+                    .filter(t -> t != null && t != Untyped.INSTANCE)
                     .collect(Collectors.toSet());
-        } catch (Exception e) {
+        } catch (SemanticException e) {
+            // If a SemanticException occurs, the empty set is returned.
             return Collections.emptySet();
         }
     }

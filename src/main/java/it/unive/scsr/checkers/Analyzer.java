@@ -11,6 +11,7 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 
@@ -45,7 +46,7 @@ public class Analyzer<V extends ValueDomain<V>> {
         }
     }
 
-    public SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>> getAnalysisStateAfter(Statement statement) {
+    public SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>> getStateAfter(Statement statement) {
         return analyzer.getAnalysisStateAfter(statement).getState();
     }
 
@@ -69,7 +70,7 @@ public class Analyzer<V extends ValueDomain<V>> {
      * @param oracle       The oracle for inter-domain communication.
      * @return <code>Set</code> of types that have been inferred. It may be empty.
      */
-    public Set<Type> inferTypes(SymbolicExpression expression, ProgramPoint programPoint, SemanticOracle oracle) {
+    public static Set<Type> inferTypes(SymbolicExpression expression, ProgramPoint programPoint, SemanticOracle oracle) {
         try {
             // Try to deduce the static type.
             var staticType = expression.getStaticType();
@@ -89,5 +90,21 @@ public class Analyzer<V extends ValueDomain<V>> {
             // If a SemanticException occurs, the empty set is returned.
             return Collections.emptySet();
         }
+    }
+
+    /**
+     * Checks whether the set of inferred types contains at least one NumericType.
+     *
+     * @param expression   The expression to type.
+     * @param programPoint The program point where the types are required.
+     * @param oracle       The oracle for inter-domain communication.
+     * @return <code>true</code> when at least one of the inferred types is numeric, <code>false</code> otherwise.
+     */
+    public static boolean anyNumericalType(SymbolicExpression expression, ProgramPoint programPoint, SemanticOracle oracle) {
+        // The set of inferred types must contain at least one NumericType.
+        return inferTypes(expression, programPoint, oracle)
+                .stream()
+                .map(Type::getClass)
+                .anyMatch(NumericType.class::isAssignableFrom);
     }
 }

@@ -62,7 +62,7 @@ public class DivisionByZeroChecker implements
 
                     for (SymbolicExpression symbolicExpression : reachableIds) {
 
-                        Set<Type> types = analyzer.getDynamicTypes(symbolicExpression, div, state);
+                        Set<Type> types = analyzer.inferTypes(symbolicExpression, div, state);
 
                         // TODO: implement type checks, it is required a numerical type
 

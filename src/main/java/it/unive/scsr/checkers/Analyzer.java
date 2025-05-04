@@ -60,7 +60,7 @@ public class Analyzer<V extends ValueDomain<V>> {
                 .toList();
     }
 
-    public Set<Type> getDynamicTypes(SymbolicExpression expression, ProgramPoint programPoint, SemanticOracle oracle) {
+    public Set<Type> inferTypes(SymbolicExpression expression, ProgramPoint programPoint, SemanticOracle oracle) {
         try {
             var dynamicType = oracle.getDynamicTypeOf(expression, programPoint, oracle);
             if (!dynamicType.isUntyped()) return Set.of(dynamicType);

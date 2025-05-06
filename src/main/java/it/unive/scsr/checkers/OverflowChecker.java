@@ -31,13 +31,6 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
 
     // Represents the exit state of an analysis, containing abstract data and the overflow level.
     public record ExitState(Intervals abstractData, SizeChecker.OverflowingLevel result) {
-        @Override
-        public String toString() {
-            var abstractEntry = Map.entry("abstract", abstractData.representation().toString());
-            var overflowingEntry = Map.entry("overflowing", String.valueOf(result.isOverflowing()));
-            var definitelyEntry = Map.entry("definitely", String.valueOf(result.definitely()));
-            return new WarnMap(Set.of(abstractEntry, overflowingEntry, definitelyEntry)).toString();
-        }
     }
 
     // Represents the key for an exit state, composed of a code location, a variable, and its numerical size.
@@ -46,7 +39,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
         public String toString() {
             var codeLocationEntry = Map.entry("location", codeLocation.getCodeLocation());
             var variableEntry = Map.entry("variable", variable.getName());
-            var sizeEntry = Map.entry("size", size.name().toLowerCase());
+            var sizeEntry = Map.entry("size", size.toString());
             return new WarnMap(Set.of(codeLocationEntry, variableEntry, sizeEntry)).toString();
         }
     }
@@ -113,12 +106,17 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                         } catch (SemanticException e) {
                             throw new IllegalArgumentException(e);
                         }
-                    })
-                    .map(ExitState::toString);
+                    });
 
             if (data.isPresent()) {
+
+                var safeData = data.orElseThrow();
+                var abstractEntry = entry("abstract", safeData.abstractData.representation().toString());
+                var descriptiontEntry = entry("description", "definite overflow");
+                var warning = new WarnMap(Set.of(abstractEntry, descriptiontEntry)).toString();
+
                 // Log the warnings using the provided tool.
-                tool.warn(new WarnMap(Set.of(entry("info", info), entry("data", data.orElseThrow()))).toString());
+                tool.warn(new WarnMap(Set.of(entry("info", info), entry("warning", warning))).toString());
             }
         });
     }

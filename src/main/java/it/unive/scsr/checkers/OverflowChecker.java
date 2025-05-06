@@ -1,6 +1,5 @@
 package it.unive.scsr.checkers;
 
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -15,7 +14,6 @@ import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Assignment;
-import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
@@ -24,7 +22,6 @@ import it.unive.lisa.type.Type;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.overflow.checkers.SizeChecker;
 
-import static it.unive.scsr.utils.Logging.defaultLogger;
 import static java.util.Map.entry;
 
 public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
@@ -70,20 +67,14 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
 
     @Override
     public boolean visit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, CFG graph, Statement node) {
-
+        // Checking if each variable reference is over/under-flowing.
         if (node instanceof Assignment assignment) {
-            Expression leftExpression = assignment.getLeft();
-
-            // Checking if each variable reference is over/under-flowing.
-            if (leftExpression instanceof VariableRef) {
-                checkVariableRef(tool, (VariableRef) leftExpression, graph, node);
+            if (assignment.getLeft() instanceof VariableRef reference) {
+                checkVariableRef(tool, reference, graph);
             }
-
         } else {
-
-            // Checking if each variable reference is over/under-flowing.
-            if (node instanceof VariableRef) {
-                checkVariableRef(tool, (VariableRef) node, graph, node);
+            if (node instanceof VariableRef reference) {
+                checkVariableRef(tool, reference, graph);
             }
         }
 
@@ -129,7 +120,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                 .anyMatch(NumericType.class::isAssignableFrom);
     }
 
-    private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef ref, CFG graph, Statement node) {
+    private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef ref, CFG graph) {
 
         var id = new Variable(ref.getStaticType(), ref.getName(), ref.getLocation());
         var types = tool
@@ -139,16 +130,9 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                 .collect(Collectors.toSet());
 
         // Perform analysis only for some specific types, namely those checked in the "isSupportedType" method. If
-        // staticType is untyped, then dynamic types are checked.
-        if (!(isSupportedType(types))) {
-            defaultLogger.info(() -> MessageFormat
-                    .format("Set {0} does not include types available for evaluations at node {1}",
-                            types,
-                            node));
-
-            // Returns without performing any parsing because the inferred type is not supported.
-            return;
-        }
+        // staticType is untyped, then dynamic types are checked. If there are no supported types, no analysis will be
+        // performed because the inferred type is not supported.
+        if (!(isSupportedType(types))) return;
 
         tool.getResultOf(graph).forEach(result -> {
             // Computes the exit state for the specified node.

@@ -1,7 +1,6 @@
 package it.unive.scsr.checkers;
 
 import java.util.HashSet;
-import java.util.Set;
 
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
@@ -17,39 +16,35 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
-import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
+import it.unive.scsr.intervals.numbers.IntervalNumber;
 
-public class DivisionByZeroChecker implements
-        SemanticCheck<
-                SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+import static it.unive.scsr.utils.Logging.defaultLogger;
 
+public class DivisionByZeroChecker implements SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 
-    private NumericalSize size;
-
-    public DivisionByZeroChecker(NumericalSize size) {
-        this.size = size;
+    @Override
+    public void beforeExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
+        SemanticCheck.super.beforeExecution(tool);
     }
 
     @Override
-    public boolean visit(
-            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-            CFG graph, Statement node) {
-        if (node instanceof Division) checkDivision(tool, graph, (Division) node);
+    public boolean visit(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, CFG graph, Statement node) {
+        if (node instanceof Division division) checkDivision(tool, graph, division);
         return true;
     }
 
-    private void checkDivision(
-            CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-            CFG graph, Division div) {
+    @Override
+    public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
+        SemanticCheck.super.afterExecution(tool);
+    }
 
-        for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-                TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
+    private void checkDivision(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, CFG graph, Division div) {
+
+        for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 
             var analyzer = new Analyzer<>(result);
-            var state = analyzer.getAnalysisStateAfter(div.getRight());
+            var state = analyzer.getStateAfter(div.getRight());
             var expressions = analyzer.getComputedExpression(div.getRight());
 
             if (!expressions.isEmpty()) {
@@ -61,42 +56,22 @@ public class DivisionByZeroChecker implements
                     var reachableIds = new HashSet<>(state.reachableFrom(divisor, div, state).elements);
 
                     for (SymbolicExpression symbolicExpression : reachableIds) {
+                        if (Analyzer.anyNumericalType(symbolicExpression, div, state)) {
 
-                        Set<Type> types = analyzer.inferTypes(symbolicExpression, div, state);
+                            ValueEnvironment<Intervals> valueState = state.getValueState();
+                            var intervals = valueState.eval((ValueExpression) symbolicExpression, div, state);
 
-                        // TODO: implement type checks, it is required a numerical type
-
-                        ValueEnvironment<Intervals> valueState = state.getValueState();
-
-                        Intervals intervalAbstractValue = valueState.eval((ValueExpression) symbolicExpression, div, state);
-
-                        // TODO: add checks for division by zero
+                            if (intervals.interval.is(IntervalNumber.ofPrimitiveOrThrow(0))) {
+                                System.out.println(symbolicExpression.getCodeLocation().getCodeLocation());
+                                System.out.println(symbolicExpression);
+                                System.out.println(intervals.representation());
+                            }
+                        }
                     }
                 } catch (SemanticException e) {
-                    e.printStackTrace();
+                    defaultLogger.warning(e.getMessage());
                 }
             }
         }
     }
-
-    // compute possible dynamic types / runtime types
-    private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div,
-                                              SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state) throws SemanticException {
-
-        Set<Type> possibleDynamicTypes = new HashSet<>();
-        Type dynamicTypes = state.getDynamicTypeOf(s, div, state);
-        if (dynamicTypes != null && !dynamicTypes.isUntyped()) {
-            possibleDynamicTypes.add(dynamicTypes);
-        } else if (dynamicTypes.isUntyped()) {
-            Set<Type> runtimeTypes = state.getRuntimeTypesOf(s, div, state);
-            if (runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
-                for (Type t : runtimeTypes)
-                    possibleDynamicTypes.add(t);
-        }
-
-        return possibleDynamicTypes;
-
-    }
-
-
 }

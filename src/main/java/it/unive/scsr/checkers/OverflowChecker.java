@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
@@ -101,13 +102,24 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
         exitStates.forEach((key, value) -> {
             // Extracts information from the key and results from the input value.
             var info = key.toString();
-            var data = Arrays.toString(value
+            var data = value
                     .stream()
-                    .map(ExitState::toString)
-                    .toArray());
+                    .filter(state -> state.result.isOverflowing())
+                    .filter(state -> state.result.definitely())
+                    .reduce((first, second) -> {
+                        try {
+                            var lub = first.abstractData.lub(second.abstractData());
+                            return new ExitState(lub, first.result);
+                        } catch (SemanticException e) {
+                            throw new IllegalArgumentException(e);
+                        }
+                    })
+                    .map(ExitState::toString);
 
-            // Log the warnings using the provided tool.
-            tool.warn(new WarnMap(Set.of(entry("info", info), entry("data", data))).toString());
+            if (data.isPresent()) {
+                // Log the warnings using the provided tool.
+                tool.warn(new WarnMap(Set.of(entry("info", info), entry("data", data.orElseThrow()))).toString());
+            }
         });
     }
 

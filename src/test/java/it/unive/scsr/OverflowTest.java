@@ -2,13 +2,14 @@ package it.unive.scsr;
 
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.scsr.checkers.OverflowChecker;
-import it.unive.scsr.utils.FilesUtils;
 import it.unive.scsr.resources.ProgramResource;
 import org.junit.Test;
 
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.function.Function;
+
+import static it.unive.scsr.utils.FilesUtils.*;
 
 public class OverflowTest {
     // A private static nested class representing a program resource specialized for overflow checking, extending
@@ -30,16 +31,12 @@ public class OverflowTest {
 
         // Defines a function that takes a Path and creates a new OverflowProgram instance, using the path's string
         // representation as the input file and a default output directory derived from the filename.
-        Function<Path, OverflowProgram> overflowProgram = path ->
-                new OverflowProgram(
-                        path.toString(),
-                        FilesUtils.defaultOutputDirectory(FilesUtils.removeExt(path.getFileName())));
+        Function<Path, OverflowProgram> overflowProgram = path -> new OverflowProgram(path.toString(), defaultOutputDirectory(removeExt(path.getFileName())));
 
         // Retrieves filenames from the default input directory, creates an OverflowProgram for each, converts each
         // program to a LiSARunner with the provided checkers and initial value environment, and then runs each
         // LiSARunner.
-        FilesUtils
-                .filenames(FilesUtils.defaultInputDirectory())
+        filenames(defaultInputDirectory())
                 .stream()
                 .map(overflowProgram)
                 .map(program -> program.toLiSARunner(checkers, new ValueEnvironment<>(Intervals.TOP), null))

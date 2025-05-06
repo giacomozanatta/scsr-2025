@@ -119,13 +119,13 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                 .anyMatch(NumericType.class::isAssignableFrom);
     }
 
-    private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node) {
+    private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef ref, CFG graph, Statement node) {
 
-        var id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
+        var id = new Variable(ref.getStaticType(), ref.getName(), ref.getLocation());
         var types = tool
                 .getResultOf(graph)
                 .stream()
-                .flatMap(result -> new Analyzer<>(result).inferTypes(id, varRef, new Analyzer<>(result).getAnalysisStateAfter(varRef)).stream())
+                .flatMap(result -> Analyzer.inferTypes(id, ref, new Analyzer<>(result).getStateAfter(ref)).stream())
                 .collect(Collectors.toSet());
 
         // Perform analysis only for some specific types, namely those checked in the "isSupportedType" method. If
@@ -142,8 +142,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
 
         tool.getResultOf(graph).forEach(result -> {
             // Computes the exit state for the specified node.
-            var env = new Analyzer<>(result)
-                    .exitStateOrThrow();
+            var env = new Analyzer<>(result).exitStateOrThrow();
 
             if (env.knowsIdentifier(id)) {
                 // Since this checker deals with the interval domain, the environment state of the value must be an
@@ -156,13 +155,12 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
                         .map(sizeChecker -> sizeChecker.isOverflowing(intervals))
                         .orElse(SizeChecker.OverflowingLevel.base());
 
-                if (stickiness.definitely()) {
-                    // Add the result only when a definite overflow has been detected.
-                    var key = new ExitKey(id.getCodeLocation(), id, size);
-                    var currentSet = exitStates.getOrDefault(key, new HashSet<>());
-                    currentSet.add(new ExitState(intervals, stickiness));
-                    exitStates.put(key, currentSet);
-                }
+
+                // Add the result as an exit state.
+                var key = new ExitKey(id.getCodeLocation(), id, size);
+                var currentSet = exitStates.getOrDefault(key, new HashSet<>());
+                currentSet.add(new ExitState(intervals, stickiness));
+                exitStates.put(key, currentSet);
             }
         });
     }

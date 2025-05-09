@@ -73,9 +73,13 @@ SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, T
 						Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 
 						// ADDED: add checks for division by zero
+						if(intervalAbstractValue != null &&
+								intervalAbstractValue.isTop()) {
+							tool.warnOn(div, "TOP Interval!");
+						}
+
 						if (intervalAbstractValue != null &&
-								!intervalAbstractValue.isBottom() &&
-									!intervalAbstractValue.isTop()) {
+								!intervalAbstractValue.isBottom()) {
 							var lb = intervalAbstractValue.interval.getLow();
 							var ub = intervalAbstractValue.interval.getHigh();
 

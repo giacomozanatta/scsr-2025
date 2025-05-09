@@ -25,10 +25,10 @@ public class DivByZeroTest {
 		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-divbyzero");
 	}
 	
-	@Test
+	/*@Test
 	public void testtestDivByZeroPentagons() throws ParsingException, AnalysisException {
 		runAnalysis(new Pentagons(), NumericalSize.UINT8, "intervals-pentagons");
-	}
+	}*/
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it

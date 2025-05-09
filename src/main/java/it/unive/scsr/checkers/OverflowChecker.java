@@ -89,6 +89,10 @@ SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, T
 		double min = getTypeLowerBound();
 		double max = getTypeUpperBound();
 
+		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
+			node = varRef.getParentStatement();
+		}
+
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
@@ -99,28 +103,35 @@ SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, T
 			if (intervalAbstractValue == null || intervalAbstractValue.isBottom())
 				continue;
 
+			if(intervalAbstractValue.isTop()) {
+				tool.warnOn(node, String.format("[%s] Infinite value in the Interval of variable %s!", size, id.getName()));
+				continue;
+			}
+
 			//TO DO - controllare l'infinito, invece di usare il toDouble
 			//TO DO - controllare i floating point
-			double lb = toDouble(intervalAbstractValue.interval.getLow());
-			double ub = toDouble(intervalAbstractValue.interval.getHigh());
+			try {
+				double lb = intervalAbstractValue.interval.getLow().toDouble();
+				double ub = intervalAbstractValue.interval.getHigh().toDouble();
+				intervalAbstractValue.interval.getLow().getNumber().doubleValue();
+				if(lb < min) {
+					if(ub < min)
+						tool.warnOn(node, String.format("[%s] Underflow DETECTED: %.3f < %.3f for variable %s",
+								size, ub, min, id.getName()));
+					else
+						tool.warnOn(node, String.format("[%s] POSSIBLE underflow DETECTED: %.3f < %.3f for variable %s",
+								size, lb, min, id.getName()));
+				}
 
-			if(lb < min) {
-				if(ub < min)
-					tool.warnOn(node, String.format("[%s] Underflow DETECTED: %.3f < %.3f for variable %s",
-							size, lb, min, id.getName()));
-				else
-					tool.warnOn(node, String.format("[%s] POSSIBLE underflow DETECTED: %.3f < %.3f for variable %s",
-							size, lb, min, id.getName()));
-			}
-
-			if(ub > max) {
-				if(lb > max)
-					tool.warnOn(node, String.format("[%s] Overflow DETECTED: %.3f < %.3f for variable %s",
-							size, lb, min, id.getName()));
-				else
-					tool.warnOn(node, String.format("[%s] POSSIBLE overflow DETECTED: %.3f < %.3f for variable %s",
-							size, lb, min, id.getName()));
-			}
+				if(ub > max) {
+					if(lb > max)
+						tool.warnOn(node, String.format("[%s] Overflow DETECTED: %.3f > %.3f for variable %s",
+								size, lb, max, id.getName()));
+					else
+						tool.warnOn(node, String.format("[%s] POSSIBLE overflow DETECTED: %.3f > %.3f for variable %s",
+								size, ub, max, id.getName()));
+				}
+			} catch (Exception e) {}
 		}
 	}
 

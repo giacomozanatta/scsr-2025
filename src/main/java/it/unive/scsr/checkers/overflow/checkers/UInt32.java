@@ -16,6 +16,6 @@ public final class UInt32 extends SizeChecker {
 
   @Override
   public Numeric<?> maxLimit() {
-    return IntervalNumber.ofPrimitiveOrThrow(2147483647);
+    return IntervalNumber.ofPrimitiveOrThrow(4294967295L);
   }
 }

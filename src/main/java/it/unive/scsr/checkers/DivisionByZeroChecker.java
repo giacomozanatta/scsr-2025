@@ -20,73 +20,99 @@ import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.divisionbyzero.Message;
 import it.unive.scsr.intervals.numbers.IntervalNumber;
 
-public class DivisionByZeroChecker implements
-	SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+public class DivisionByZeroChecker
+    implements SemanticCheck<
+        SimpleAbstractState<
+            PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 
-	private record Data(CodeLocation codeLocation, SymbolicExpression expression) {
+  private record Data(CodeLocation codeLocation, SymbolicExpression expression) {}
 
-	}
+  private final Set<Data> divisionsByZero = new HashSet<>();
 
-	private final Set<Data> divisionsByZero = new HashSet<>();
+  @Override
+  public void beforeExecution(
+      CheckToolWithAnalysisResults<
+              SimpleAbstractState<
+                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+          tool) {
+    divisionsByZero.clear();
+  }
 
-	@Override
-	public void beforeExecution(
-		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
-		divisionsByZero.clear();
-	}
+  @Override
+  public boolean visit(
+      CheckToolWithAnalysisResults<
+              SimpleAbstractState<
+                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+          tool,
+      CFG graph,
+      Statement node) {
+    if (node instanceof Division division) {
+      checkDivision(tool, graph, division);
+    }
+    return true;
+  }
 
-	@Override
-	public boolean visit(
-		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-		CFG graph, Statement node) {
-		if (node instanceof Division division) {
-			checkDivision(tool, graph, division);
-		}
-		return true;
-	}
+  @Override
+  public void afterExecution(
+      CheckToolWithAnalysisResults<
+              SimpleAbstractState<
+                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+          tool) {
+    // Write the warning using the tool provided.
+    divisionsByZero.stream()
+        .map(
+            data -> {
+              var warning = new Message.Warning("division by zero");
+              var info =
+                  new Message.Info(data.expression.toString(), data.codeLocation.getCodeLocation());
+              return new Message(warning, info).toJson();
+            })
+        .forEach(tool::warn);
+  }
 
-	@Override
-	public void afterExecution(
-		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
-		// Write the warning using the tool provided.
-		divisionsByZero.stream().map(data -> {
-			var warning = new Message.Warning("division by zero");
-			var info = new Message.Info(data.expression.toString(),
-				data.codeLocation.getCodeLocation());
-			return new Message(warning, info).toJson();
-		}).forEach(tool::warn);
-	}
+  private void checkDivision(
+      CheckToolWithAnalysisResults<
+              SimpleAbstractState<
+                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+          tool,
+      CFG graph,
+      Division div) {
+    tool.getResultOf(graph)
+        .forEach(
+            result -> {
+              // Get the simple abstract state (which will also be used as an oracle), terminate the
+              // expression computed for the right operand of the division expression.
+              var analyzer = new Analyzer<>(result);
+              var state = analyzer.getStateAfter(div.getRight());
+              var expressions = analyzer.getComputedExpression(div.getRight());
 
-	private void checkDivision(
-		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-		CFG graph, Division div) {
-		tool.getResultOf(graph).forEach(result -> {
-			// Get the simple abstract state (which will also be used as an oracle), terminate the
-			// expression computed for the right operand of the division expression.
-			var analyzer = new Analyzer<>(result);
-			var state = analyzer.getStateAfter(div.getRight());
-			var expressions = analyzer.getComputedExpression(div.getRight());
+              // When the set of evaluated expressions is non-empty, the first one is taken.
+              if (!expressions.isEmpty()) {
 
-			// When the set of evaluated expressions is non-empty, the first one is taken.
-			if (!expressions.isEmpty()) {
+                analyzer
+                    .reachableElements(expressions.getFirst(), div, state)
+                    .forEach(
+                        expression -> {
+                          // For each expression reachable from the first one calculated, if it is
+                          // of numeric type, the
+                          // abstract domain is calculated.
+                          if (Analyzer.anyNumericalType(expression, div, state)) {
 
-				analyzer.reachableElements(expressions.getFirst(), div, state)
-					.forEach(expression -> {
-						// For each expression reachable from the first one calculated, if it is of
-						// numeric type, the abstract domain is calculated.
-						if (Analyzer.anyNumericalType(expression, div, state)) {
-
-							// With the abstract domain, it is possible to know whether the right
-							// side of a division expression is a zero value.
-							var domain = Analyzer.evalOrThrow(state.getValueState(),
-								(ValueExpression) expression, div, state);
-							if (domain.interval.is(IntervalNumber.ofPrimitiveOrThrow(0))) {
-								divisionsByZero.add(
-									new Data(expression.getCodeLocation(), expression));
-							}
-						}
-					});
-			}
-		});
-	}
+                            // With the abstract domain, it is possible to know whether the right
+                            // side of a division expression is a zero value.
+                            var domain =
+                                Analyzer.evalOrThrow(
+                                    state.getValueState(),
+                                    (ValueExpression) expression,
+                                    div,
+                                    state);
+                            if (domain.interval.is(IntervalNumber.ofPrimitiveOrThrow(0))) {
+                              divisionsByZero.add(
+                                  new Data(expression.getCodeLocation(), expression));
+                            }
+                          }
+                        });
+              }
+            });
+  }
 }

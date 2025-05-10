@@ -5,17 +5,17 @@ import it.unive.scsr.intervals.numbers.IntervalNumber;
 import it.unive.scsr.intervals.numbers.Numeric;
 
 public final class UInt32 extends SizeChecker {
-    public UInt32(OverflowChecker.NumericalSize size) {
-        super(size);
-    }
+  public UInt32(OverflowChecker.NumericalSize size) {
+    super(size);
+  }
 
-    @Override
-    public Numeric<?> minLimit() {
-        return IntervalNumber.ofPrimitiveOrThrow(0);
-    }
+  @Override
+  public Numeric<?> minLimit() {
+    return IntervalNumber.ofPrimitiveOrThrow(0);
+  }
 
-    @Override
-    public Numeric<?> maxLimit() {
-        return IntervalNumber.ofPrimitiveOrThrow(2147483647);
-    }
+  @Override
+  public Numeric<?> maxLimit() {
+    return IntervalNumber.ofPrimitiveOrThrow(2147483647);
+  }
 }

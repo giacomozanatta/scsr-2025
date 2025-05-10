@@ -12,25 +12,25 @@ import it.unive.lisa.imp.IMPFrontend;
 import it.unive.lisa.imp.ParsingException;
 import it.unive.lisa.program.Program;
 
-public class SignsTest {
+public class ParityTest {
 
     @Test
-    public void testSigns() throws ParsingException, AnalysisException {
+    public void testParity() throws ParsingException, AnalysisException {
         // we parse the program to get the CFG representation of the code in it
-        Program program = IMPFrontend.processFile("inputs/signs.imp");
+        Program program = IMPFrontend.processFile("inputs/parity.imp");
 
         // we build a new configuration for the analysis
         LiSAConfiguration conf = new DefaultConfiguration();
 
         // we specify where we want files to be generated
-        conf.workdir = "outputs/sign";
+        conf.workdir = "outputs/parity";
 
         // we specify the visual format of the analysis results
         conf.analysisGraphs = GraphType.HTML;
         // we specify the analysis that we want to execute
-       conf.abstractState = DefaultConfiguration.simpleState(
+        conf.abstractState = DefaultConfiguration.simpleState(
                 DefaultConfiguration.defaultHeapDomain(),
-                new ValueEnvironment<>(new Signs()),
+                new ValueEnvironment<>(new Parity()),
                 DefaultConfiguration.defaultTypeDomain());
 
         // we instantiate LiSA with our configuration*/

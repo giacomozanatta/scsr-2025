@@ -8,7 +8,7 @@ module Analyzers
 
       # The set containing all the alerts is reduced to a single hash that expresses all the data.
       with_mangled_set = messages.transform_values do |set|
-        { sizes: uniq_join.call(set.map { _1['info']['size'] }),
+        { sizes: uniq_join.call(set.map { _1['info']['size'] }).sort,
           expressions: uniq_join.call(set.map { _1['info']['expression'] }),
           descriptions: uniq_join.call(set.map { _1['warning']['description'] }),
           abstracts: uniq_join.call(set.map { _1['warning']['abstractRepresentation'] }) }

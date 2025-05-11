@@ -63,16 +63,8 @@ public abstract sealed class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
     var min = interval.low;
     var max = interval.high;
 
-    if (min.isInfinity() || max.isInfinity()) {
-      // Since it is not top, it is possible to know the "overflow direction". However, this
-      // requires additional
-      // data to track.
-      possibleOverflow.get();
-    }
-
     // From this point on the interval is finite, that is, the lower and upper bounds are
-    // represented by finite
-    // numbers.
+    // represented by finite numbers or by infinity.
     var isUnderflow = min.lessThan(minLimit());
     var isOverflow = max.greaterThan(maxLimit());
 
@@ -82,11 +74,9 @@ public abstract sealed class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
       var alwaysUp = min.greaterThan(maxLimit());
 
       // If the direction is consistently down or up, return the definite overflow value. Otherwise,
-      // return the
-      // possible overflow value, accounting for uncertainty.
-      if (alwaysDown || alwaysUp) {
-        return definiteOverflow.get();
-      }
+      // return the possible
+      // overflow value, accounting for uncertainty.
+      if (alwaysDown || alwaysUp) return definiteOverflow.get();
       return possibleOverflow.get();
     }
 

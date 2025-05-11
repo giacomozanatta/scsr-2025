@@ -22,17 +22,17 @@ public class OverflowTest {
 
 	@Test
 	public void testOverflowIntervalsUINT8() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-uint8");
+		runAnalysis(new ValueEnvironment<>(Intervals.TOP), NumericalSize.UINT8, "intervals-uint8");
 	}
 	
 	@Test
 	public void testOverflowIntervalsINT16() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "intervals-int16");
+		runAnalysis(new ValueEnvironment<>(Intervals.TOP), NumericalSize.INT16, "intervals-int16");
 	}
 	
 	@Test
 	public void testOverflowIntervalsFLOAT8() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT8, "intervals-float8");
+		runAnalysis(new ValueEnvironment<>(Intervals.TOP), NumericalSize.FLOAT8, "intervals-float8");
 	}
 	
 	@Test

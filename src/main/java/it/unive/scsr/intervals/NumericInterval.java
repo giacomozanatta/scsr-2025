@@ -136,6 +136,30 @@ public class NumericInterval implements Comparable<NumericInterval> {
         divisions.stream().max(IntervalNumber::compareTo).orElseThrow());
   }
 
+  /**
+   * Checks whether this current <code>NumericInterval</code> is definitely less than the specified
+   * <code>NumericInterval</code>.
+   *
+   * @param other <code>NumericInterval</code> to compare with.
+   * @return <code>true</code> if this interval is definitely less than the specified interval,
+   *     <code>false</code> otherwise.
+   */
+  public boolean definitelyLessThan(NumericInterval other) {
+    return this.high.lessThan(other.low);
+  }
+
+  /**
+   * Checks whether this current <code>NumericInterval</code> is definitely greater than the
+   * specified <code>NumericInterval</code>.
+   *
+   * @param other <code>NumericInterval</code> to compare with.
+   * @return <code>true</code> if this interval is definitely greater than the specified interval,
+   *     <code>false</code> otherwise.
+   */
+  public boolean definitelyGreaterThan(NumericInterval other) {
+    return this.low.greaterThan(other.high);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (o == null || getClass() != o.getClass()) return false;
@@ -149,6 +173,11 @@ public class NumericInterval implements Comparable<NumericInterval> {
     int result = Objects.hashCode(low);
     result = 31 * result + Objects.hashCode(high);
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return "[" + low + ", " + high + ']';
   }
 
   @Override

@@ -1,4 +1,4 @@
-package it.unive.scsr;
+package it.unive.scsr.tests879899;
 
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.DefaultConfiguration;
@@ -8,9 +8,10 @@ import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.imp.IMPFrontend;
 import it.unive.lisa.imp.ParsingException;
 import it.unive.lisa.program.Program;
+import it.unive.scsr.Parity;
 import org.junit.Test;
 
-public class MyParityTest {
+public class ParityTest {
 
     @Test
     public void testParity() throws ParsingException, AnalysisException {

@@ -1,4 +1,4 @@
-package it.unive.scsr;
+package it.unive.scsr.tests879899;
 
 import it.unive.scsr.intervals.numbers.*;
 import it.unive.scsr.utils.Collections;

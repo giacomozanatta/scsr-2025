@@ -87,7 +87,7 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
 	@Override
 	public boolean isPossiblyTainted() {
-		return this == TAINTED || this == TOP;
+		return this == TOP;
 	}
 // This method evaluates a binary expression
 	@Override

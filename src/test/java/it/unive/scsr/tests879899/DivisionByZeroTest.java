@@ -1,6 +1,7 @@
-package it.unive.scsr;
+package it.unive.scsr.tests879899;
 
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.DivisionByZeroChecker;
 import it.unive.scsr.resources.ProgramResource;
 import org.junit.Test;
@@ -11,7 +12,7 @@ import java.util.function.Function;
 
 import static it.unive.scsr.utils.FilesUtils.*;
 
-public class MyDivisionByZeroTest {
+public class DivisionByZeroTest {
 
     // A private static nested class representing a program resource specialized for division by zero checking,
     // extending ProgramResource and parameterized with DivisionByZeroChecker and a ValueEnvironment of Intervals. It is

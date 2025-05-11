@@ -14,7 +14,8 @@ module Analyzers
           abstracts: uniq_join.call(set.map { _1['warning']['abstractRepresentation'] }) }
       end
 
-      # ...
+      # Construct a human-readable description of the warning based on the data in the hash. Finally, create a hash
+      # where the key is the 'name' and the value is the array of generated warning hashes.
       with_mangled_set.map do |(location, hash)|
         human_readable_description = "#{hash[:descriptions]} for sizes #{hash[:sizes]} " +
                                      "at #{location} for #{hash[:expressions]} " +

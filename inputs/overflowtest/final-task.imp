@@ -1,0 +1,118 @@
+// Create (at least 3) meaningful programs to test the following checkers:
+//  - overflow/underflow checker
+//  - division by zero checker
+//  - taint with three levels checker
+
+// Definition for holding minimum and maximum numeric values
+class MinMaxNumeric {
+    // INT8 -> signed integer 8-bit
+    // INT16 -> signed integer 16-bit
+    // INT32 -> signed integer 32-bit
+    // UINT8 -> unsigned integer 8-bit
+    // UINT16 -> unsigned integer 16-bit
+    // UINT32 -> unsigned integer 32-bit
+
+    minInt8;
+    maxInt8;
+    minInt16;
+    maxInt16;
+    minInt32;
+    maxInt32;
+
+    minUint8;
+    maxUint8;
+    minUint16;
+    maxUint16;
+    minUint32;
+    maxUint32;
+
+    ~MinMaxNumeric() {
+        this.minInt8 = -128;
+        this.maxInt8 = 127;
+        this.minInt16 = -32768;
+        this.maxInt16 = 32767;
+        this.minInt32 = -2147483647 - 1;
+        this.maxInt32 = 2147483647;
+
+        this.minUint8 = 0;
+        this.maxUint8 = 255;
+        this.minUint16 = 0;
+        this.maxUint16 = 65535;
+        this.minUint32 = 0;
+        this.maxUint32 = (2147483647 * 2) + 1;
+    }
+}
+
+class UintOverflow {
+
+    baseOverflow(type) {
+        def balance = this.fetchBalance(type, 16);
+        def newBalance = balance + 32;
+        return newBalance;
+    }
+
+    baseLimitOverflow(type) {
+        def balance = this.fetchBalance(type, 16);
+        def newBalance = balance + 15;
+        def newBalanceLimit = newBalance + 1;
+        return newBalanceLimit;
+    }
+
+    baseDefinitelyNotOverflow(type) {
+        def balance = this.fetchBalance(type, 0);
+        def newBalance = balance - 1;
+        return newBalance;
+    }
+
+    overflow8() {
+        def base = this.baseOverflow(8);
+        return base;
+    }
+
+    overflow16() {
+        return this.baseOverflow(16);
+    }
+
+    overflow32() {
+        return this.baseOverflow(32);
+    }
+
+    limitOverflow8() {
+        return this.baseLimitOverflow(8);
+    }
+
+    limitOverflow16() {
+        return this.baseLimitOverflow(16);
+    }
+
+    limitOverflow32() {
+        return this.baseLimitOverflow(32);
+    }
+
+    definitelyNotOverflow8() {
+        return this.baseDefinitelyNotOverflow(8);
+    }
+
+    definitelyNotOverflow16() {
+        return this.baseDefinitelyNotOverflow(16);
+    }
+
+    definitelyNotOverflow32() {
+        return this.baseDefinitelyNotOverflow(32);
+    }
+
+    fetchBalance(type, gap) {
+        if (type == 8) {
+            def ret = 255 - gap;
+            return ret;
+        } else {
+            if (type == 16) {
+                def ret = 65535 - gap;
+                return ret;
+            } else {
+                def ret = (2147483647 * 2) + 1 - gap;
+                return ret;
+            }
+        }
+    }
+}

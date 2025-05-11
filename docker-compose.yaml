@@ -1,0 +1,10 @@
+name: lisa
+
+services:
+  analyzer:
+    image: lisa
+    build:
+      context: .
+    volumes:
+      - $PWD/warnings:/lisa/warnings
+    entrypoint: tail -f

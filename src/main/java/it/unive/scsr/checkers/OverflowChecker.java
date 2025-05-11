@@ -221,8 +221,18 @@ public class OverflowChecker implements
 			default:      return Double.POSITIVE_INFINITY;
 		}
 	}
+	/* The following method checks if the CFG name contains a type name, and if so
+	   it performs the overflow/underflow check over that type, if not it performs
+	   the test for all the types
+	 */
 	private boolean isCfgRelevant(CFG cfg) {
 		String name = cfg.getDescriptor().getName().toUpperCase();
-		return name.endsWith(size.name());
+		if (name.contains(size.name()))
+			return true;
+		for (NumericalSize s : NumericalSize.values()) {
+			if (name.contains(s.name()))
+				return false;
+		}
+		return true;
 	}
 }

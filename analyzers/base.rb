@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'set'
 
 module Analyzers
   class Base
@@ -77,7 +78,7 @@ module Analyzers
         # Construct the full path for the output file by joining the 'entrypoint' with the 'filename' and write the
         # 'result' (which is expected to be a data structure) to the file as JSON.
         entrypoint
-          .join(filename)
+          .join("#{filename}.json")
           .write(result.to_json)
       end
     end

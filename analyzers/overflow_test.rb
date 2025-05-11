@@ -17,7 +17,7 @@ module Analyzers
       # ...
       with_mangled_set.map do |(location, hash)|
         human_readable_description = "#{hash[:descriptions]} for sizes #{hash[:sizes]} " +
-                                     "at #{location} for expressions #{hash[:expressions]} " +
+                                     "at #{location} for #{hash[:expressions]} " +
                                      "holding #{hash[:abstracts]}"
 
         { warning: human_readable_description }

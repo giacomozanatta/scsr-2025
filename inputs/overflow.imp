@@ -1,0 +1,56 @@
+class overflow {
+
+
+	f1() {
+		def i = 2;
+		def j = 7;
+		def k = -3;
+		def l = -1;
+		def a = 0 + l;
+		def b = i + j;
+		def c = k - j;
+		def d = j * k;
+		def e = i / l;
+        def f = -i;
+	}
+
+	f2(b) {
+		def x = 0;
+		if (b)
+           	x = 32767;
+       	else
+           	x = -32768;
+           	
+        def r = x + 1;
+    }
+    
+	f3(i) {
+		def x = 1 + i;
+    }
+    
+    f4(a,b) {
+		def x = a + b;
+    }
+    
+	f5(b) {
+		def c = 1;
+			
+		while (b < 3) {
+			c = b + 1;
+			b = b + 1; 
+		}
+		
+		c = c + 1; 
+	}
+	
+	f6(b) {
+		def c = 2;
+	
+		if(b >= 0)
+			if(c > b ) {
+				def d = 32767 + b;
+			}
+	}
+	
+	
+}

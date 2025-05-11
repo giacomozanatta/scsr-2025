@@ -96,7 +96,6 @@ public class OverflowChecker
           var data =
               value.stream()
                   .filter(state -> state.result.isOverflowing())
-                  .filter(state -> state.result.definitely())
                   .reduce(
                       (first, second) -> {
                         try {
@@ -118,7 +117,8 @@ public class OverflowChecker
                     key.codeLocation.getCodeLocation());
             var warning =
                 new Message.Warning(
-                    "definite overflow", safeData.abstractData.representation().toString());
+                    safeData.result.definitely() ? "definite overflow" : "may overflow",
+                    safeData.abstractData.representation().toString());
 
             // Log the warnings using the provided tool.
             tool.warn(new Message(warning, info).toJson());

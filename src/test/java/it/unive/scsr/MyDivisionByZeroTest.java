@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 import static it.unive.scsr.utils.FilesUtils.*;
 
-public class DivisionByZeroTest {
+public class MyDivisionByZeroTest {
 
     // A private static nested class representing a program resource specialized for division by zero checking,
     // extending ProgramResource and parameterized with DivisionByZeroChecker and a ValueEnvironment of Intervals. It is

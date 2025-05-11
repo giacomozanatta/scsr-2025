@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 import static it.unive.scsr.utils.FilesUtils.*;
 
-public class OverflowTest {
+public class MyOverflowTest {
     // A private static nested class representing a program resource specialized for overflow checking, extending
     // ProgramResource and parameterized with OverflowChecker and a ValueEnvironment of Intervals. It is initialized
     // with input and output directory paths.

@@ -14,13 +14,14 @@ module Analyzers
           abstracts: uniq_join.call(set.map { _1['warning']['abstractRepresentation'] }) }
       end
 
+      # ...
       with_mangled_set.map do |(location, hash)|
         human_readable_description = "#{hash[:descriptions]} for sizes #{hash[:sizes]} " +
                                      "at #{location} for expressions #{hash[:expressions]} " +
                                      "holding #{hash[:abstracts]}"
 
         { warning: human_readable_description }
-      end
+      end.then { { "#{name}" => _1 } }
     end
   end
 end

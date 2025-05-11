@@ -79,7 +79,7 @@ module Analyzers
         # 'result' (which is expected to be a data structure) to the file as JSON.
         entrypoint
           .join("#{filename}.json")
-          .write(result.to_json)
+          .write(JSON.pretty_generate(result))
       end
     end
 

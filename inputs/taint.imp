@@ -1,4 +1,3 @@
-// LIBERALATO ALESSANDRO - 908093
 class taint {
 
 	source1(){
@@ -45,7 +44,5 @@ class taint {
 
 		this.sink1(m); // the value may be tainted
 	}
-
-
 
 }

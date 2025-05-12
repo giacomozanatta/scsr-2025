@@ -25,16 +25,16 @@ public class TaintThreeLevelsTaskEvaluation {
 	
 	
 	// we define the signatures for matching sources, sanitizers, and sinks
-	String[] sources = new String[] {"source1", "source2"};
-	String[] sanitizers = new String[] {"sanitizer1", "sanitizer2"};
-	String[] sinks = new String[] {"sink1", "sinks"};
+	String[] sources = new String[] {"source", "source1", "source2"};
+	String[] sanitizers = new String[] {"sanitizer", "sanitizer1", "sanitizer2"};
+	String[] sinks = new String[] {"sink", "sinks"};
 	
 
 	@Test
 	public void testTaintThreeLevels() throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
 		//Program program = IMPFrontend.processFile("inputs/taint-3lvs-eval.imp");
-		Program program = IMPFrontend.processFile("inputs/taint3.imp");
+		Program program = IMPFrontend.processFile("inputs/taint-complex.imp");
 		// we load annotation for identify sources, sanitizer, and sinks during the analysis and checker execution
 		loadAnnotations(program);
 		

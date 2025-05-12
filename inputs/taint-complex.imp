@@ -96,4 +96,17 @@ class taint_complex {
 		this.sink(val); // TOP: could be tainted or clean
 	}
 
+    complex8() {
+    		def t = 0;
+
+    		for (def i = 0; i < 5; i = i + 1) {
+    			def temp = this.source1();
+    			t = t + temp;
+    			if (i == 4) {
+    			this.sanitizer1(t);
+    			}
+    		}
+
+    		this.sink1(t); // t may be tainted or clean, so TOP
+    	}
 }

@@ -15,22 +15,21 @@ import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.context.FullStackToken;
 import it.unive.lisa.program.Program;
 import it.unive.scsr.checkers.DivisionByZeroChecker;
-import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 public class DivByZeroTest {
 	
 
 	@Test
 	public void testDivByZeroInterval() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-divbyzero");
+		runAnalysis(new ValueEnvironment<>(new Intervals()), "intervals-divbyzero");
 	}
 	
 	@Test
 	public void testtestDivByZeroPentagons() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.UINT8, "intervals-pentagons");
+		runAnalysis(new Pentagons(), "intervals-pentagons");
 	}
 	
-	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
+	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
 		Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
 
@@ -57,7 +56,7 @@ public class DivByZeroTest {
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 		 
 		// the OverflowChecker is executed after the numerical analysis and it checks if a abstract numerical value leads to an overflow/underflow
-		conf.semanticChecks.add(new DivisionByZeroChecker(size));
+		conf.semanticChecks.add(new DivisionByZeroChecker());
 		 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

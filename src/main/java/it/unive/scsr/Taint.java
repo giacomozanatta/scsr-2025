@@ -35,7 +35,11 @@ public class Taint extends BaseTaint<Taint> {
 		this.isTainted = taint;
 		
 	}
-	
+	public boolean getTaintState() {
+		if (isTainted == null)
+			throw new IllegalStateException("Cannot get state of bottom element");
+		return isTainted;
+	}
 	@Override
 	public Taint lubAux(Taint other) throws SemanticException {
 		return TAINT;

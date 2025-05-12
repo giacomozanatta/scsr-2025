@@ -23,7 +23,6 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonLe;
 import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
-import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
@@ -42,17 +41,17 @@ public class Intervals
 	/**
 	 * The interval represented by this domain element.
 	 */
-	public final IntInterval interval;
+	public final Interval interval;
 	
 	/**
 	 * The abstract zero ({@code [0, 0]}) element.
 	 */
-	public static final Intervals ZERO = new Intervals(IntInterval.ZERO);
+	public static final Intervals ZERO = new Intervals(Interval.ZERO);
 
 	/**
 	 * The abstract top ({@code [-Inf, +Inf]}) element.
 	 */
-	public static final Intervals TOP = new Intervals(IntInterval.INFINITY);
+	public static final Intervals TOP = new Intervals(Interval.INFINITY);
 
 	/**
 	 * The abstract bottom element.
@@ -62,10 +61,10 @@ public class Intervals
 	/**
 	 * Builds the interval.
 	 * 
-	 * @param interval the underlying {@link IntInterval}
+	 * @param interval the underlying {@link Interval}
 	 */
 	public Intervals(
-			IntInterval interval) {
+			Interval interval) {
 		this.interval = interval;
 	}
 
@@ -78,7 +77,7 @@ public class Intervals
 	public Intervals(
 			MathNumber lower,
 			MathNumber upper) {
-		this(new IntInterval(lower, upper));
+		this(new Interval(lower, upper));
 	}
 
 	/**
@@ -90,14 +89,27 @@ public class Intervals
 	public Intervals(
 			int low,
 			int high) {
-		this(new IntInterval(low, high));
+		this(new Interval(low, high));
 	}
+
+	/**
+	 * Builds the interval from float bounds by approximating to integer.
+	 * The lower bound is floored, the upper bound is ceiled.
+	 */
+
+	public Intervals(
+			float low,
+			float high) {
+				// convert to int for low use floor and ceil for high
+		this (new Interval(low, high));
+	}
+
 
 	/**
 	 * Builds the top interval.
 	 */
 	public Intervals() {
-		this(IntInterval.INFINITY);
+		this(Interval.INFINITY);
 	}
 	
 	@Override
@@ -108,7 +120,7 @@ public class Intervals
 			// negation of the interval by multiplying it by -1
 			if (arg.isBottom())
 				return bottom();
-			return new Intervals(arg.interval.mul(new IntInterval(MathNumber.MINUS_ONE, MathNumber.MINUS_ONE)));
+			return new Intervals(arg.interval.mul(new Interval(MathNumber.MINUS_ONE, MathNumber.MINUS_ONE)));
 		}
 		
 		return top();
@@ -117,8 +129,8 @@ public class Intervals
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
 		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+		Interval a = this.interval;
+		Interval b = other.interval;
 		
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
@@ -141,8 +153,8 @@ public class Intervals
 	@Override
 	public Intervals lubAux(Intervals other) throws SemanticException {
 		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+		Interval a = this.interval;
+		Interval b = other.interval;
 		
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
@@ -220,12 +232,23 @@ public class Intervals
 	@Override
 	public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		if(constant.getValue() instanceof Integer) {
-			Integer i = (Integer) constant.getValue();
-			Intervals singletonInterval = new Intervals(i,i);
-			return singletonInterval;
+		Object v = constant.getValue();
+		// If LISA already wrapped it as MathNumber
+		if (v instanceof MathNumber) {
+			MathNumber m = (MathNumber) v;
+			return new Intervals(m, m);
 		}
-		
+		else if (v instanceof Integer) {
+			// Use doubleValue to build a MathNumber exactly
+			MathNumber m = new MathNumber((Integer) v);
+			return new Intervals(m, m);
+		}
+		else if (v instanceof Number) {
+			// Use doubleValue to build a MathNumber exactly
+			MathNumber m = new MathNumber(((Number) v).doubleValue());
+			return new Intervals(m, m);
+		}
+		// Non-numeric constants map to top
 		return top();
 	}
 
@@ -246,11 +269,11 @@ public class Intervals
 		if (left.isBottom() || right.isBottom())
 			return bottom();
 		
-		// Using native arithmetic operations from the IntInterval class
+		// Using native arithmetic operations from the Interval class
 		// to evaluate binary expressions
 
 		// for addition and subtraction there are no "edge" cases to handle
-		// and we can just use the IntInterval methods
+		// and we can just use the Interval methods
 		if (operator instanceof AdditionOperator)
 			return new Intervals(left.interval.plus(right.interval));
 
@@ -269,7 +292,7 @@ public class Intervals
 			// dividing by the singleton interval [0,0] leads to bottom
 			if (right.isNonBottomSingletonWithValue(0))
 				return bottom();
-			// in all other cases we can divide the two intervals using the IntInterval div method 
+			// in all other cases we can divide the two intervals using the Interval div method 
 			else
 				return new Intervals(left.interval.div(right.interval, false, false));
 		}

@@ -274,12 +274,19 @@ public class Pentagons
 		ValueEnvironment<UpperBounds> newBounds = new ValueEnvironment<UpperBounds>(upperbounds.lattice, upperbounds.getMap());
 
 		for (Identifier id1 : intervals.getKeys()) {
+			Intervals i1 = intervals.getState(id1);
+			if (i1 == null || i1.isBottom())
+				continue;
 			Set<Identifier> closure = new HashSet<>();
-			for (Identifier id2 : intervals.getKeys())
-				if (!id1.equals(id2))
-					if (intervals.getState(id1).interval.getHigh()
-							.compareTo(intervals.getState(id2).interval.getLow()) < 0)
+			for (Identifier id2 : intervals.getKeys()) {
+				if (!id1.equals(id2)) {
+					Intervals i2 = intervals.getState(id2);
+					if (i2 == null || i2.isBottom())
+						continue;
+					if (i1.interval.getHigh().compareTo(i2.interval.getLow()) < 0)
 						closure.add(id2);
+				}
+			}
 			if (!closure.isEmpty())
 				// glb is the union
 				newBounds = newBounds.putState(id1,
@@ -288,8 +295,4 @@ public class Pentagons
 
 		return new Pentagons(newBounds, intervals);
 	}
-
-	
-	
-
 }

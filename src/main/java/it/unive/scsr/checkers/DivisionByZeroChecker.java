@@ -22,19 +22,15 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
+import it.unive.scsr.Interval;
 import it.unive.scsr.Intervals;
-import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
+import it.unive.scsr.Pentagons;
+
 
 public class DivisionByZeroChecker implements
 SemanticCheck<
 		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
-	
-	
-	private NumericalSize size;
-	
-	public DivisionByZeroChecker(NumericalSize size) {
-		this.size = size;
-	}
 
 	@Override
 	public boolean visit(
@@ -70,15 +66,52 @@ SemanticCheck<
 						for (SymbolicExpression s : reachableIds) {
 							
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
+
+							// ADDED: implement type checks, it is required a numerical type
+							if (types.isEmpty()) {
+								tool.warnOn(div, "No possible dynamic types for " + s.toString());
+								return;
+							}
+
+							else {
+								// check if any dynamic types are numeric types and return only if none are using map filter
+								Set<Type> numericDynamicTypes = types.stream().filter(t -> t.isNumericType()).collect(java.util.stream.Collectors.toSet());
+								if (numericDynamicTypes.isEmpty()) {
+									tool.warnOn(div, "Variable " + s.toString() + " does not have any possible numeric types");
+									return;
+								}
+							}
+
+							Object vs = state.getState().getValueState();
+				
+							if (vs instanceof ValueEnvironment<?>) {
+								// cast to ValueEnvironment
+								@SuppressWarnings("unchecked")
+								ValueEnvironment<Intervals> valueState = (ValueEnvironment<Intervals>) vs;
+								Intervals intervalAbstractValue =  valueState.eval((ValueExpression) s, div, state.getState());
+								
+								// check if the interval is the singleton 0
+								if (intervalAbstractValue.isNonBottomSingletonWithValue(0)) {
+									tool.warnOn(div, "[DEFINITE] Division by zero detected, since denominator variable " + s.toString() + " is 0");
+									return;
+								}
+								// check if interval contains 0 
+								else if (intervalAbstractValue.interval.intersects(new Interval(0, 0))) {
+									MathNumber lowerBound = intervalAbstractValue.interval.getLow();
+									MathNumber upperBound = intervalAbstractValue.interval.getHigh();
+									tool.warnOn(div, "[POSSIBLE] Division by zero detected, since denominator variable " + s.toString() + "may be 0, ranging from " + lowerBound.toString() + " to " + upperBound.toString());
+									return;
+								}
+
+							
+							}
 						
-			
-							// TODO: implement type checks, it is required a numerical type
-			
-							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
-							
-							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
-							
-							// TODO: add checks for division by zero
+							else if (vs instanceof Pentagons) {
+								// get interval from pentagons
+								Pentagons pentagon = (Pentagons) vs;
+								
+
+							}
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();

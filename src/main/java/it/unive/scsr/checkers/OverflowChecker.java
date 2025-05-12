@@ -74,11 +74,11 @@ public class OverflowChecker
     // Checking if each variable reference is over/under-flowing.
     if (node instanceof Assignment assignment) {
       if (assignment.getLeft() instanceof VariableRef reference) {
-        checkVariableRef(tool, reference, graph);
+        checkVariableRef(tool, reference, graph, node);
       }
     } else {
       if (node instanceof VariableRef reference) {
-        checkVariableRef(tool, reference, graph);
+        checkVariableRef(tool, reference, graph, node);
       }
     }
 
@@ -137,7 +137,8 @@ public class OverflowChecker
                   PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
           tool,
       VariableRef ref,
-      CFG graph) {
+      CFG graph,
+      Statement node) {
 
     var id = new Variable(ref.getStaticType(), ref.getName(), ref.getLocation());
     var types =
@@ -161,7 +162,8 @@ public class OverflowChecker
         .forEach(
             result -> {
               // Computes the exit state for the specified node.
-              var env = new Analyzer<>(result).exitStateOrThrow();
+              var state = new Analyzer<>(result).getStateAfter(node);
+              var env = state.getValueState();
 
               if (env.knowsIdentifier(id)) {
                 // Since this checker deals with the interval domain, the environment state of the

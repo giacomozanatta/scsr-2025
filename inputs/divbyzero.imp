@@ -2,7 +2,7 @@ class divbyzero {
 
 
 	f0() {
-		def a = 1/0;
+		def a = 1/0.0;
 	}
 	
 	f1() {

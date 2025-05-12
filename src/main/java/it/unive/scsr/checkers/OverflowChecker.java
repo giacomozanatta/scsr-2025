@@ -1,7 +1,5 @@
 package it.unive.scsr.checkers;
 
-
-import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -160,34 +158,34 @@ SemanticCheck<
 							break;
 						case UINT32:
 							if (low.compareTo(new MathNumber(0)) < 0) {
-								tool.warnOn(varRef, "Underflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+								tool.warnOn(varRef, "Negative overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
 							}
 							if (high.compareTo(new MathNumber(4294967295L)) > 0) {
-								tool.warnOn(varRef, "Overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+								tool.warnOn(varRef, "Positive overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
 							}
 							break;
 						case FLOAT8:
-							if (low.compareTo(new MathNumber(-240.0)) < 0) {
-								tool.warnOn(varRef, "Underflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
-							}
-							if (high.compareTo(new MathNumber(240.0)) > 0) {
+							if (low.compareTo(new MathNumber(-240.0)) < 0 || low.compareTo(new MathNumber(240.0)) > 0) {
 								tool.warnOn(varRef, "Overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							}
+							if (true) {
+								tool.warnOn(varRef, "Unerflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
 							}
 							break;
 						case FLOAT16:
-							if (low.compareTo(new MathNumber(-65504.0)) < 0) {
-								tool.warnOn(varRef, "Underflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
-							}
-							if (high.compareTo(new MathNumber(65504.0)) > 0) {
+							if (low.compareTo(new MathNumber(-65504)) < 0 || low.compareTo(new MathNumber(65504)) > 0) {
 								tool.warnOn(varRef, "Overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							}
+							if (true) {
+								tool.warnOn(varRef, "Unerflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
 							}
 							break;
 						case FLOAT32:
-							if (low.compareTo(new MathNumber(Float.MIN_VALUE)) < 0) {
-								tool.warnOn(varRef, "Underflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
-							}
-							if (high.compareTo(new MathNumber(Float.MAX_VALUE)) > 0) {
+							if (low.compareTo(new MathNumber(Float.MIN_VALUE)) < 0 || low.compareTo(new MathNumber(Float.MAX_VALUE)) > 0) {
 								tool.warnOn(varRef, "Overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							}
+							if (true) {
+								tool.warnOn(varRef, "Unerflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
 							}
 							break;
 						default:

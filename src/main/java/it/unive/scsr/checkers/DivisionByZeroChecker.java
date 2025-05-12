@@ -96,10 +96,10 @@ SemanticCheck<
 									return;
 								}
 								// check if interval contains 0 
-								else if (intervalAbstractValue.interval.intersects(new Interval(0, 0))) {
+								else if (intervalAbstractValue.interval.intersects(Interval.ZERO)) {
 									MathNumber lowerBound = intervalAbstractValue.interval.getLow();
 									MathNumber upperBound = intervalAbstractValue.interval.getHigh();
-									tool.warnOn(div, "[POSSIBLE] Division by zero detected, since denominator variable " + s.toString() + "may be 0, ranging from " + lowerBound.toString() + " to " + upperBound.toString());
+									tool.warnOn(div, "[POSSIBLE] Division by zero detected, since denominator variable " + s.toString() + " may be 0, ranging from " + lowerBound.toString() + " to " + upperBound.toString());
 									return;
 								}
 
@@ -108,7 +108,7 @@ SemanticCheck<
 						
 							else if (vs instanceof Pentagons) {
 								// get interval from pentagons
-								Pentagons pentagon = (Pentagons) vs;
+								tool.warnOn(div, "Pentagons are not supported yet");
 								
 
 							}

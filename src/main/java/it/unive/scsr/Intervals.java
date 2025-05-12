@@ -304,6 +304,11 @@ public class Intervals
 			int number) {
 		return interval.isSingleton() && interval.getLow().is(number) && !isBottom();
 	}
+	
+	public boolean isNonBottomSingletonWithValue(
+			float number) {
+		return interval.isSingleton() && interval.getLow().equals(new MathNumber(number)) && !isBottom();
+	}
 
 	@Override
 	public int hashCode() {

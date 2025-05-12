@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 
 import static it.unive.scsr.utils.Logging.defaultLogger;
 
+// TODO: implement float checker
 public abstract sealed class SizeChecker permits Int16, Int32, Int8, UInt16, UInt32, UInt8 {
 
   /**

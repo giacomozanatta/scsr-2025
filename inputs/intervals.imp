@@ -17,7 +17,22 @@ class intervals {
        	else
            	x = -7;
 		return x;
-  }
+    }
+
+    prova(b){
+        def x = 0;
+        if (b>5)
+            x = x + 7;
+        return x;
+    }
+
+    some_numeric_function(unknown) {
+    		def some = 10;
+    		if (unknown == 123) {
+    			some = some + 5;
+    		}
+    		return some;                                          // some         = [10, 10.001]
+    }
 
 	loop(b) {
 			def c = 1;

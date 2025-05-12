@@ -102,14 +102,6 @@ public class Intervals
 			return bottom();
 
 		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
-			/*MathNumber a = interval.getLow();
-			MathNumber b = interval.getHigh();
-
-			MathNumber min = a.multiply(new MathNumber(-1));
-			MathNumber max = b.multiply(new MathNumber(-1));
-
-			return new Intervals(min, max);
-*/
             return new Intervals(arg.interval.mul(new IntInterval(-1,-1)));
 		}
 		
@@ -225,6 +217,12 @@ public class Intervals
 			Intervals singletonInterval = new Intervals(i,i);
 			return singletonInterval;
 		}
+		if(constant.getValue() instanceof Float){
+			Float f = (Float) constant.getValue();
+			Integer i = (int) Math.ceil(f.floatValue());
+			Intervals singletonInterval = new Intervals(i,i);
+			return singletonInterval;
+		}
 		
 		return top();
 	}
@@ -253,7 +251,7 @@ public class Intervals
 			
 			return new Intervals(first.min(second), first.max(second));
 			
-		} else if( operator instanceof SubtractionOperator) {
+		} else if (operator instanceof SubtractionOperator) {
 
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
@@ -261,12 +259,12 @@ public class Intervals
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
 
-			MathNumber first = lA.subtract(lB);
-			MathNumber second = uA.subtract(uB);
+			MathNumber newLow  = lA.subtract(uB); // NOTA: lA - uB
+			MathNumber newHigh = uA.subtract(lB); // NOTA: uA - lB
 
-			return new Intervals(first.min(second), first.max(second));
-			
-		} else if( operator instanceof MultiplicationOperator) {
+			return new Intervals(newLow, newHigh);
+
+	} else if( operator instanceof MultiplicationOperator) {
 
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();

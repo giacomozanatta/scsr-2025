@@ -9,9 +9,9 @@
 class Tests {
 
 	some_numeric_function(unknown) {
-		def some = 10;
+		def some = 10.5;
 		if (unknown == 123) {
-			some = some + 0.001;
+			some = some + 1.5;
 		}
 		return some;                                          // some         = [10, 10.001]
 	}

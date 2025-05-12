@@ -12,6 +12,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -100,12 +101,19 @@ public class Intervals
 		if (arg.isBottom())
 			return bottom();
 
-		if(operator instanceof NegatableOperator) {
+		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
+			/*MathNumber a = interval.getLow();
+			MathNumber b = interval.getHigh();
 
+			MathNumber min = a.multiply(new MathNumber(-1));
+			MathNumber max = b.multiply(new MathNumber(-1));
+
+			return new Intervals(min, max);
+*/
             return new Intervals(arg.interval.mul(new IntInterval(-1,-1)));
 		}
 		
-		return top();
+		return  top();
 	}
 	
 	@Override

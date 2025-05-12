@@ -162,25 +162,25 @@ SemanticCheck<
 				if (low != null && low.isFinite()) {
 					double lower = low.getNumber().doubleValue();
 					if (lower < min) {
-						tool.warnOn(node, "Underflow: value " + lower + " is below minimum allowed " + min + " for type " + size);
+						tool.warnOn(node, "[Type "+ size + "] " + "Underflow: value " + lower + " is below minimum allowed " + min + " for variable " + id.getName());
 					}
 				}
-				else if (low != null && !low.isFinite()) {
-					tool.warnOn(node, "Underflow: value: infinite");
-				}
+				//else if (low != null && !low.isFinite()) {
+				//	tool.warnOn(node, "Underflow: value: infinite");
+				//}
 
 				if (high != null && high.isFinite()) {
 					double upper = high.getNumber().doubleValue();
 					if (upper > max) {
-						tool.warnOn(node, "Overflow: value " + upper + " is above maximum allowed " + max + " for type " + size);
+						tool.warnOn(node, "[Type "+ size + "] " + "Overflow: value " + upper + " is above maximum allowed " + max + " for variable " + id.getName());
 					}
 				}
-				else if (high != null && !high.isFinite()) {
-					tool.warnOn(node, "Underflow: value: infinite");
-				}
+				//else if (high != null && !high.isFinite()) {
+				//	tool.warnOn(node, "Underflow: value: infinite");
+				//}
 			}
 			else if(size != null && intervalAbstractValue != null && intervalAbstractValue.isTop())
-				tool.warnOn(node, "Overflow: infinite value in the interval ");
+				tool.warnOn(node, "Infinite value in the Interval of variable " + id.getName());
 		}
 	}
 

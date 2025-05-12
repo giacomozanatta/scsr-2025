@@ -7,7 +7,7 @@ class intervals {
 		def s = i - j;
 //		def m = i * j;
 //		def d = i / j;
-//      def l = -i;
+        def l = -i;
 	}
 
 	branches(b) {

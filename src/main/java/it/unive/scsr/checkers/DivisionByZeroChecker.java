@@ -70,7 +70,12 @@ SemanticCheck<
 						for (SymbolicExpression s : reachableIds) {
 							
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
-						
+
+							Type staticType = s.getStaticType();
+
+							// check if numerical type (static or dynamic)
+							if (!isNumerical(types, staticType))
+								continue;
 			
 							// TODO: implement type checks, it is required a numerical type
 			
@@ -79,6 +84,21 @@ SemanticCheck<
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 							
 							// TODO: add checks for division by zero
+
+							if (intervalAbstractValue != null && !intervalAbstractValue.isBottom() && !intervalAbstractValue.isTop()) {
+								if (intervalAbstractValue.interval.getLow().getNumber().longValue() <= 0 &&
+										intervalAbstractValue.interval.getHigh().getNumber().longValue() >= 0) {
+									tool.warnOn(
+											div,
+											"Possible division by zero: " + s.toString() + " ∈ " + intervalAbstractValue);
+								}
+							}
+							else if(intervalAbstractValue != null && intervalAbstractValue.isTop()){
+								tool.warnOn(
+											div,
+											"Possible division by zero (Interval undefined): " + s.toString() + " ∈ " + intervalAbstractValue);
+
+							}
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();
@@ -88,6 +108,15 @@ SemanticCheck<
 			}
 		}
 		
+	}
+
+	private boolean isNumerical(Set<Type> dynamicTypes, Type staticType) {
+		if (!staticType.isUntyped() && staticType.isNumericType())
+			return true;
+		for (Type type : dynamicTypes)
+			if (type.isNumericType())
+				return true;
+		return false;
 	}
 
 	// compute possible dynamic types / runtime types

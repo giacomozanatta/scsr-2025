@@ -1,0 +1,7 @@
+class overflow2 {
+    f0(){
+        def i = 120;
+    	def j = 121;
+    	def b = i + j;
+    }
+}

@@ -1,3 +1,4 @@
+// LIBERALATO ALESSANDRO - 908093
 class taint_complex {
 
 	source() {
@@ -102,7 +103,7 @@ class taint_complex {
     		for (def i = 0; i < 5; i = i + 1) {
     			def temp = this.source1();
     			t = t + temp;
-    			if (i == 4) {
+    			if (i > 4) {
     			this.sanitizer1(t);
     			}
     		}

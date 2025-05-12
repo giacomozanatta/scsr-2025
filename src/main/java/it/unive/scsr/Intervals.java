@@ -12,14 +12,15 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
-import it.unive.lisa.symbolic.value.operator.binary.ComparisonEq;
+import it.unive.lisa.symbolic.value.operator.ComparisonOperator;
+import it.unive.lisa.symbolic.value.operator.binary.*;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.scsr.intervals.BinaryFunctions;
+import it.unive.scsr.intervals.BinarySatisfiability;
 import it.unive.scsr.intervals.NumericInterval;
 import it.unive.scsr.intervals.numbers.*;
 
@@ -51,6 +52,11 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
    */
   public Intervals(SigNum lower, SigNum upper) {
     this(new NumericInterval(lower, upper));
+  }
+
+  /** Builds the interval. */
+  public Intervals() {
+    this(NumericInterval.INFINITY);
   }
 
   @Override
@@ -190,21 +196,14 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
       Intervals right,
       ProgramPoint pp,
       SemanticOracle oracle) {
-    // Extract the numeric range from the left and right expression.
-    var leftInterval = left.interval;
-    var rightInterval = right.interval;
-
-    // If the operator is an instance of ComparisonEq, then equality is tested only when the
-    // intervals are
-    // singletons, otherwise nothing can be said.
-    if (operator instanceof ComparisonEq) {
-      return leftInterval.isSingleton() && rightInterval.isSingleton()
-          ? leftInterval.equals(rightInterval)
-              ? Satisfiability.SATISFIED
-              : Satisfiability.NOT_SATISFIED
-          : Satisfiability.UNKNOWN;
+    // ...
+    if (operator instanceof ComparisonOperator comparisonOperator) {
+      return Optional.ofNullable(BinarySatisfiability.INSTANCE.findBy(comparisonOperator))
+          .map(f -> f.apply(left, right))
+          .orElse(Satisfiability.UNKNOWN);
     }
 
+    // ...
     return Satisfiability.UNKNOWN;
   }
 

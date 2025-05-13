@@ -24,6 +24,7 @@ import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.util.numeric.MathNumber;
+import it.unive.lisa.util.numeric.MathNumberConversionException;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
@@ -300,14 +301,18 @@ public class Intervals
 		return top();
 	}
 
-	public boolean isNonBottomSingletonWithValue(
-			int number) {
-		return interval.isSingleton() && interval.getLow().is(number) && !isBottom();
-	}
+	// public boolean isNonBottomSingletonWithValue(
+	// 		int number) {
+	// 	return interval.isSingleton() && interval.getLow().is(number) && !isBottom();
+	// }
 	
 	public boolean isNonBottomSingletonWithValue(
 			float number) {
-		return interval.isSingleton() && interval.getLow().equals(new MathNumber(number)) && !isBottom();
+		try {
+			return interval.isSingleton() && (interval.getLow().toFloat() == number) && !isBottom();
+		} catch (MathNumberConversionException e) {
+			return interval.isSingleton() && interval.getLow().equals(new MathNumber(number)) && !isBottom();
+		}
 	}
 
 	@Override

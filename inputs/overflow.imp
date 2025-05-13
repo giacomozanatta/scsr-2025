@@ -2,7 +2,7 @@ class overflow {
 
 
 	f1() {
-		def i = 2;
+		def i = 0.0000000001;
 		def j = 7;
 		def k = -3;
 		def l = -1;

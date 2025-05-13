@@ -113,6 +113,7 @@ SemanticCheck<
 						}
 						break;
 					}
+					boolean isZero = intervalAbstractValue.isNonBottomSingletonWithValue(0);
 					
 					// check for overflow/underflow based in the numerical size
 					switch (size) {
@@ -165,27 +166,45 @@ SemanticCheck<
 							}
 							break;
 						case FLOAT8:
-							if (low.compareTo(new MathNumber(-240.0)) < 0 || low.compareTo(new MathNumber(240.0)) > 0) {
-								tool.warnOn(varRef, "Overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							// overflow: magnitude beyond ±240
+							if (low.compareTo(new MathNumber(-240.0)) < 0 || high.compareTo(new MathNumber(240.0)) > 0) {
+								tool.warnOn(varRef, "Overflow detected for variable " + id.getName()
+									+ " with range [" + low + ", " + high + "]");
 							}
-							if (true) {
-								tool.warnOn(varRef, "Unerflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							// underflow-to-zero: entire interval within (−minSub, +minSub)
+							// minSubnormal for FLOAT8 is 2^(-9) ≈ 0.001953125
+							MathNumber minSub = new MathNumber(0.001953125);
+							if (high.compareTo(minSub) < 0 && low.compareTo(new MathNumber(-0.001953125)) > 0 && !isZero) {
+								tool.warnOn(varRef, "Underflow detected for variable " + id.getName()
+									+ " with range [" + low + ", " + high + "]");
 							}
 							break;
 						case FLOAT16:
-							if (low.compareTo(new MathNumber(-65504)) < 0 || low.compareTo(new MathNumber(65504)) > 0) {
-								tool.warnOn(varRef, "Overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							// overflow: magnitude beyond ±65504
+							if (low.compareTo(new MathNumber(-65504.0)) < 0 || high.compareTo(new MathNumber(65504.0)) > 0) {
+								tool.warnOn(varRef, "Overflow detected for variable " + id.getName()
+									+ " with range [" + low + ", " + high + "]");
 							}
-							if (true) {
-								tool.warnOn(varRef, "Unerflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							// underflow-to-zero: entire interval within (−minSub, +minSub)
+							// min subnormal for FLOAT16 is 2^(-24) ≈ 5.960464477539063E-8
+							MathNumber minSub16 = new MathNumber(5.960464477539063E-8);
+							if (high.compareTo(minSub16) < 0 && low.compareTo(new MathNumber(-5.960464477539063E-8)) > 0 && !isZero) {
+								tool.warnOn(varRef, "Underflow detected for variable " + id.getName()
+									+ " with range [" + low + ", " + high + "]");
 							}
 							break;
 						case FLOAT32:
-							if (low.compareTo(new MathNumber(Float.MIN_VALUE)) < 0 || low.compareTo(new MathNumber(Float.MAX_VALUE)) > 0) {
-								tool.warnOn(varRef, "Overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							// overflow: magnitude beyond ±Float.MAX_VALUE
+							if (low.compareTo(new MathNumber(-Float.MAX_VALUE)) < 0 || high.compareTo(new MathNumber(Float.MAX_VALUE)) > 0) {
+								tool.warnOn(varRef, "Overflow detected for variable " + id.getName()
+									+ " with range [" + low + ", " + high + "]");
 							}
-							if (true) {
-								tool.warnOn(varRef, "Unerflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+							// underflow-to-zero: entire interval within (−minSub, +minSub)
+							// min subnormal for FLOAT32 is Float.MIN_VALUE
+							MathNumber minSub32 = new MathNumber(Float.MIN_VALUE);
+							if (high.compareTo(minSub32) < 0 && low.compareTo(new MathNumber(-Float.MIN_VALUE)) > 0 && !isZero) {
+								tool.warnOn(varRef, "Underflow detected for variable " + id.getName()
+									+ " with range [" + low + ", " + high + "]");
 							}
 							break;
 						default:

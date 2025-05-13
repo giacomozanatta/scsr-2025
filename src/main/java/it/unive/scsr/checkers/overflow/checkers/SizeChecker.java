@@ -8,8 +8,6 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static it.unive.scsr.utils.Logging.defaultLogger;
-
 // TODO: implement float checker
 public abstract sealed class SizeChecker permits Int16, Int32, Int8, UInt16, UInt32, UInt8 {
 
@@ -30,12 +28,6 @@ public abstract sealed class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
     public static OverflowingLevel base() {
       return new OverflowingLevel(false, false);
     }
-  }
-
-  protected final OverflowChecker.NumericalSize size;
-
-  protected SizeChecker(OverflowChecker.NumericalSize size) {
-    this.size = size;
   }
 
   /**
@@ -112,10 +104,9 @@ public abstract sealed class SizeChecker permits Int16, Int32, Int8, UInt16, UIn
         .map(
             pair -> {
               try {
-                return (SizeChecker) pair.checker.getConstructor(size.getClass()).newInstance(size);
+                return (SizeChecker) pair.checker.getConstructor().newInstance();
               } catch (Exception e) {
-                defaultLogger.warning(() -> "Cannot build an instance of " + pair.className);
-                return null;
+                throw new IllegalArgumentException("Cannot build an instance of " + pair.className);
               }
             });
   }

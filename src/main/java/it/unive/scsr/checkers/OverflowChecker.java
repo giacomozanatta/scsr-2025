@@ -114,97 +114,98 @@ SemanticCheck<
 						break;
 					}
 					boolean isZero = intervalAbstractValue.isNonBottomSingletonWithValue(0);
+					String overflowMessage = "Overflow detected on size " + size.toString() + " for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]";
+					String underflowMessage = "Underflow detected on size " + size.toString() + " for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]";
 					
 					// check for overflow/underflow based in the numerical size
 					switch (size) {
 						case INT8:
 							if (low.compareTo(new MathNumber(Byte.MIN_VALUE)) < 0) {
-								tool.warnOn(varRef, "Negative overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Negative " + overflowMessage);
 							}
 							if (high.compareTo(new MathNumber(Byte.MAX_VALUE)) > 0) {
-								tool.warnOn(varRef, "Positive overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Positive " + overflowMessage);
 							}
 							break;
 						case INT16:
 							if (low.compareTo(new MathNumber(Short.MIN_VALUE)) < 0) {
-								tool.warnOn(varRef, "Negative overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Negative " + overflowMessage);
 							}
 							if (high.compareTo(new MathNumber(Short.MAX_VALUE)) > 0) {
-								tool.warnOn(varRef, "Positive overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Positive " + overflowMessage);
 							}
 							break;
 						case UINT8:
 							if (low.compareTo(new MathNumber(0)) < 0) {
-								tool.warnOn(varRef, "Negative overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Negative " + overflowMessage);
 							}
 							if (high.compareTo(new MathNumber(0xFF)) > 0) {
-								tool.warnOn(varRef, "Positive overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Positive " + overflowMessage);
 							}
 							break;
 						case UINT16:
 							if (low.compareTo(new MathNumber(0)) < 0) {
-								tool.warnOn(varRef, "Negative overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Negative " + overflowMessage);
 							}
 							if (high.compareTo(new MathNumber(65535)) > 0) {
-								tool.warnOn(varRef, "Positive overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Positive " + overflowMessage);
 							}
 							break;
 						case INT32:
 							if (low.compareTo(new MathNumber(Integer.MIN_VALUE)) < 0) {
-								tool.warnOn(varRef, "Negative overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Negative " + overflowMessage);
 							}
 							if (high.compareTo(new MathNumber(Integer.MAX_VALUE)) > 0) {
-								tool.warnOn(varRef, "Positive overflow detected for variable " + id.getName() + " with range " + intervalAbstractValue.interval.toString());
+								tool.warnOn(varRef, "Positive " + overflowMessage);
 							}
 							break;
 						case UINT32:
 							if (low.compareTo(new MathNumber(0)) < 0) {
-								tool.warnOn(varRef, "Negative overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+								tool.warnOn(varRef, "Negative " + overflowMessage);
 							}
 							if (high.compareTo(new MathNumber(4294967295L)) > 0) {
-								tool.warnOn(varRef, "Positive overflow detected for variable " + id.getName() + " with range [" + low.toString() + ", " + high.toString() + "]");
+								tool.warnOn(varRef, "Positive " + overflowMessage);
 							}
 							break;
 						case FLOAT8:
 							// overflow: magnitude beyond ±240
 							if (low.compareTo(new MathNumber(-240.0)) < 0 || high.compareTo(new MathNumber(240.0)) > 0) {
-								tool.warnOn(varRef, "Overflow detected for variable " + id.getName()
+								tool.warnOn(varRef, overflowMessage
 									+ " with range [" + low + ", " + high + "]");
 							}
 							// underflow-to-zero: entire interval within (−minSub, +minSub)
 							// minSubnormal for FLOAT8 is 2^(-9) ≈ 0.001953125
-							MathNumber minSub = new MathNumber(0.001953125);
-							if (high.compareTo(minSub) < 0 && low.compareTo(new MathNumber(-0.001953125)) > 0 && !isZero) {
-								tool.warnOn(varRef, "Underflow detected for variable " + id.getName()
-									+ " with range [" + low + ", " + high + "]");
+							float minSub = 0.001953125f;
+							MathNumber upperBound = new MathNumber(minSub);
+							MathNumber lowerBound = new MathNumber(-minSub);
+							if (high.compareTo(upperBound) < 0 && low.compareTo(lowerBound) > 0 && !isZero) {
+								tool.warnOn(varRef, underflowMessage);
 							}
 							break;
 						case FLOAT16:
 							// overflow: magnitude beyond ±65504
 							if (low.compareTo(new MathNumber(-65504.0)) < 0 || high.compareTo(new MathNumber(65504.0)) > 0) {
-								tool.warnOn(varRef, "Overflow detected for variable " + id.getName()
-									+ " with range [" + low + ", " + high + "]");
+								tool.warnOn(varRef, overflowMessage);
 							}
 							// underflow-to-zero: entire interval within (−minSub, +minSub)
 							// min subnormal for FLOAT16 is 2^(-24) ≈ 5.960464477539063E-8
-							MathNumber minSub16 = new MathNumber(5.960464477539063E-8);
-							if (high.compareTo(minSub16) < 0 && low.compareTo(new MathNumber(-5.960464477539063E-8)) > 0 && !isZero) {
-								tool.warnOn(varRef, "Underflow detected for variable " + id.getName()
-									+ " with range [" + low + ", " + high + "]");
+							float minSub16 = 5.960464477539063E-8f;
+							MathNumber upperBound16 = new MathNumber(minSub16);
+							MathNumber lowerBound16 = new MathNumber(-minSub16);
+							if (high.compareTo(upperBound16) < 0 && low.compareTo(lowerBound16) > 0 && !isZero) {
+								tool.warnOn(varRef, underflowMessage);
 							}
 							break;
 						case FLOAT32:
 							// overflow: magnitude beyond ±Float.MAX_VALUE
 							if (low.compareTo(new MathNumber(-Float.MAX_VALUE)) < 0 || high.compareTo(new MathNumber(Float.MAX_VALUE)) > 0) {
-								tool.warnOn(varRef, "Overflow detected for variable " + id.getName()
-									+ " with range [" + low + ", " + high + "]");
+								tool.warnOn(varRef, overflowMessage);
 							}
 							// underflow-to-zero: entire interval within (−minSub, +minSub)
 							// min subnormal for FLOAT32 is Float.MIN_VALUE
 							MathNumber minSub32 = new MathNumber(Float.MIN_VALUE);
 							if (high.compareTo(minSub32) < 0 && low.compareTo(new MathNumber(-Float.MIN_VALUE)) > 0 && !isZero) {
-								tool.warnOn(varRef, "Underflow detected for variable " + id.getName()
-									+ " with range [" + low + ", " + high + "]");
+								tool.warnOn(varRef, underflowMessage);
 							}
 							break;
 						default:
@@ -217,8 +218,6 @@ SemanticCheck<
 					tool.warnOn(varRef, "Pentagons are not supported yet");
 				}
 				
-				// TODO: implement logic for overflow/underflow checks
-				// hint: it depends to the NumericalSize size
 		}
 		
 		

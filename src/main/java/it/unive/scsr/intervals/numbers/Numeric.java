@@ -12,8 +12,8 @@ public sealed abstract class Numeric<T> implements SigNum permits IntegerNumber,
         ADD, SUBTRACT, MULTIPLY, DIVIDE
     }
 
-    private final static int SCALE = 32;
-    private final static RoundingMode ROUNDING_MODE = RoundingMode.HALF_DOWN;
+    protected final static int SCALE = 32;
+    protected final static RoundingMode ROUNDING_MODE = RoundingMode.HALF_DOWN;
 
     protected final Number number;
 

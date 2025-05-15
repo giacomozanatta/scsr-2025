@@ -3,17 +3,11 @@ package it.unive.scsr.checkers.overflow.checkers;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.intervals.numbers.Numeric;
 
-import java.util.function.Supplier;
-
 public abstract sealed class IntegerChecker extends SizeChecker
     permits Int16, Int32, Int8, UInt16, UInt32, UInt8 {
 
   @Override
   public OverflowingLevel isOverflowing(Intervals intervals) {
-
-    Supplier<OverflowingLevel> possibleOverflow = () -> new OverflowingLevel(true, false);
-    Supplier<OverflowingLevel> definiteOverflow = () -> new OverflowingLevel(true, true);
-
     // ...
     if (intervals.isBottom()) return OverflowingLevel.base();
 
@@ -34,8 +28,8 @@ public abstract sealed class IntegerChecker extends SizeChecker
       // If the direction is consistently down or up, return the definite overflow value. Otherwise,
       // return the possible
       // overflow value, accounting for uncertainty.
-      if (alwaysDown || alwaysUp) return definiteOverflow.get();
-      return possibleOverflow.get();
+      if (alwaysDown || alwaysUp) return OverflowingLevel.definite();
+      return OverflowingLevel.possible();
     }
 
     // If no further information can be deduced from the specified ranges, the verifier will not

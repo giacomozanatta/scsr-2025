@@ -13,10 +13,10 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
-import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
+import it.unive.scsr.helpers.FloatInterval;
 
 public class Intervals
 		// instances of this class are lattice elements such that:
@@ -32,17 +32,17 @@ public class Intervals
 	/**
 	 * The interval represented by this domain element.
 	 */
-	public final IntInterval interval;
+	public final FloatInterval interval;
 	
 	/**
 	 * The abstract zero ({@code [0, 0]}) element.
 	 */
-	public static final Intervals ZERO = new Intervals(IntInterval.ZERO);
+	public static final Intervals ZERO = new Intervals(FloatInterval.ZERO);
 
 	/**
 	 * The abstract top ({@code [-Inf, +Inf]}) element.
 	 */
-	public static final Intervals TOP = new Intervals(IntInterval.INFINITY);
+	public static final Intervals TOP = new Intervals(FloatInterval.INFINITY);
 
 	/**
 	 * The abstract bottom element.
@@ -52,10 +52,10 @@ public class Intervals
 	/**
 	 * Builds the interval.
 	 * 
-	 * @param interval the underlying {@link IntInterval}
+	 * @param interval the underlying {@link FloatInterval}
 	 */
 	public Intervals(
-			IntInterval interval) {
+			FloatInterval interval) {
 		this.interval = interval;
 	}
 
@@ -68,7 +68,7 @@ public class Intervals
 	public Intervals(
 			MathNumber lower,
 			MathNumber upper) {
-		this(new IntInterval(lower, upper));
+		this(new FloatInterval(lower, upper));
 	}
 
 	/**
@@ -80,14 +80,14 @@ public class Intervals
 	public Intervals(
 			int low,
 			int high) {
-		this(new IntInterval(low, high));
+		this(new FloatInterval(low, high));
 	}
 
 	/**
 	 * Builds the top interval.
 	 */
 	public Intervals() {
-		this(IntInterval.INFINITY);
+		this(FloatInterval.INFINITY);
 	}
 	
 	@Override
@@ -96,7 +96,7 @@ public class Intervals
 		
 		if(operator instanceof NegatableOperator) {
 			// Negating [a, b] produces [-b, -a]
-			return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
+			return new Intervals(arg.interval.mul(FloatInterval.MINUS_ONE));
 		}
 		
 		return top();
@@ -105,8 +105,8 @@ public class Intervals
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
 		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+		FloatInterval a = this.interval;
+		FloatInterval b = other.interval;
 		
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
@@ -128,8 +128,8 @@ public class Intervals
 	@Override
 	public Intervals lubAux(Intervals other) throws SemanticException {
 		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+		FloatInterval a = this.interval;
+		FloatInterval b = other.interval;
 		
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
@@ -223,8 +223,8 @@ public class Intervals
 		if(left.isBottom() || right.isBottom())
 			return bottom();
 		
-		IntInterval a = left.interval;
-		IntInterval b = right.interval;
+		FloatInterval a = left.interval;
+		FloatInterval b = right.interval;
 		
 		if(operator instanceof AdditionOperator)  {
 			
@@ -248,7 +248,8 @@ public class Intervals
 			// For example [2, 4] * [-3, 2] = [b * c, b * d] = [-12, 8]
 			return new Intervals(left.interval.mul(right.interval));
 		} else if( operator instanceof DivisionOperator) {
-			return new Intervals(left.interval.div(right.interval, false, true));
+			// No error on zero
+			return new Intervals(left.interval.div(right.interval, false, false));
 		}
 
 			
@@ -318,5 +319,7 @@ public class Intervals
 	}
 	
 
-	
+	public boolean isZero(){
+		return this == ZERO || compareTo(ZERO) == 0;
+	}
 }

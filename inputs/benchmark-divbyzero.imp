@@ -1,0 +1,80 @@
+// DivByZeroBenchmarks.imp
+class DivByZeroBenchmarks {
+
+  // 1: PID derivative term protected by guard
+  derivative(curr, prev, dt) {
+    if (dt == 0)
+      return 0;
+    return (curr - prev) / dt;
+  }
+
+  // 2: Kalman gain computation
+  //gain(P, R) {
+  //  def s = P + R;
+  //  if (s == 0) return 0;
+  //  return P / s;
+  //}
+
+  // 3: Quadratic formula branch
+  solve(a, b, c) {
+    def disc = b*b - 4*a*c;
+    if (2*a == 0) return 0;
+    return (-b + disc) / (2*a);
+  }
+
+  // 4: Normalization
+  norm(x, min, max) {
+    def range = max - min;
+    if (range == 0) return 0;
+    return (x - min) / range;
+  }
+
+  // 5: Harmonic mean
+  harmonic(a, b) {
+    if (a == 0 || b == 0) return 0;
+    def invSum = (1/a) + (1/b);
+    if (invSum == 0) return 0;
+    return 2 / invSum;
+  }
+
+  // 6: Impedance with guard
+  impedance(R, XL, XC) {
+    def diff = XL - XC;
+    if (diff == 0) return 0;
+    return R / diff;
+  }
+
+  // 7: Decimation loop
+  decimate(x) {
+    def y = x;
+    while (y > 0) {
+      y = y / 2;
+    }
+    return y;
+  }
+
+  // 8: Safe division in branch
+  safe(x, y) {
+    if (y != 0)
+      return x / y;
+    return 0;
+  }
+
+  // 9: Rate limiter
+  rate(cnt, time) {
+    if (time <= 0) return 0;
+    return cnt / time;
+  }
+
+  // 10: 2×2 matrix inversion
+  invert(a, b, c, d) {
+    def det = a*d - b*c;
+    if (det == 0) return 0;
+    def i00 =  d / det;
+    def i01 = -b / det;
+    def i10 = -c / det;
+    def i11 =  a / det;
+    // combine to force usage
+    return i00 + i01 + i10 + i11;
+  }
+}

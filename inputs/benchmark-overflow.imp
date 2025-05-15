@@ -1,0 +1,96 @@
+// OverflowBenchmarks.imp
+class OverflowBenchmarks {
+
+  // 1: Compound‐interest loop on 16-bit “cents” balance over 12 months
+  compoundInterest(balance, rate) {
+    // balance, rate in [0..32767]
+    for (def m = 0; m < 12; m = m + 1) {
+      def interest = (balance * rate) / 100;
+      balance = balance + interest;
+    }
+    return balance;
+  }
+
+  // 2: 3×3 image convolution on 8-bit channels
+  //conv3x3(src, dst, width, height) {
+  //  for (def y = 1; y < height - 1; y = y + 1) {
+  //    for (def x = 1; x < width - 1; x = x + 1) {
+  //      def sum = 0;
+  //      for (def ky = -1; ky <= 1; ky = ky + 1)
+  //        for (def kx = -1; kx <= 1; kx = kx + 1)
+  //          sum = sum + src[(y+ky)*width + (x+kx)];
+  //      dst[y*width + x] = sum;
+  //    }
+  //  }
+  //}
+
+  // 3: 32-bit packet sequence number wrapping
+  nextSeq(start, incr) {
+    def s = start;
+    while (s < 1000000000) {
+      s = s + incr;
+    }
+    return s;
+  }
+
+  // 4: Mix three 16-bit audio tracks
+  mix3(a, b, c) {
+    def out = 0;
+    out = a + b + c;
+    return out;
+  }
+
+  // 5: 8-bit CRC step with bitwise ops
+  //crc8(crc, b) {
+  //  def t = crc * b;
+  //  for (def i = 0; i < 8; i = i + 1) {
+  //    if ((t & 0x80) == 0x80)
+  //      t = (t << 1) ^ 0x07;
+  //    else
+  //      t = t << 1;
+  //  }
+  //  return t & 0xFF;
+  //}
+
+  // 6: Inventory restock nested loops
+  restock(stock, incoming, days) {
+    def s = stock;
+    for (def d = 0; d < days; d = d + 1) {
+      for (def i = 0; i < incoming; i = i + 1)
+        s = s + 1;
+    }
+    return s;
+  }
+
+  // 7: Physics sim: position update in loop
+  simulate(pos, vel, dt, steps) {
+    def p = pos;
+    for (def i = 0; i < steps; i = i + 1)
+      p = p + vel * dt;
+    return p;
+  }
+
+  // 8: Amortization: monthly growth over n payments
+  amort(principal, rate, n) {
+    def p = principal;
+    for (def i = 0; i < n; i = i + 1)
+      p = p + (p * rate) / 100;
+    return p;
+  }
+
+  // 9: Health regen (signed 8-bit) over ticks
+  regen(health, rate, ticks) {
+    def h = health;
+    for (def t = 0; t < ticks; t = t + 1)
+      h = h + rate;
+    return h;
+  }
+
+  // 10: 16-bit timer increment by one in loop
+  tickTimer(start, ticks) {
+    def t = start;
+    for (def i = 0; i < ticks; i = i + 1)
+      t = t + 1;
+    return t;
+  }
+}

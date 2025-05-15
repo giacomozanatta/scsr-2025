@@ -26,6 +26,7 @@ import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Interval;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.Pentagons;
+import it.unive.lisa.symbolic.value.Identifier;
 
 
 public class DivisionByZeroChecker implements
@@ -83,34 +84,44 @@ SemanticCheck<
 							}
 
 							Object vs = state.getState().getValueState();
-				
+							Intervals finalInterval = Intervals.TOP;
+							
 							if (vs instanceof ValueEnvironment<?>) {
-								// cast to ValueEnvironment
 								@SuppressWarnings("unchecked")
 								ValueEnvironment<Intervals> valueState = (ValueEnvironment<Intervals>) vs;
-								Intervals intervalAbstractValue =  valueState.eval((ValueExpression) s, div, state.getState());
-								
-								// check if the interval is the singleton 0
-								if (intervalAbstractValue.isNonBottomSingletonWithValue(0)) {
-									tool.warnOn(div, "[DEFINITE] Division by zero detected, since denominator variable " + s.toString() + " is 0");
-									return;
-								}
-								// check if interval contains 0 
-								else if (intervalAbstractValue.interval.intersects(Interval.ZERO)) {
-									MathNumber lowerBound = intervalAbstractValue.interval.getLow();
-									MathNumber upperBound = intervalAbstractValue.interval.getHigh();
-									tool.warnOn(div, "[POSSIBLE] Division by zero detected, since denominator variable " + s.toString() + " may be 0, ranging from " + lowerBound.toString() + " to " + upperBound.toString());
-									return;
-								}
-
-							
+								finalInterval = valueState.eval((ValueExpression) s, div, state.getState());
 							}
 						
 							else if (vs instanceof Pentagons) {
-								// get interval from pentagons
-								tool.warnOn(div, "Pentagons are not supported yet");
-								
+								Pentagons p = (Pentagons) vs;
+								if (!(s instanceof Identifier)) 
+									return;
+								Identifier sid = (Identifier) s;
+								ValueEnvironment<Intervals> ie = p.getInterval();
+								Intervals raw = ie.getState(sid);
+								if (raw == null || raw.isBottom())
+									return;
+								Intervals reduced = raw;
+								for (Identifier b : p.getUpperBounds().getState(sid)) {
+									Intervals ib = ie.getState(b);
+									if (ib != null && !ib.isBottom()) {
+										reduced = reduced.glb(new Intervals(MathNumber.MINUS_INFINITY, ib.interval.getHigh()));
+									}
+								}
+								finalInterval = reduced;
+							}
 
+							if (finalInterval != null) {
+								if (finalInterval.isNonBottomSingletonWithValue(0)) {
+									tool.warnOn(div, "[DEFINITE] Division by zero detected: divisor " + s + " is exactly 0");
+									return;
+								} else if (finalInterval.interval.intersects(Interval.ZERO)) {
+									MathNumber lo = finalInterval.interval.getLow();
+									MathNumber hi = finalInterval.interval.getHigh();
+									tool.warnOn(div, "[POSSIBLE] Division by zero: divisor " + s 
+										+ " may be 0 (in [" + lo + ", " + hi + "])");
+									return;
+								}
 							}
 						}
 					} catch (SemanticException e) {

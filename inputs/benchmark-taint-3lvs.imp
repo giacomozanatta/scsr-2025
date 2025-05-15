@@ -1,0 +1,98 @@
+// TaintThreeLevelsBenchmarks.imp
+class TaintThreeLevelsBenchmarks {
+
+  // sources, sanitizers, and sinks
+  sourceInt()       { return readInt(); }
+  sourceStr()       { return readString(); }
+  sanitizeHtml(s)   { return htmlEscape(s); }
+  sanitizeSql(s)    { return sqlQuote(s); }
+
+  @lisa.taint.Sink
+  sinkInt(i)        { }
+  @lisa.taint.Sink
+  sinkStr(s)        { }
+
+  // 1: Direct taint to int‐sink
+  flow1() {
+    def x = sourceInt();
+    sinkInt(x);
+  }
+
+  // 2: Sanitized before sink
+  flow2() {
+    def s = sourceStr();
+    def clean = sanitizeHtml(s);
+    sinkStr(clean);
+  }
+
+  // 3: Conditional taint
+  flow3(b) {
+    def t = 0;
+    if (b) t = sourceInt(); else t = 5;
+    sinkInt(t);
+  }
+
+  // 4: Loop‐driven taint accumulation
+  flow4(n) {
+    def sum = 0;
+    for (def i = 0; i < n; i = i + 1) {
+      sum = sum + sourceInt();
+    }
+    sinkInt(sum);
+  }
+
+  // 5: SQL injection example
+  flow5() {
+    def u = sourceStr();
+    def q = \"SELECT * FROM users WHERE name='\" + u + \"'\";
+    sinkStr(q);
+  }
+
+  // 6: Mixed sanitization and concat
+  flow6() {
+    def p1 = sourceStr();
+    def p2 = sourceStr();
+    def both = sanitizeSql(p1) + \";\" + sanitizeSql(p2);
+    sinkStr(both);
+  }
+
+  // 7: Array of tainted strings
+  flow7(size) {
+    def arr = new String[size];
+    for (def i = 0; i < size; i = i + 1)
+      arr[i] = (i % 2 == 0) ? sourceStr() : \"safe\";
+    def out = \"\";
+    for (def j = 0; j < size; j = j + 1)
+      out = out + arr[j];
+    sinkStr(out);
+  }
+
+  // 8: Nested calls and re‐sanitization
+  helper(x) {
+    return sanitizeHtml(x);
+  }
+  flow8() {
+    def raw = sourceStr();
+    def h1  = helper(raw);
+    def h2  = helper(h1 + raw);
+    sinkStr(h2);
+  }
+
+  // 9: Token propagation and clean
+  flow9() {
+    def tok = sourceStr();
+    def t2  = tok + \"#\";      // tainted
+    def t3  = sanitizeSql(t2); // cleaned for SQL context
+    sinkStr(t3);
+  }
+
+  // 10: Multi‐sink different levels
+  flow10() {
+    def a = sourceInt();
+    sinkInt(a);                // tainted
+    def b = a + 1;
+    sinkInt(b);                // still tainted
+    def c = b * 0;             // now 0, clean?
+    sinkInt(c);                // clean (always 0)
+  }
+}

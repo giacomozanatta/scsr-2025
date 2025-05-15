@@ -85,6 +85,13 @@ public class Pentagons
 		return new Pentagons(upperbounds.assume(expression, src, dest, oracle), intervals.assume(expression, src, dest, oracle));
 	}
 	
+	public ValueEnvironment<Intervals> getInterval() {
+		return intervals;
+	}
+
+	public ValueEnvironment<UpperBounds> getUpperBounds() {
+		return upperbounds;
+	}
 	
 	@Override
 	public Pentagons wideningAux(

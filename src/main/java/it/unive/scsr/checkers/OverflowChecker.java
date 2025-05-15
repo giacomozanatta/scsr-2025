@@ -71,9 +71,16 @@ SemanticCheck<
 		
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
+
+		Statement target = node;
 				
 		// ADDED: implement type checks, it is required a numerical type
 		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
+
+		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
+			target = varRef.getParentStatement();
+		}
+
 
 		if (!staticType.isUntyped() && !staticType.isNumericType()) {
 			tool.warnOn(varRef, "Variable " + id.getName() + " is not a numerical type, but has static type " + staticType.toString());
@@ -96,7 +103,8 @@ SemanticCheck<
 		
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
+
+				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(target).getState();
 				
 				Object vs = state.getValueState();
 

@@ -102,7 +102,7 @@ public abstract sealed class Numeric<T> implements SigNum permits IntegerNumber,
 
   @Override
   public String toString() {
-    return number.toString();
+    return toDecimal().stripTrailingZeros().toString();
   }
 
   private IntervalNumber finalize(IntervalNumber result, IntervalNumber other, Computation orElse) {

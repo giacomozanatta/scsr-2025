@@ -52,7 +52,7 @@ public class OverflowTest {
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
 
-		String location = "";
+		String location = "benchmark-";
 		// we parse the program to get the CFG representation of the code in it
 		Program program = IMPFrontend.processFile("inputs/" + location + "overflow.imp");
 

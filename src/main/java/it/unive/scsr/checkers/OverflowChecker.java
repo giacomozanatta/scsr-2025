@@ -142,6 +142,11 @@ public class OverflowChecker
       Statement node) {
 
     var id = new Variable(ref.getStaticType(), ref.getName(), ref.getLocation());
+    var target =
+        (ref.getParentStatement() instanceof Assignment assignment
+                && assignment.getLeft().equals(ref))
+            ? assignment
+            : node;
 
     tool.getResultOf(graph)
         .forEach(
@@ -183,8 +188,8 @@ public class OverflowChecker
               // dynamic types are checked. If there are no supported types, no analysis will be
               // performed because the inferred type is not supported.
               if (isTypeAligned) {
-                // Computes the exit state for the specified node.
-                var state = analyzer.getStateAfter(node);
+                // Computes the exit state for the specified target.
+                var state = analyzer.getStateAfter(target);
                 var env = state.getValueState();
 
                 if (env.knowsIdentifier(id)) {

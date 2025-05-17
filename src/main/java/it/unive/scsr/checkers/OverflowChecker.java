@@ -76,14 +76,20 @@ SemanticCheck<
 		
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
+
+		Statement target = node;
 				
 		// TODO: implement type checks, it is required a numerical type
 		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
-		
+
+		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
+			target = varRef.getParentStatement();
+		}
+
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
+				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(target).getState();
 				Intervals intervalAbstractValue = state.getValueState().getState(id);	
 				
 				// TODO: implement logic for overflow/underflow checks

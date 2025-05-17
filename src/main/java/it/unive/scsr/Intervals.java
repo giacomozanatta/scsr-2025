@@ -14,6 +14,7 @@ import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.NegatableOperator;
+import it.unive.lisa.symbolic.value.operator.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
@@ -99,6 +100,7 @@ public class Intervals
 	@Override
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
+<<<<<<< HEAD
 
 		if (operator == NumericNegation.INSTANCE) {
 			if (arg.isTop()) {
@@ -108,6 +110,13 @@ public class Intervals
 			}
 		} else if (operator instanceof NegatableOperator) {
 			return new Intervals(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
+=======
+		
+		// TODO: The semantics of negation should be implemented here! 
+		
+		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
+			
+>>>>>>> master
 		}
 
 		return top();

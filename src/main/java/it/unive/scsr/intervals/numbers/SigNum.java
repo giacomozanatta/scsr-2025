@@ -40,4 +40,12 @@ public sealed interface SigNum extends IntervalNumber permits Numeric, Infinity 
     // values.
     return isPositive() ? other.isPositive() : other.isNegative();
   }
+
+  default boolean isIntegerNumber() {
+    return this instanceof IntegerNumber;
+  }
+
+  default boolean isDecimalNumber() {
+    return this instanceof DecimalNumber;
+  }
 }

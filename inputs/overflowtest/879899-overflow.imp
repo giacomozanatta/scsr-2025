@@ -92,5 +92,27 @@ class Test {
         def ge_comparison_not_overflowing1 = 0;
         if (more_than_127 >= 0) { ge_comparison_not_overflowing1 = 1;  }
         else { ge_comparison_not_overflowing1 = limits.max_int_8() + 1; }
+
+        // This should successfully mark ge_comparison_overflowing2 variable as overflowing.
+        def ge_comparison_overflowing2 = 0;
+        if (just_negative >= 0) { ge_comparison_overflowing2 = 1;  }
+        else { ge_comparison_overflowing2 = limits.max_int_8() + 1; }
+
+        // This should successfully prevent the else branch from marking the le_comparison_not_overflowing0 variable as
+        // overflowing.
+        def le_comparison_not_overflowing0 = 0;
+        if (just_zero <= 0) { le_comparison_not_overflowing0 = 1;  }
+        else { le_comparison_not_overflowing0 = limits.max_int_8() + 1; }
+
+        // This should successfully prevent the else branch from marking the le_comparison_not_overflowing1 variable as
+        // overflowing.
+        def le_comparison_not_overflowing1 = 0;
+        if (just_negative <= 0) { le_comparison_not_overflowing1 = 1;  }
+        else { le_comparison_not_overflowing1 = limits.max_int_8() + 1; }
+
+        // This should successfully mark le_comparison_overflowing2 variable as overflowing.
+        def le_comparison_overflowing2 = 0;
+        if (more_than_127 <= 0) { le_comparison_overflowing2 = 1;  }
+        else { le_comparison_overflowing2 = limits.max_int_8() + 1; }
     }
 }

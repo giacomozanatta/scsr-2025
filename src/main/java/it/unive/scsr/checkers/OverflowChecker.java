@@ -100,7 +100,7 @@ SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, T
 
 			// ADDED: implement logic for overflow/underflow checks
 			// hint: it depends to the NumericalSize size
-			if (intervalAbstractValue == null || intervalAbstractValue.isBottom())
+			if (intervalAbstractValue == null || intervalAbstractValue.interval == null || intervalAbstractValue.isBottom())
 				continue;
 
 			if(intervalAbstractValue.isTop()) {
@@ -135,6 +135,7 @@ SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, T
 		}
 	}
 
+	//togliere l'infinito che viene controllato prima!
 	private double toDouble(MathNumber n) {
 		if (n == null)
 			return Double.NaN;

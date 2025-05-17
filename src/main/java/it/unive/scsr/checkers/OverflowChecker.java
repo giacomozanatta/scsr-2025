@@ -1,7 +1,6 @@
 package it.unive.scsr.checkers;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
@@ -16,9 +15,8 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.value.Variable;
-import it.unive.lisa.type.NumericType;
-import it.unive.lisa.type.Type;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.overflow.Message;
 import it.unive.scsr.checkers.overflow.checkers.SizeChecker;
@@ -29,7 +27,7 @@ public class OverflowChecker
             PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 
   // Represents the exit state of an analysis, containing abstract data and the overflow level.
-  public record ExitState(Intervals abstractData, SizeChecker.OverflowingLevel result) {}
+  public record ExitState(Intervals abstractData, SizeChecker.OverflowResult result) {}
 
   // Represents the key for an exit state, composed of a code location, a variable, and its
   // numerical size.
@@ -44,7 +42,15 @@ public class OverflowChecker
     UINT32,
     FLOAT8,
     FLOAT16,
-    FLOAT32,
+    FLOAT32;
+
+    public boolean isFloatingPoint() {
+      return this.equals(FLOAT8) || this.equals(FLOAT16) || this.equals(FLOAT32);
+    }
+
+    public boolean isInteger() {
+      return !isFloatingPoint();
+    }
   }
 
   private final NumericalSize size;
@@ -95,7 +101,7 @@ public class OverflowChecker
         (key, value) -> {
           var data =
               value.stream()
-                  .filter(state -> state.result.isOverflowing())
+                  .filter(state -> state.result.isValuable())
                   .reduce(
                       (first, second) -> {
                         try {
@@ -117,18 +123,13 @@ public class OverflowChecker
                     key.codeLocation.getCodeLocation());
             var warning =
                 new Message.Warning(
-                    safeData.result.definitely() ? "definite overflow" : "may overflow",
+                    safeData.result.isDefinite() ? "definite overflow" : "may overflow",
                     safeData.abstractData.representation().toString());
 
             // Log the warnings using the provided tool.
             tool.warn(new Message(warning, info).toJson());
           }
         });
-  }
-
-  private boolean isSupportedType(final Set<Type> possibleTypes) {
-    // The set of inferred types must contain at least one NumericType.
-    return possibleTypes.stream().map(Type::getClass).anyMatch(NumericType.class::isAssignableFrom);
   }
 
   private void checkVariableRef(
@@ -141,48 +142,70 @@ public class OverflowChecker
       Statement node) {
 
     var id = new Variable(ref.getStaticType(), ref.getName(), ref.getLocation());
-    var types =
-        tool.getResultOf(graph).stream()
-            .flatMap(
-                result ->
-                    Analyzer.inferTypes(id, ref, new Analyzer<>(result).getStateAfter(ref))
-                        .stream())
-            .collect(Collectors.toSet());
-
-    // Perform analysis only for some specific types, namely those checked in the "isSupportedType"
-    // method. If
-    // staticType is untyped, then dynamic types are checked. If there are no supported types, no
-    // analysis will be
-    // performed because the inferred type is not supported.
-    if (!(isSupportedType(types))) {
-      return;
-    }
 
     tool.getResultOf(graph)
         .forEach(
             result -> {
-              // Computes the exit state for the specified node.
-              var state = new Analyzer<>(result).getStateAfter(node);
-              var env = state.getValueState();
+              var analyzer = new Analyzer<>(result);
+              var types = Analyzer.inferTypes(id, ref, analyzer.getStateAfter(ref));
 
-              if (env.knowsIdentifier(id)) {
-                // Since this checker deals with the interval domain, the environment state of the
-                // value must be an
-                // interval.
-                var intervals = env.getState(id);
+              // Check if any of the types in the 'types' stream are either Float32Type or
+              // Float64Type. This determines if the value might represent a single-precision or
+              // double-precision floating-point number.
+              var mayBeFloat =
+                  types.stream()
+                      .anyMatch(type -> type instanceof Float32Type || type instanceof Float64Type);
 
-                // The overflow depends on the size of NumericalSize.
-                var stickiness =
-                    SizeChecker.findBy(size)
-                        .map(sizeChecker -> sizeChecker.isOverflowing(intervals))
-                        .orElse(SizeChecker.OverflowingLevel.base());
+              // Check if any of the types in the 'types' stream are one of the integer types
+              // (signed or unsigned 8, 16, 32, or 64 bit). This determines if the value might
+              // represent a whole number.
+              var mayBeInteger =
+                  types.stream()
+                      .anyMatch(
+                          type ->
+                              type instanceof Int8Type
+                                  || type instanceof Int16Type
+                                  || type instanceof Int32Type
+                                  || type instanceof Int64Type
+                                  || type instanceof UInt8Type
+                                  || type instanceof UInt16Type
+                                  || type instanceof UInt32Type
+                                  || type instanceof UInt64Type);
 
-                if (stickiness.isOverflowing()) {
-                  // Add the result as an exit state.
-                  var key = new ExitKey(id.getCodeLocation(), id, size);
-                  var currentSet = exitStates.getOrDefault(key, new HashSet<>());
-                  currentSet.add(new ExitState(intervals, stickiness));
-                  exitStates.put(key, currentSet);
+              // Determine if the determined 'size' (likely representing the size of a data type) is
+              // aligned with the potential underlying types. It checks if a floating-point size is
+              // associated with a potentially floating-point type, or if an integer size is
+              // associated with a potential integer type.
+              var isTypeAligned =
+                  (size.isFloatingPoint() && mayBeFloat) || (size.isInteger() && mayBeInteger);
+
+              // Perform analysis only for some specific types. If staticType is untyped, then
+              // dynamic types are checked. If there are no supported types, no analysis will be
+              // performed because the inferred type is not supported.
+              if (isTypeAligned) {
+                // Computes the exit state for the specified node.
+                var state = analyzer.getStateAfter(node);
+                var env = state.getValueState();
+
+                if (env.knowsIdentifier(id)) {
+
+                  // Since this checker deals with the interval domain, the environment state of the
+                  // value must be an interval.
+                  var intervals = env.getState(id);
+
+                  // The overflow depends on the size of NumericalSize.
+                  var stickiness =
+                      SizeChecker.findBy(size)
+                          .map(sizeChecker -> sizeChecker.isOverflowing(intervals))
+                          .orElse(null);
+
+                  if (stickiness != null && stickiness.isValuable()) {
+                    // Add the result as an exit state.
+                    var key = new ExitKey(id.getCodeLocation(), id, size);
+                    var currentSet = exitStates.getOrDefault(key, new HashSet<>());
+                    currentSet.add(new ExitState(intervals, stickiness));
+                    exitStates.put(key, currentSet);
+                  }
                 }
               }
             });

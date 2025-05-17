@@ -7,26 +7,27 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-// TODO: implement float checker
 public abstract sealed class SizeChecker permits DecimalChecker, IntegerChecker {
 
   /**
-   * A record that represents whether a value has overflowed. If overflowed, it also specifies
-   * whether the value has overflowed definitely or not.
-   *
-   * @param isOverflowing <code>true</code> if the value is overflowing, <code>false</code>
-   *     otherwise.
-   * @param definitely <code>true</code> if the value is definitely overflowing, <code>false</code>
-   *     otherwise.
+   * Represents the result of an overflow check for numeric types. It is a sealed interface, meaning
+   * its implementations are limited to the specified permitted subclasses: {@link
+   * DecimalChecker.DecimalOverflow} and {@link IntegerChecker.IntegerOverflow}.
    */
-  public record OverflowingLevel(boolean isOverflowing, boolean definitely) {
+  public sealed interface OverflowResult
+      permits DecimalChecker.DecimalOverflow, IntegerChecker.IntegerOverflow {
 
     /**
-     * @return The base record indicating that the analysis is unable to tell anything.
+     * @return {@code true} if the overflow result represents a valuable overflow that should be
+     *     reported, {@code false} otherwise.
      */
-    public static OverflowingLevel base() {
-      return new OverflowingLevel(false, false);
-    }
+    boolean isValuable();
+
+    /**
+     * @return {@code true} if the overflow condition is definite (always occurs under the given
+     *     circumstances), {@code false} if it's potential or uncertain.
+     */
+    boolean isDefinite();
   }
 
   /**
@@ -34,10 +35,9 @@ public abstract sealed class SizeChecker permits DecimalChecker, IntegerChecker 
    *
    * @param intervals The range that represents the lower and upper numeric limit for a program
    *     element.
-   * @return The {@link OverflowingLevel} indicating whether the value could overflow and whether it
-   *     will definitely happen or not.
+   * @return The {@link OverflowResult} indicating whether the value could overflow.
    */
-  public abstract OverflowingLevel isOverflowing(Intervals intervals);
+  public abstract OverflowResult isOverflowing(Intervals intervals);
 
   /**
    * Try to find the most appropriate checker based on the numerical size.
@@ -49,10 +49,8 @@ public abstract sealed class SizeChecker permits DecimalChecker, IntegerChecker 
     record ClassNamePair(Class<?> checker, String className) {}
 
     // Assuming that there is a direct mapping between the name representing the numeric size and
-    // the class name of
-    // the subclasses of this sealed class. Because it is a sealed class, it is known at compile
-    // time what the
-    // possible subclasses are, which allows for better reflection.
+    // the class name of the subclasses of this sealed class. Because it is a sealed class, it is
+    // known at compile time what the possible subclasses are, which allows for better reflection.
     return Stream.of(
             IntegerChecker.class.getPermittedSubclasses(),
             DecimalChecker.class.getPermittedSubclasses())

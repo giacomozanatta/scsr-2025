@@ -94,8 +94,7 @@ public class DivisionByZeroChecker
                     .forEach(
                         expression -> {
                           // For each expression reachable from the first one calculated, if it is
-                          // of numeric type, the
-                          // abstract domain is calculated.
+                          // of numeric type, the abstract domain is calculated.
                           if (Analyzer.anyNumericalType(expression, div, state)) {
 
                             // With the abstract domain, it is possible to know whether the right

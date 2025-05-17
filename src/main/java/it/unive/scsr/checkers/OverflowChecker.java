@@ -1,6 +1,8 @@
 package it.unive.scsr.checkers;
 
+import java.text.MessageFormat;
 import java.util.*;
+import java.util.function.Function;
 
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
@@ -19,6 +21,8 @@ import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.overflow.Message;
+import it.unive.scsr.checkers.overflow.checkers.DecimalChecker;
+import it.unive.scsr.checkers.overflow.checkers.IntegerChecker;
 import it.unive.scsr.checkers.overflow.checkers.SizeChecker;
 
 public class OverflowChecker
@@ -116,15 +120,47 @@ public class OverflowChecker
 
             // Extracts information from the key and results from the input value.
             var safeData = data.orElseThrow();
+
+            // Define a Function to generate a human-readable description for DecimalOverflow
+            // instances. The description varies based on whether the overflow is definite, only
+            // close to zero, or just a possibility.
+            Function<DecimalChecker.DecimalOverflow, String> decimalDescription =
+                overflow ->
+                    overflow.isDefinite()
+                        ? MessageFormat.format(
+                            "definite overflow [round to zero: {0}, round to positive limit: {1}, round to negative limit: {2}]",
+                            overflow.definiteRoundToZero(),
+                            overflow.definiteReachPositiveLimit(),
+                            overflow.definiteReachNegativeLimit())
+                        : overflow.onlyCloseToZero()
+                            ? MessageFormat.format(
+                                "reaching overflow [close to zero: {0}]",
+                                overflow.onlyCloseToZero())
+                            : "may overflow";
+
+            // Determine the description of the overflow based on the type of the 'safeData.result'.
+            // If it's an IntegerOverflow, the description indicates whether it's a definite or
+            // potential overflow. If it's a DecimalOverflow, the 'decimalDescription' function is
+            // used to generate a more detailed description.
+            var description =
+                switch (safeData.result) {
+                  case IntegerChecker.IntegerOverflow o ->
+                      o.isDefinite() ? "definite overflow" : "may overflow";
+                  case DecimalChecker.DecimalOverflow o -> decimalDescription.apply(o);
+                };
+
+            // Create an Info object containing details about the variable, its size, and its code
+            // location.
             var info =
                 new Message.Info(
                     key.variable.getName(),
                     key.size.toString(),
                     key.codeLocation.getCodeLocation());
+
+            // Create a Warning message object containing the generated 'description' and the string
+            // representation of the abstract data associated with the safe data.
             var warning =
-                new Message.Warning(
-                    safeData.result.isDefinite() ? "definite overflow" : "may overflow",
-                    safeData.abstractData.representation().toString());
+                new Message.Warning(description, safeData.abstractData.representation().toString());
 
             // Log the warnings using the provided tool.
             tool.warn(new Message(warning, info).toJson());

@@ -57,7 +57,7 @@ class Test {
         if (just_zero != 0) { eq_comparison_overflowing = 1; }
         else { eq_comparison_overflowing = limits.max_int_8() + 1; }
 
-        // This should successfully prevent the else branch from marking the gt_comparison_not_overflowing variable as
+        // This should successfully prevent the true branch from marking the gt_comparison_not_overflowing variable as
         // overflowing.
         def gt_comparison_not_overflowing = 0;
         if (just_zero > 0) { gt_comparison_not_overflowing = limits.max_int_8() + 1;  }
@@ -69,7 +69,7 @@ class Test {
         if (more_than_127 > 0) { gt_comparison_overflowing = limits.max_int_8() + 1;  }
         else { gt_comparison_overflowing = 1; }
 
-        // This should successfully prevent the else branch from marking the lt_comparison_not_overflowing variable as
+        // This should successfully prevent the true branch from marking the lt_comparison_not_overflowing variable as
         // overflowing.
         def lt_comparison_not_overflowing = 0;
         if (just_zero < 0) { lt_comparison_not_overflowing = limits.max_int_8() + 1;  }
@@ -80,5 +80,17 @@ class Test {
         def lt_comparison_overflowing = 0;
         if (just_negative < 0) { lt_comparison_overflowing = limits.max_int_8() + 1;  }
         else { lt_comparison_overflowing = 1; }
+
+        // This should successfully prevent the else branch from marking the ge_comparison_not_overflowing0 variable as
+        // overflowing.
+        def ge_comparison_not_overflowing0 = 0;
+        if (just_zero >= 0) { ge_comparison_not_overflowing0 = 1;  }
+        else { ge_comparison_not_overflowing0 = limits.max_int_8() + 1; }
+
+        // This should successfully prevent the else branch from marking the ge_comparison_not_overflowing1 variable as
+        // overflowing.
+        def ge_comparison_not_overflowing1 = 0;
+        if (more_than_127 >= 0) { ge_comparison_not_overflowing1 = 1;  }
+        else { ge_comparison_not_overflowing1 = limits.max_int_8() + 1; }
     }
 }

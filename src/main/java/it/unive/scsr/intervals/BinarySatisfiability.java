@@ -4,7 +4,6 @@ import it.unive.lisa.analysis.lattices.Satisfiability;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.utils.BiSatisfiabilityDispatcher;
 
-import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class BinarySatisfiability extends BiSatisfiabilityDispatcher<Intervals> {
@@ -14,7 +13,7 @@ public class BinarySatisfiability extends BiSatisfiabilityDispatcher<Intervals> 
   @Override
   public BiFunction<Intervals, Intervals, Satisfiability> buildEqFunction() {
     return (left, right) ->
-        intersection(left, right).isEmpty()
+        left.interval.intersection(right.interval).isEmpty()
             ? Satisfiability.NOT_SATISFIED
             : numericEquality(left, right) ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN;
   }
@@ -22,7 +21,7 @@ public class BinarySatisfiability extends BiSatisfiabilityDispatcher<Intervals> 
   @Override
   public BiFunction<Intervals, Intervals, Satisfiability> buildNeFunction() {
     return (left, right) ->
-        intersection(left, right).isEmpty()
+        left.interval.intersection(right.interval).isEmpty()
             ? Satisfiability.SATISFIED
             : numericEquality(left, right) ? Satisfiability.NOT_SATISFIED : Satisfiability.UNKNOWN;
   }
@@ -30,9 +29,9 @@ public class BinarySatisfiability extends BiSatisfiabilityDispatcher<Intervals> 
   @Override
   public BiFunction<Intervals, Intervals, Satisfiability> buildGtFunction() {
     return (left, right) ->
-        numericEquality(left, right) || definitelyLessThan(left, right)
+        numericEquality(left, right) || left.interval.definitelyLessThan(right.interval)
             ? Satisfiability.NOT_SATISFIED
-            : definitelyGreaterThan(left, right)
+            : left.interval.definitelyGreaterThan(right.interval)
                 ? Satisfiability.SATISFIED
                 : Satisfiability.UNKNOWN;
   }
@@ -40,89 +39,42 @@ public class BinarySatisfiability extends BiSatisfiabilityDispatcher<Intervals> 
   @Override
   public BiFunction<Intervals, Intervals, Satisfiability> buildLtFunction() {
     return (left, right) ->
-        numericEquality(left, right) || definitelyGreaterThan(left, right)
+        numericEquality(left, right) || left.interval.definitelyGreaterThan(right.interval)
             ? Satisfiability.NOT_SATISFIED
-            : definitelyLessThan(left, right) ? Satisfiability.SATISFIED : Satisfiability.UNKNOWN;
+            : left.interval.definitelyLessThan(right.interval)
+                ? Satisfiability.SATISFIED
+                : Satisfiability.UNKNOWN;
   }
 
   @Override
   public BiFunction<Intervals, Intervals, Satisfiability> buildGeFunction() {
     return (left, right) -> {
-      // ...
-      var comparison = comparison(left, right);
-
-      // ...
-      if (singletonInCommon(left, right)) {
-        return comparison == 0 || comparison > 0
-            ? Satisfiability.SATISFIED
-            : Satisfiability.NOT_SATISFIED;
-      }
-
-      // ...
-      return definitelyGreaterThan(left, right)
+      if (numericEquality(left, right)) return Satisfiability.SATISFIED;
+      return left.interval.definitelyGreaterThan(right.interval)
           ? Satisfiability.SATISFIED
-          : definitelyLessThan(left, right) ? Satisfiability.NOT_SATISFIED : Satisfiability.UNKNOWN;
+          : left.interval.definitelyLessThan(right.interval)
+              ? Satisfiability.NOT_SATISFIED
+              : Satisfiability.UNKNOWN;
     };
   }
 
   @Override
   public BiFunction<Intervals, Intervals, Satisfiability> buildLeFunction() {
     return (left, right) -> {
-      // ...
-      var comparison = comparison(left, right);
-
-      // ...
-      if (singletonInCommon(left, right)) {
-        return comparison == 0 || comparison < 0
-            ? Satisfiability.SATISFIED
-            : Satisfiability.NOT_SATISFIED;
-      }
-
-      // ...
-      return definitelyLessThan(left, right)
+      if (numericEquality(left, right)) return Satisfiability.SATISFIED;
+      return left.interval.definitelyLessThan(right.interval)
           ? Satisfiability.SATISFIED
-          : definitelyGreaterThan(left, right)
+          : left.interval.definitelyGreaterThan(right.interval)
               ? Satisfiability.NOT_SATISFIED
               : Satisfiability.UNKNOWN;
     };
   }
 
-  // ...
-  private boolean definitelyLessThan(Intervals left, Intervals right) {
-    var leftInterval = left.interval;
-    var rightInterval = right.interval;
-    return leftInterval.definitelyLessThan(rightInterval);
-  }
-
-  // ...
-  private boolean definitelyGreaterThan(Intervals left, Intervals right) {
-    var leftInterval = left.interval;
-    var rightInterval = right.interval;
-    return leftInterval.definitelyGreaterThan(rightInterval);
-  }
-
-  // ...
-  private Optional<NumericInterval> intersection(Intervals left, Intervals right) {
-    var leftInterval = left.interval;
-    var rightInterval = right.interval;
-    return leftInterval.intersection(rightInterval);
-  }
-
-  // ...
-  private int comparison(Intervals left, Intervals right) {
-    var leftInterval = left.interval;
-    var rightInterval = right.interval;
-    return leftInterval.compareTo(rightInterval);
-  }
-
-  // ...
-  private boolean singletonInCommon(Intervals left, Intervals right) {
-    var intersection = intersection(left, right);
-    return intersection.isPresent() && intersection.orElseThrow().isSingleton();
-  }
-
-  // ...
+  // Checks if two Intervals objects represent numerically equal singleton intervals. Two intervals
+  // are considered numerically equal singletons if both contain only a single value and that single
+  // value is the same for both intervals.
   private boolean numericEquality(Intervals left, Intervals right) {
-    return singletonInCommon(left, right) && comparison(left, right) == 0;
+    return (left.interval.isSingleton() && right.interval.isSingleton())
+        && (left.interval.compareTo(right.interval) == 0);
   }
 }

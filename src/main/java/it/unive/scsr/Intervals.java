@@ -196,14 +196,17 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
       Intervals right,
       ProgramPoint pp,
       SemanticOracle oracle) {
-    // ...
+    // If it is a ComparisonOperator, attempt to find a corresponding BinarySatisfiability function
+    // based on the operator type. If no corresponding BinarySatisfiability function is found for
+    // the ComparisonOperator, return UNKNOWN.
     if (operator instanceof ComparisonOperator comparisonOperator) {
       return Optional.ofNullable(BinarySatisfiability.INSTANCE.findBy(comparisonOperator))
           .map(f -> f.apply(left, right))
           .orElse(Satisfiability.UNKNOWN);
     }
 
-    // ...
+    // If the 'operator' is not a ComparisonOperator, the satisfiability cannot be determined by
+    // this logic, so return UNKNOWN.
     return Satisfiability.UNKNOWN;
   }
 

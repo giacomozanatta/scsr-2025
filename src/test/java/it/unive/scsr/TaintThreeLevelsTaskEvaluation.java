@@ -74,7 +74,7 @@ public class TaintThreeLevelsTaskEvaluation {
 		 conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 		 
 		 // the TaintChecker is executed after the taint analysis and it checks if a tainted value is flowed in a sink
-		 conf.semanticChecks.add(new TaintThreeLevelsChecker());
+		 conf.semanticChecks.add(new TaintThreeLevelsChecker(false));
 		 
 		conf.serializeResults = true;
 		conf.jsonOutput = true;

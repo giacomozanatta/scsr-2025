@@ -28,9 +28,14 @@ public class TaintThreeLevelsTest {
   private static class TaintThreeLevelsProgram
       extends ProgramResource<TaintThreeLevelsChecker, ValueEnvironment<TaintThreeLevels>> {
 
-    private static final String[] sources = new String[] {"source1", "source2"};
-    private static final String[] sanitizers = new String[] {"sanitizer1", "sanitizer2"};
-    private static final String[] sinks = new String[] {"sink1", "sinks"};
+    private static final String[] sources =
+        new String[] {"source_SQL", "source_HTML", "source_PATH", "source1", "source2"};
+
+    private static final String[] sanitizers =
+        new String[] {"sanitize_SQL", "sanitize_HTML", "sanitize_PATH", "sanitizer1", "sanitizer2"};
+
+    private static final String[] sinks =
+        new String[] {"sink_SQL", "sink_HTML", "sink_PATH", "sink1", "sinks"};
 
     public TaintThreeLevelsProgram(String inputFile, String outputDirectory) {
       super(inputFile, outputDirectory);
@@ -88,7 +93,7 @@ public class TaintThreeLevelsTest {
         .map(
             program ->
                 program.toLiSARunner(
-                    Set.of(new TaintThreeLevelsChecker()),
+                    Set.of(new TaintThreeLevelsChecker(true)),
                     new ValueEnvironment<>(TaintThreeLevels.TOP)))
         .forEach(Runnable::run);
   }

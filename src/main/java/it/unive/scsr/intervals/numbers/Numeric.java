@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 public abstract sealed class Numeric<T> implements SigNum permits IntegerNumber, DecimalNumber {
 
@@ -71,7 +72,6 @@ public abstract sealed class Numeric<T> implements SigNum permits IntegerNumber,
         orElse);
   }
 
-  // TODO: handle by respecting limit definitions.
   @Override
   public IntervalNumber divide(IntervalNumber other, Computation orElse) {
     return finalize(
@@ -138,21 +138,54 @@ public abstract sealed class Numeric<T> implements SigNum permits IntegerNumber,
   private static <T> BiFunction<T, T, T> numericMethod(
       Class<? extends T> type, Operation operation) {
     try {
-      // Convert the operation enum name to lowercase to match the method naming convention. Then,
-      // get the
-      // specific arithmetic method from the 'type' class that corresponds to the given operation.
-      var operationName = operation.name().toLowerCase();
-      var method = type.getMethod(operationName, type);
 
-      return (first, second) -> {
-        try {
-          // Invoke the retrieved method on the 'first' object, passing 'second' as the argument.
-          return (T) method.invoke(first, second);
-        } catch (Exception e) {
-          throw new IllegalArgumentException(e);
-        }
-      };
+      // Convert the operation enum name to lowercase to match the method naming convention.
+      var operationName = operation.name().toLowerCase();
+
+      // Define a Supplier that returns a BiFunction. This BiFunction represents a simple method
+      // invocation on two operands of type T. It retrieves the method based on the operation name
+      // and the class type, and then invokes it. Any exceptions during invocation are wrapped in a
+      // RuntimeException.
+      Supplier<BiFunction<T, T, T>> getSimpleMethod =
+          () ->
+              (first, second) -> {
+                try {
+                  return (T) type.getMethod(operationName, type).invoke(first, second);
+                } catch (Exception e) {
+                  throw new RuntimeException(e);
+                }
+              };
+
+      // If the target type is BigInteger, return the simple method invocation BiFunction.
+      // BigInteger operations typically don't require special rounding.
+      if (type.equals(BigInteger.class)) {
+        return getSimpleMethod.get();
+      } else if (type.equals(BigDecimal.class)) {
+        // If the target type is BigDecimal, handle the division operation differently to specify a
+        // RoundingMode. For other operations, use the simple method invocation.
+        return operation.equals(Operation.DIVIDE)
+            ? (first, second) -> {
+              try {
+                // For division of BigDecimals, get the method that takes a RoundingMode as an
+                // argument and invoke it with RoundingMode.HALF_DOWN.
+                return (T)
+                    type.getMethod(operationName, type, RoundingMode.class)
+                        .invoke(first, second, RoundingMode.HALF_DOWN);
+              } catch (Exception e) {
+                // If any exception occurs during method invocation, wrap it in a RuntimeException.
+                throw new RuntimeException(e);
+              }
+            }
+            : getSimpleMethod.get();
+      } else {
+        // If the type is neither BigInteger nor BigDecimal, throw an IllegalArgumentException as
+        // the method likely doesn't support operations on this type.
+        throw new IllegalArgumentException();
+      }
     } catch (Exception e) {
+      // If any exception occurs while trying to get the method (e.g., NoSuchMethodException), it
+      // means the specified operation is not supported for the given type. Wrap the original
+      // exception in an IllegalArgumentException and rethrow it.
       throw new IllegalArgumentException(e);
     }
   }

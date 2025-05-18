@@ -31,15 +31,15 @@ public abstract class BiSatisfiabilityDispatcher<T extends Lattice<T>> {
         .orElse(null);
   }
 
-  abstract public BiFunction<T, T, Satisfiability> buildEqFunction();
+  public abstract BiFunction<T, T, Satisfiability> buildEqFunction();
 
-  abstract public BiFunction<T, T, Satisfiability> buildNeFunction();
+  public abstract BiFunction<T, T, Satisfiability> buildNeFunction();
 
-  abstract public BiFunction<T, T, Satisfiability> buildGtFunction();
+  public abstract BiFunction<T, T, Satisfiability> buildGtFunction();
 
-  abstract public BiFunction<T, T, Satisfiability> buildLtFunction();
+  public abstract BiFunction<T, T, Satisfiability> buildLtFunction();
 
-  abstract public BiFunction<T, T, Satisfiability> buildGeFunction();
+  public abstract BiFunction<T, T, Satisfiability> buildGeFunction();
 
-  abstract public BiFunction<T, T, Satisfiability> buildLeFunction();
+  public abstract BiFunction<T, T, Satisfiability> buildLeFunction();
 }

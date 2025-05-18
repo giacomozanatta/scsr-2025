@@ -37,20 +37,6 @@ public class Analyzer<V extends ValueDomain<V>> {
   }
 
   /**
-   * Compute the exit state or throw a {@link RuntimeException}.
-   *
-   * @return The {@link ValueDomain} contained in the exit state.
-   * @throws RuntimeException If the lub operator fails.
-   */
-  public V exitStateOrThrow() {
-    try {
-      return analyzer.getExitState().getState().getValueState();
-    } catch (SemanticException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
    * @param statement The instruction from which the state will be calculated.
    * @return The {@link AbstractState} embedded into this analysis state, containing abstract values
    *     for program variables and memory locations after the given statement.

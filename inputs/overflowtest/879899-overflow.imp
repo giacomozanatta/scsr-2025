@@ -114,5 +114,18 @@ class Test {
         def le_comparison_overflowing2 = 0;
         if (more_than_127 <= 0) { le_comparison_overflowing2 = 1;  }
         else { le_comparison_overflowing2 = limits.max_int_8() + 1; }
+
+        // Test arrays with a simple for loop.
+        def int_array = new int[2];
+        int_array[0] = 0;
+        int_array[1] = 0;
+
+        for (def i = 0; i < 2; i = i + 1) {
+            int_array[0] = int_array[0] + i;    // Since this will be parsed more than once, the widening operator will be applied resulting in a possible overflow.
+            int_array[1] = int_array[1] + i;    // Since this will be parsed more than once, the widening operator will be applied resulting in a possible overflow.
+        }
+
+        def int_array_0 = int_array[0]; // This is a possible overflow even though it definitely isn't.
+        def int_array_1 = int_array[1]; // This is a possible overflow even though it definitely isn't.
     }
 }

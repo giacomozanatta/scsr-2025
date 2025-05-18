@@ -42,6 +42,7 @@ public class ProgramResource<S extends SemanticCheck<?>, V extends ValueDomain<V
             final LiSAConfiguration configuration = new DefaultConfiguration();
 
             configuration.workdir = outputDirectory;
+            configuration.analysisGraphs = LiSAConfiguration.GraphType.HTML;
             configuration.jsonOutput = true;
 
             configuration.abstractState =

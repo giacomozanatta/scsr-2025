@@ -1,9 +1,7 @@
 package it.unive.scsr.checkers;
 
 import java.util.HashSet;
-import java.util.Set;
 
-import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
@@ -14,13 +12,12 @@ import it.unive.lisa.program.annotations.matcher.AnnotationMatcher;
 import it.unive.lisa.program.annotations.matcher.BasicAnnotationMatcher;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeMember;
-import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.call.CFGCall;
-import it.unive.lisa.program.cfg.statement.call.Call;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.lisa.type.Type;
 import it.unive.lisa.util.StringUtilities;
 import it.unive.scsr.TaintThreeLevels;
 import it.unive.lisa.analysis.types.InferredTypes;
@@ -32,6 +29,17 @@ public class TaintThreeLevelsChecker
     implements SemanticCheck<
         SimpleAbstractState<
             PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> {
+
+  private final boolean filterFirstThis;
+
+  /**
+   * @param filterFirstThis Allow taint analysis to be disabled if the first parameter is a
+   *     reference type and its name is <code>this</code>. Not an elegant solution, but at least
+   *     avoid some pedantic warnings for this checker.
+   */
+  public TaintThreeLevelsChecker(boolean filterFirstThis) {
+    this.filterFirstThis = filterFirstThis;
+  }
 
   /** Sink annotation. */
   public static final Annotation SINK_ANNOTATION = new Annotation("lisa.taint.Sink");
@@ -60,27 +68,33 @@ public class TaintThreeLevelsChecker
                   TypeEnvironment<InferredTypes>>>
           result : tool.getResultOf(call.getCFG())) {
 
-        Call resolved = tool.getResolvedVersion(call, result);
+        var resolved = tool.getResolvedVersion(call, result);
         if (resolved == null) System.err.println("Error");
 
         if (resolved instanceof CFGCall cfg) {
           for (CodeMember n : cfg.getTargets()) {
-            Parameter[] parameters = n.getDescriptor().getFormals();
+            var parameters = n.getDescriptor().getFormals();
             for (int i = 0; i < parameters.length; i++)
               if (parameters[i].getAnnotations().contains(SINK_MATCHER)) {
-                AnalysisState<
-                        SimpleAbstractState<
-                            PointBasedHeap,
-                            ValueEnvironment<TaintThreeLevels>,
-                            TypeEnvironment<InferredTypes>>>
-                    state = result.getAnalysisStateAfter(call.getParameters()[i]);
-                Set<SymbolicExpression> reachableIds = new HashSet<>();
-                for (SymbolicExpression e : state.getComputedExpressions())
+                var state = result.getAnalysisStateAfter(call.getParameters()[i]);
+                var reachableIds = new HashSet<SymbolicExpression>();
+
+                for (SymbolicExpression e : state.getComputedExpressions()) {
                   reachableIds.addAll(
                       state.getState().reachableFrom(e, node, state.getState()).elements);
+                }
 
                 for (SymbolicExpression s : reachableIds) {
                   ValueEnvironment<TaintThreeLevels> valueState = state.getState().getValueState();
+
+                  // Filter taint checks for "this" reference.
+                  if (filterFirstThis) {
+                    var types = Analyzer.inferTypes(s, call, state.getState());
+                    if (types.stream().allMatch(Type::isReferenceType)
+                        && s.toString().equals("this")) {
+                      continue;
+                    }
+                  }
 
                   if (valueState
                       .eval((ValueExpression) s, node, state.getState())

@@ -131,6 +131,27 @@ public class OverflowChecker implements
 				System.err.printf("[%s] Possible overflow in %s: %.3f > %.3f location %s%n",
 						size, id.getName(), high, max, id.getCodeLocation());
 			}
+			// Underflow over low magnitude numbers (FLOAT8/16/32)
+			double posMin = getMinPositiveNormalized();
+			if (posMin > 0) {
+				double absLow  = Math.abs(low);
+				double absHigh = Math.abs(high);
+
+				boolean intervalIsZero = (low == 0.0 && high == 0.0);
+
+				if (!intervalIsZero) {
+					if (highFinite && absHigh < posMin && absLow < posMin) {
+						// Definite underflow
+						System.err.printf("[%s] Underflow (low magnitude) in %s: |%.3e| < %.3e location %s%n",
+								size, id.getName(), high, posMin, id.getCodeLocation());
+					} else if (absLow < posMin || absHigh < posMin) {
+						// Possible underflow
+						System.err.printf("[%s] Possible underflow (low magnitude) in %s: value crosses ±%.3e location %s%n",
+								size, id.getName(), posMin, id.getCodeLocation());
+					}
+				}
+			}
+
 		}
 
 	}
@@ -219,6 +240,14 @@ public class OverflowChecker implements
 			case FLOAT16: return 65504.0;
 			case FLOAT32: return Float.MAX_VALUE;
 			default:      return Double.POSITIVE_INFINITY;
+		}
+	}
+	private double getMinPositiveNormalized() {
+		switch (size) {
+			case FLOAT8:  return 0.015625;          // 2^-6  (min normal E4M3)
+			case FLOAT16: return 6.10352e-5;        // 2^-14 (half precision)
+			case FLOAT32: return 1.17549435e-38;    // Float MIN_NORMAL
+			default:      return 0.0;               // non-floating-point
 		}
 	}
 	/* The following method checks if the CFG name contains a type name, and if so

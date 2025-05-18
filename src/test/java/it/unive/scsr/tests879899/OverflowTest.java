@@ -13,34 +13,36 @@ import java.util.function.Function;
 import static it.unive.scsr.utils.FilesUtils.*;
 
 public class OverflowTest {
-    // A private static nested class representing a program resource specialized for overflow checking, extending
-    // ProgramResource and parameterized with OverflowChecker and a ValueEnvironment of Intervals. It is initialized
-    // with input and output directory paths.
-    private static class OverflowProgram extends ProgramResource<OverflowChecker, ValueEnvironment<Intervals>> {
-        public OverflowProgram(String inputFile, String outputDirectory) {
-            super(inputFile, outputDirectory);
-        }
+  // A private static nested class representing a program resource specialized for overflow
+  // checking, extending ProgramResource and parameterized with OverflowChecker and a
+  // ValueEnvironment of Intervals. It is initialized with input and output directory paths.
+  private static class OverflowProgram
+      extends ProgramResource<OverflowChecker, ValueEnvironment<Intervals>> {
+    public OverflowProgram(String inputFile, String outputDirectory) {
+      super(inputFile, outputDirectory);
     }
+  }
 
-    @Test
-    public void test() {
-        // Creates a list of OverflowChecker instances, one for each value in the NumericalSize enum.
-        var checkers = Arrays
-                .stream(OverflowChecker.NumericalSize.values())
-                .map(OverflowChecker::new)
-                .toList();
+  @Test
+  public void test() {
+    // Creates a list of OverflowChecker instances, one for each value in the NumericalSize enum.
+    var checkers =
+        Arrays.stream(OverflowChecker.NumericalSize.values()).map(OverflowChecker::new).toList();
 
-        // Defines a function that takes a Path and creates a new OverflowProgram instance, using the path's string
-        // representation as the input file and a default output directory derived from the filename.
-        Function<Path, OverflowProgram> overflowProgram = path -> new OverflowProgram(path.toString(), defaultOutputDirectory(removeExt(path.getFileName())));
+    // Defines a function that takes a Path and creates a new OverflowProgram instance, using the
+    // path's string representation as the input file and a default output directory derived from
+    // the filename.
+    Function<Path, OverflowProgram> overflowProgram =
+        path ->
+            new OverflowProgram(
+                path.toString(), defaultOutputDirectory(removeExt(path.getFileName())));
 
-        // Retrieves filenames from the default input directory, creates an OverflowProgram for each, converts each
-        // program to a LiSARunner with the provided checkers and initial value environment, and then runs each
-        // LiSARunner.
-        filenames(defaultInputDirectory())
-                .stream()
-                .map(overflowProgram)
-                .map(program -> program.toLiSARunner(checkers, new ValueEnvironment<>(Intervals.TOP), null))
-                .forEach(Runnable::run);
-    }
+    // Retrieves filenames from the default input directory, creates an OverflowProgram for each,
+    // converts each program to a LiSARunner with the provided checkers and initial value
+    // environment, and then runs each LiSARunner.
+    filenames(defaultInputDirectory()).stream()
+        .map(overflowProgram)
+        .map(program -> program.toLiSARunner(checkers, new ValueEnvironment<>(Intervals.TOP)))
+        .forEach(Runnable::run);
+  }
 }

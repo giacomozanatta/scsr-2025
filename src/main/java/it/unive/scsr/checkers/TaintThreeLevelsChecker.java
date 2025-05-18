@@ -28,80 +28,92 @@ import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.annotations.Annotation;
 
-public class TaintThreeLevelsChecker implements
-SemanticCheck<
-		SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> {
-	
-	/**
-	 * Sink annotation.
-	 */
-	public static final Annotation SINK_ANNOTATION = new Annotation("lisa.taint.Sink");
+public class TaintThreeLevelsChecker
+    implements SemanticCheck<
+        SimpleAbstractState<
+            PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> {
 
-	/**
-	 * Sink matcher.
-	 */
-	public static final AnnotationMatcher SINK_MATCHER = new BasicAnnotationMatcher(SINK_ANNOTATION);
+  /** Sink annotation. */
+  public static final Annotation SINK_ANNOTATION = new Annotation("lisa.taint.Sink");
 
-	@Override
-	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node) {
-		
-		if (!(node instanceof UnresolvedCall))
-			return true; 
-		UnresolvedCall call = (UnresolvedCall) node;
-		try {
-			for (AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>,
-							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(call.getCFG())) {
-				
-				Call resolved = tool.getResolvedVersion(call, result);
-				if (resolved == null)
-					System.err.println("Error");
+  /** Sink matcher. */
+  public static final AnnotationMatcher SINK_MATCHER = new BasicAnnotationMatcher(SINK_ANNOTATION);
 
-				if (resolved instanceof CFGCall) {
-					CFGCall cfg = (CFGCall) resolved;
-					for (CodeMember n : cfg.getTargets()) {
-						Parameter[] parameters = n.getDescriptor().getFormals();
-						for (int i = 0; i < parameters.length; i++)
-							if (parameters[i].getAnnotations().contains(SINK_MATCHER)) {
-								AnalysisState<
-										SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>,
-												TypeEnvironment<InferredTypes>>> state = result
-														.getAnalysisStateAfter(call.getParameters()[i]);
-								Set<SymbolicExpression> reachableIds = new HashSet<>();
-								for (SymbolicExpression e : state.getComputedExpressions())
-									reachableIds
-											.addAll(state.getState().reachableFrom(e, node, state.getState()).elements);
+  @Override
+  public boolean visit(
+      CheckToolWithAnalysisResults<
+              SimpleAbstractState<
+                  PointBasedHeap,
+                  ValueEnvironment<TaintThreeLevels>,
+                  TypeEnvironment<InferredTypes>>>
+          tool,
+      CFG graph,
+      Statement node) {
 
-								for (SymbolicExpression s : reachableIds) {
-									ValueEnvironment<TaintThreeLevels> valueState = state.getState().getValueState();
+    if (!(node instanceof UnresolvedCall call)) return true;
 
-									if(valueState.eval((ValueExpression) s, node, state.getState()).isAlwaysTainted())
-										tool.warnOn(call, "[DEFINITE] The value passed for the " + StringUtilities.ordinal(i + 1)
-										+ " parameter of this call is always tainted, and it reaches the sink at parameter '"
-										+ parameters[i].getName() + "' of " + resolved.getFullTargetName());
-									else if (valueState.eval((ValueExpression) s, node, state.getState())
-											.isPossiblyTainted())
-										tool.warnOn(call, "[POSSIBLE] The value passed for the " + StringUtilities.ordinal(i + 1)
-												+ " parameter of this call may be tainted, and it reaches the sink at parameter '"
-												+ parameters[i].getName() + "' of " + resolved.getFullTargetName());
-								}
-							}
+    try {
+      for (AnalyzedCFG<
+              SimpleAbstractState<
+                  PointBasedHeap,
+                  ValueEnvironment<TaintThreeLevels>,
+                  TypeEnvironment<InferredTypes>>>
+          result : tool.getResultOf(call.getCFG())) {
 
-					}
-				} 
-			}
-		} catch (SemanticException e) {
-			System.err.println("Cannot check " + node);
-			e.printStackTrace(System.err);
-		}
+        Call resolved = tool.getResolvedVersion(call, result);
+        if (resolved == null) System.err.println("Error");
 
-		return true;
-	}
+        if (resolved instanceof CFGCall cfg) {
+          for (CodeMember n : cfg.getTargets()) {
+            Parameter[] parameters = n.getDescriptor().getFormals();
+            for (int i = 0; i < parameters.length; i++)
+              if (parameters[i].getAnnotations().contains(SINK_MATCHER)) {
+                AnalysisState<
+                        SimpleAbstractState<
+                            PointBasedHeap,
+                            ValueEnvironment<TaintThreeLevels>,
+                            TypeEnvironment<InferredTypes>>>
+                    state = result.getAnalysisStateAfter(call.getParameters()[i]);
+                Set<SymbolicExpression> reachableIds = new HashSet<>();
+                for (SymbolicExpression e : state.getComputedExpressions())
+                  reachableIds.addAll(
+                      state.getState().reachableFrom(e, node, state.getState()).elements);
 
-	
-		
-	
+                for (SymbolicExpression s : reachableIds) {
+                  ValueEnvironment<TaintThreeLevels> valueState = state.getState().getValueState();
 
+                  if (valueState
+                      .eval((ValueExpression) s, node, state.getState())
+                      .isAlwaysTainted())
+                    tool.warnOn(
+                        call,
+                        "[DEFINITE] The value passed for the "
+                            + StringUtilities.ordinal(i + 1)
+                            + " parameter of this call is always tainted, and it reaches the sink at parameter '"
+                            + parameters[i].getName()
+                            + "' of "
+                            + resolved.getFullTargetName());
+                  else if (valueState
+                      .eval((ValueExpression) s, node, state.getState())
+                      .isPossiblyTainted())
+                    tool.warnOn(
+                        call,
+                        "[POSSIBLE] The value passed for the "
+                            + StringUtilities.ordinal(i + 1)
+                            + " parameter of this call may be tainted, and it reaches the sink at parameter '"
+                            + parameters[i].getName()
+                            + "' of "
+                            + resolved.getFullTargetName());
+                }
+              }
+          }
+        }
+      }
+    } catch (SemanticException e) {
+      System.err.println("Cannot check " + node);
+      e.printStackTrace(System.err);
+    }
+
+    return true;
+  }
 }

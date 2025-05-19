@@ -117,14 +117,14 @@ SemanticCheck<
                 "Positive overflow for '" + varName +
                 "': high = " + high + " > " + L.maxOverflow);
         }
-        // underflow‐to‐zero (optional)
+        // underflow‐to‐zero
         if (L.hasUnderflow) {
             boolean isZero = false;
             try {
                 isZero = Intervals.ZERO.isNonBottomSingletonWithValue(
                             low.toInt()) && low.equals(high);
             } catch (Exception e) {
-                // ignore
+				e.printStackTrace();
             }
             if (!isZero &&
                 high.compareTo(L.underflowMax) < 0 &&
@@ -220,6 +220,11 @@ SemanticCheck<
 								tool.warnOn(varRef, "Error during interval computation: " + e.getMessage());
 							}
 					}
+				}
+
+				if (intervalAbstractValue.isBottom()) {
+					tool.warnOn(target, "Variable " + id.getName() + " is bottom");
+					break;
 				}
 
 				MathNumber low = intervalAbstractValue.interval.getLow();

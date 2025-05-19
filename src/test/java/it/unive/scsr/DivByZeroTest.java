@@ -26,18 +26,18 @@ public class DivByZeroTest {
 	
 	@Test
 	public void testtestDivByZeroPentagons() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), "intervals-pentagons");
+		runAnalysis(new Pentagons(), "pentagons-divbyzero");
 	}
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/benchmark-divbyzero.imp");
+		Program program = IMPFrontend.processFile("inputs/all-divbyzero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/benchmark-divbyzero/"+path;
+		conf.workdir = "outputs/all-divbyzero/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

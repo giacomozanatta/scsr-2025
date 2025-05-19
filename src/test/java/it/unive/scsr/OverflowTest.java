@@ -52,15 +52,15 @@ public class OverflowTest {
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
 
-		String location = "";
+		String location = "all-overflow";
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/" + location + "overflow.imp");
+		Program program = IMPFrontend.processFile("inputs/" + location + ".imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/" + location + "overflow/"+path;
+		conf.workdir = "outputs/" + location + "/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

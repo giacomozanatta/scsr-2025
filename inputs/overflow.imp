@@ -1,0 +1,31 @@
+class Main {
+    main() {
+        def x = 0;
+        def y = 0;
+        def z = 0;
+        def w = 0;
+        def a = 0;
+        def b = 0;
+
+        x = 10; // NO (after this assignment)
+        y = 20; // NO (after this assignment)
+        z = x + y; // OF (NO + NO -> OF)
+        
+        w = -x; // OF (neg(NO) -> OF)
+
+        a = z * y; // OF (OF * NO -> OF)
+        b = 5;     // NO (after this assignment)
+        // b = b / 0; // This would be an error/exception in IMP, not directly an overflow state from the domain for the operation itself before execution.
+                  // Division by zero is typically handled by runtime semantics or specific checks.
+                  // Our Overflow domain would make (NO / NO) -> OF due to potential overflow like MIN_INT / -1
+        
+        // At this point, x is 10 (NO)
+        if (x > 5) { 
+            x = x + 200; // x was NO (from 10), 200 is NO. x becomes OF.
+        } else {
+            // This branch not taken if x is 10
+            x = x - 200; 
+        }
+        // After the if, x is OF (due to the taken branch)
+    }
+}

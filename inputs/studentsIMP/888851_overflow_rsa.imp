@@ -1,0 +1,157 @@
+/**
+ * RSA encryption and decryption implementation.
+ * This is mainly used to test overflows, because RSA has big exponents, making
+ * it easy to overflow even with small primes.
+ * WARNING: I still need to test it, so this file will probably be re-uploaded.
+ * Current upload number: 1
+ *
+ * @author Alvise Favero -- 888851@stud.unive.it
+ */
+
+
+class Key {
+    exponent;
+    modulus;
+
+    constructor(exponent, modulus) {
+        this.exponent = exponent;
+        this.modulus = modulus;
+    }
+}
+
+class RsaCipher {
+
+    integerDivision(a, b) {
+        def q = 0;
+        while (a >= b) {
+            a = a - b;
+            q = q + 1;
+        }
+
+        return q;
+    }
+
+    modulo(a, b) {
+        while (a >= b) {
+            a = a - b;
+        }
+
+        return a;
+    }
+
+    /**
+     * Computes the Bezout coefficients using the Extended Euclidean Algorithm.
+     * @param a
+     * @param b
+     * @return an array of integers where:
+     *   - index 0 is the GCD of a and b
+     *   - index 1 is the coefficient x such that a*x + b*y = GCD(a, b) (also its the inverse of a mod b)
+     *   - index 2 is the coefficient y such that a*x + b*y = GCD(a, b)
+     */
+    extendedEuclidean(a, b) {
+        def c = 1;
+        def d = 0;
+        def e = 1;
+        def f = 0;
+
+
+        while (b != 0) {
+            def q = this.integerDivision(a, b);
+
+            def tempA = a;
+            a = b;
+            b = tempA - b * q;
+
+            def tempC = c;
+            c = d;
+            d = tempC - d * q;
+
+            def tempE = e;
+            e = f;
+            f = tempE - f * q;
+        }
+        // Now a is the GCD, c is the coefficient for a, and e is the coefficient for b
+
+        /*
+        if (a != 1) {
+            // GCD is not 1, so no modular inverse exists
+            throw "No modular inverse exists";
+        }
+        */
+
+        return c; // c is the modular inverse of a mod b
+    }
+
+    genKeys(p, q, e) {
+        def n = p * q;
+        def phi = (p - 1) * (q - 1);
+
+        def d = this.extendedEuclidean(e, phi); // d is the modular inverse of e mod phi
+        d = d[1];
+
+        def res = new Key[2];
+        res[0] = new Key(e, n); // Public key
+        res[1] = new Key(d, n); // Private key
+
+        return res; // Array in the form (PublicKey, PrivateKey)
+    }
+
+    encrypt(message, publicKey) {
+        def c = 1;
+        for (def i = 0; i < publicKey.exponent; i = i + 1) {
+            // We could do it like this, completely preventing overflow:
+            // c = (c * message) % publicKey.modulus;
+            // But we do want overflow to happen
+
+            c = c * message;
+        }
+        def res = this.modulo(c, publicKey.modulus);
+        return res; // Ciphertext
+    }
+
+    decrypt(ciphertext, privateKey) {
+        def m = 1;
+        for (def i = 0; i < privateKey.exponent; i = i + 1) {
+            m = m * ciphertext;
+        }
+
+        def res = this.modulo(m, privateKey.modulus);
+        return res; // Plaintext
+    }
+}
+
+class RsaTest {
+    main() {
+        this.testNoOverflow();
+        this.testOverflow();
+    }
+
+    testNoOverflow() {
+        def p = 3;
+        def q = 5;
+        def e = 3;
+
+        def rsa = new RsaCipher();
+        def keys = rsa.genKeys(p, q, e);
+        def publicKey = keys[0];
+        def privateKey = keys[1];
+        def message = 6;
+
+        def ciphertext = rsa.encrypt(message, publicKey);
+        def decryptedMessage = rsa.decrypt(ciphertext, privateKey);
+    }
+
+    testOverflow() {
+        def p = 11;
+        def q = 13;
+        def e = 7;
+
+        def rsa = new RsaCipher();
+        def keys = rsa.genKeys(p, q, e);
+        def publicKey = keys[0];
+        def privateKey = keys[1];
+        def message = 6;
+        def ciphertext = rsa.encrypt(message, publicKey);
+        def decryptedMessage = rsa.decrypt(ciphertext, privateKey);
+    }
+}

@@ -1,0 +1,44 @@
+class taint {
+
+	source1() {
+		return -99;
+	}
+
+	sanitizer1(v) {
+		return 0;
+	}
+
+	sink1(v) {
+	}
+
+	// Example 1
+	config_setup() {
+		def userInput = this.source1();         // tainted
+		def configVal = userInput;
+		configVal = 42;                         // overwrite
+		this.sink1(configVal);                  // clean, because it was overwritten
+	}
+
+	// Example 2
+	multi_input_flow() {
+		def srcA = this.source1();              // tainted
+		def srcB = this.source1();              // tainted
+		def combined = srcA + srcB;             // tainted
+		def safeVal = this.sanitizer1(combined); // sanitized
+		this.sink1(safeVal);                    // clean, because it was sanitized
+	}
+
+	// Example 3
+	conditional_flow() {
+		def result = 0;
+		def input = this.source1();             // tainted
+
+		if (input < 0) {
+			result = input;                     // taint propagated
+		} else {
+			result = this.sanitizer1(input);    // sanitized
+		}
+
+		this.sink1(result);                     // may be tainted
+	}
+}

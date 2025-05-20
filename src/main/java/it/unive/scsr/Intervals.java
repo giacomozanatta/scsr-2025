@@ -53,7 +53,7 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
   @Override
   public Intervals glbAux(Intervals other) {
-    return this.interval.intersection(other.interval).map(this::changeInterval).orElse(top());
+    return this.interval.intersection(other.interval).map(this::changeInterval).orElse(bottom());
   }
 
   @Override

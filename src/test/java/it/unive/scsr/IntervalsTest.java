@@ -45,7 +45,7 @@ public class IntervalsTest {
 		// we specify the analysis that we want to execute
 		conf.abstractState = DefaultConfiguration.simpleState(
 				DefaultConfiguration.defaultHeapDomain(),
-				new ValueEnvironment<>(Intervals.TOP),
+				new ValueEnvironment<>(new Intervals()),
 				DefaultConfiguration.defaultTypeDomain());
 		
 		conf.serializeResults = true;

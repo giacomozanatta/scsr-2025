@@ -48,20 +48,13 @@ public class NumericInterval implements Comparable<NumericInterval> {
     return low.compareTo(other.low) <= 0 && high.compareTo(other.high) >= 0;
   }
 
-  public Optional<NumericInterval> negate() {
-    if (low instanceof SigNum lowSig && high instanceof SigNum highSig) {
-      return Optional.of(new NumericInterval(highSig.negate(), lowSig.negate()));
-    }
-
-    // If any of the elements is NaN, the optional empty is returned since the interval cannot be
-    // negated.
-    return Optional.empty();
+  public NumericInterval negate() {
+    return new NumericInterval(high.negate(), low.negate());
   }
 
   public Optional<NumericInterval> intersection(NumericInterval other) {
     // It is assumed, due to the constraints on the constructor, that the lower and upper bounds of
-    // the ranges are
-    // instances of SigNum.
+    // the ranges are instances of SigNum.
     SigNum newLower = this.low.max(other.low).asSigNum();
     SigNum newUpper = this.high.min(other.high).asSigNum();
 
@@ -80,22 +73,18 @@ public class NumericInterval implements Comparable<NumericInterval> {
   public Optional<NumericInterval> add(
       NumericInterval other, IntervalNumber.Computation operation) {
     // Perform addition between two intervals. The order is somewhat preserved so that the smallest
-    // element on the
-    // left is added to the smallest element on the right to get the smallest number. The same
-    // reasoning applies to
-    // get the largest number.
+    // element on the left is added to the smallest element on the right to get the smallest number.
+    // The same reasoning applies to get the largest number.
     return buildOrEmpty(this.low.add(other.low, operation), this.high.add(other.high, operation));
   }
 
   public Optional<NumericInterval> subtract(
       NumericInterval other, IntervalNumber.Computation operation) {
     // Perform subtraction between two intervals. The order here is not "linearly" preserved in the
-    // sense that to
-    // get the smallest element, the lower element of the left interval is related to the larger
-    // element of the
-    // right interval. For the largest element the reasoning is similar, that is, the largest
-    // element of the left
-    // interval is related to the smallest element of the right interval.
+    // sense that to get the smallest element, the lower element of the left interval is related to
+    // the larger element of the right interval. For the largest element the reasoning is similar,
+    // that is, the largest element of the left interval is related to the smallest element of the
+    // right interval.
     return buildOrEmpty(
         this.low.subtract(other.high, operation), this.high.subtract(other.low, operation));
   }
@@ -103,8 +92,7 @@ public class NumericInterval implements Comparable<NumericInterval> {
   public Optional<NumericInterval> multiply(
       NumericInterval other, IntervalNumber.Computation operation) {
     // All possible combinations are calculated to obtain the minimum number for the smallest
-    // element and the
-    // maximum number for the largest element.
+    // element and the maximum number for the largest element.
     var multiplications =
         List.of(
             this.low.multiply(other.low, operation),
@@ -121,8 +109,7 @@ public class NumericInterval implements Comparable<NumericInterval> {
   public Optional<NumericInterval> divide(
       NumericInterval other, IntervalNumber.Computation operation) {
     // All possible combinations are calculated to obtain the minimum number for the smallest
-    // element and the
-    // maximum number for the largest element.
+    // element and the maximum number for the largest element.
     var divisions =
         List.of(
             this.low.divide(other.low, operation),

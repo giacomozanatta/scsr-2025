@@ -22,7 +22,7 @@ public class DivByZeroTest {
 
 	@Test
 	public void testDivByZeroInterval() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(Intervals.TOP), NumericalSize.UINT8, "intervals-divbyzero");
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-divbyzero");
 	}
 	
 	@Test

@@ -42,7 +42,7 @@ public class OverflowTest {
     // environment, and then runs each LiSARunner.
     filenames(defaultInputDirectory()).stream()
         .map(overflowProgram)
-        .map(program -> program.toLiSARunner(checkers, new ValueEnvironment<>(Intervals.TOP)))
+        .map(program -> program.toLiSARunner(checkers, new ValueEnvironment<>(new Intervals())))
         .forEach(Runnable::run);
   }
 }

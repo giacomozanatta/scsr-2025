@@ -42,7 +42,7 @@ public class DivisionByZeroTest {
         .map(
             program ->
                 program.toLiSARunner(
-                    Set.of(new DivisionByZeroChecker()), new ValueEnvironment<>(Intervals.TOP)))
+                    Set.of(new DivisionByZeroChecker()), new ValueEnvironment<>(new Intervals())))
         .forEach(Runnable::run);
   }
 }

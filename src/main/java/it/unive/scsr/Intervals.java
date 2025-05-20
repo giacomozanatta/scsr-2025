@@ -16,7 +16,6 @@ import it.unive.lisa.symbolic.value.operator.ComparisonOperator;
 import it.unive.lisa.symbolic.value.operator.binary.*;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
-import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 import it.unive.scsr.intervals.BinaryFunctions;
@@ -26,57 +25,40 @@ import it.unive.scsr.intervals.numbers.*;
 
 public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Comparable<Intervals> {
 
-  /** The interval represented by this domain element. */
   public final NumericInterval interval;
+  public final Numeric<?> threshold;
 
-  /** The abstract top ({@code [-Inf, +Inf]}) element. */
-  public static final Intervals TOP = new Intervals(NumericInterval.INFINITY);
-
-  /** The abstract bottom element. */
-  public static final Intervals BOTTOM = new Intervals(null);
-
-  /**
-   * Builds the interval.
-   *
-   * @param interval the underlying {@link IntInterval}
-   */
-  public Intervals(NumericInterval interval) {
+  public Intervals(NumericInterval interval, Numeric<?> threshold) {
     this.interval = interval;
+    this.threshold = threshold;
   }
 
-  /**
-   * Builds the interval.
-   *
-   * @param lower the lower bound
-   * @param upper the higher bound
-   */
-  public Intervals(SigNum lower, SigNum upper) {
-    this(new NumericInterval(lower, upper));
+  public Intervals(SigNum lower, SigNum upper, Numeric<?> threshold) {
+    this(new NumericInterval(lower, upper), threshold);
   }
 
-  /** Builds the interval. */
+  public Intervals(Numeric<?> threshold) {
+    this(NumericInterval.INFINITY, threshold);
+  }
+
   public Intervals() {
-    this(NumericInterval.INFINITY);
+    this(NumericInterval.INFINITY, null);
   }
 
   @Override
   public Intervals evalUnaryExpression(
       UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle) {
-    if (operator instanceof NumericNegation) {
-      return arg.interval.negate().map(Intervals::new).orElse(BOTTOM);
-    }
-
-    return top();
+    return operator instanceof NumericNegation ? changeInterval(arg.interval.negate()) : top();
   }
 
   @Override
   public Intervals glbAux(Intervals other) {
-    return this.interval.intersection(other.interval).map(Intervals::new).orElse(BOTTOM);
+    return this.interval.intersection(other.interval).map(this::changeInterval).orElse(top());
   }
 
   @Override
   public Intervals lubAux(Intervals other) {
-    return new Intervals(this.interval.union(other.interval));
+    return changeInterval(this.interval.union(other.interval));
   }
 
   @Override
@@ -86,7 +68,7 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
   @Override
   public Intervals top() {
-    return TOP;
+    return changeInterval(NumericInterval.INFINITY);
   }
 
   @Override
@@ -96,7 +78,7 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
   @Override
   public Intervals bottom() {
-    return BOTTOM;
+    return changeInterval(null);
   }
 
   @Override
@@ -131,7 +113,7 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
     // If there is a number that cannot be enclosed in a IntervalNumber, then top is returned.
     return IntervalNumber.ofPrimitive(number)
         .map(NumericInterval::new)
-        .map(Intervals::new)
+        .map(this::changeInterval)
         .orElse(top());
   }
 
@@ -179,14 +161,14 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
       newLower = interval.low;
     }
 
-    return new Intervals(newLower, newUpper);
+    return changeInterval(new NumericInterval(newLower, newUpper));
   }
 
   @Override
   public Intervals narrowingAux(Intervals other) {
     SigNum newHigh = interval.high instanceof PlusInfinity ? other.interval.high : interval.high;
     SigNum newLow = interval.low instanceof MinusInfinity ? other.interval.low : interval.low;
-    return new Intervals(newLow, newHigh);
+    return changeInterval(new NumericInterval(newLow, newHigh));
   }
 
   @Override
@@ -224,5 +206,9 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
     // Any assumptions should be implemented here!
     return BaseNonRelationalValueDomain.super.assumeBinaryExpression(
         environment, operator, left, right, src, dest, oracle);
+  }
+
+  public Intervals changeInterval(NumericInterval interval) {
+    return new Intervals(interval, threshold);
   }
 }

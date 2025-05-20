@@ -25,11 +25,11 @@ public class DivisionByZeroCheckerTest {
     public void testDivisionByZero() throws ParsingException, AnalysisException {
 
         // Parse input program
-        Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
+        Program program = IMPFrontend.processFile("inputs/studentsIMP/908677-benchmark-divbyzero.imp");
 
         // Configure LiSA
         LiSAConfiguration conf = new DefaultConfiguration();
-        conf.workdir = "outputs/divbyzero-checker";
+        conf.workdir = "outputs/divbyzero-checker/students";
         conf.analysisGraphs = GraphType.HTML;
         conf.jsonOutput = true;                        // JSON report
 

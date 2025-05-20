@@ -1,0 +1,33 @@
+class Test {
+
+	source_SQL() { return "untrusted SQL input"; }          // Returns a string representing untrusted SQL input, simulating a source of potentially malicious data.
+	sanitize_SQL(input) { return "sanitized SQL input"; }   // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful SQL constructs.
+	sink_SQL(input) {}                                      // Represents a sink where SQL input is used. This could be a database query execution.
+
+	source_HTML() { return "untrusted HTML input"; }        // Returns a string representing untrusted HTML input, simulating a source of potentially malicious data.
+    sanitize_HTML(input) { return "sanitized HTML input"; } // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful HTML constructs.
+	sink_HTML(input) {}                                     // Represents a sink where HTML input is used. This could be rendering HTML content in a web page.
+
+	source_PATH() { return "untrusted PATH reference"; }    // Returns a string representing an untrusted PATH reference, simulating a source of potentially malicious file system paths.
+	sanitize_PATH(input) { return "sanitized PATH input"; } // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful path components.
+	sink_PATH(input) {}                                     // Represents a sink where a file system path is used. This could be file access operations.
+
+	benchmark() {
+        def clean_str_value = "CLEAN";  // Defines a clean string value that is not considered tainted.
+
+        def _1_taint = this.source_SQL();           // Retrieves untrusted SQL input from the source.
+        this.sink_SQL(_1_taint);                    // Passes the untrusted SQL input directly to the sink (demonstrating a potential vulnerability).
+        this.sink_SQL(this.sanitize_SQL(_1_taint)); // Passes the sanitized version of the SQL input to the sink (demonstrating a mitigation).
+
+        def _2_top = clean_str_value + this.source_HTML();  // Concatenates a clean string with untrusted HTML input. The resulting string may be considered tainted due to the inclusion of untrusted input.
+        this.sink_HTML(_2_top);                             // Passes the tainted HTML string directly to the sink (demonstrating a potential vulnerability).
+        this.sink_HTML(this.sanitize_HTML(_2_top));         // Passes the sanitized version of the HTML string to the sink (demonstrating a mitigation).
+
+        def _3_clean = "/hard/coded/path";                      // Defines a hardcoded, clean file system path.
+        def _3_clean_to_top = _3_clean + this.source_PATH();    // Concatenates the clean path with untrusted PATH input, making the resulting path tainted.
+        def _3_sanitized = this.sanitize_PATH(_3_clean_to_top); // Sanitizes the tainted path.
+        this.sink_PATH(_3_clean);                               // Passes the original clean path to the sink.
+        this.sink_PATH(_3_clean_to_top);                        // Passes the tainted path to the sink (demonstrating a potential vulnerability).
+        this.sink_PATH(_3_sanitized);                           // Passes the sanitized path to the sink (demonstrating a mitigation).
+	}
+}

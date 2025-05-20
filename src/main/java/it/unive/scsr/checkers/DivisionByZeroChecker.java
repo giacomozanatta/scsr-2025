@@ -27,12 +27,12 @@ import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 public class DivisionByZeroChecker implements
-SemanticCheck<
-		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
-	
-	
+		SemanticCheck<
+				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+
+
 	private NumericalSize size;
-	
+
 	public DivisionByZeroChecker(NumericalSize size) {
 		this.size = size;
 	}
@@ -41,13 +41,13 @@ SemanticCheck<
 	public boolean visit(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
-		
+
 		if( node instanceof Division)
 			checkDivision(tool, graph, (Division) node);
 
-		
+
 		return true;
-		
+
 	}
 
 	private void checkDivision(
@@ -57,60 +57,67 @@ SemanticCheck<
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 			AnalysisState<
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-					TypeEnvironment<InferredTypes>>> state = result.getAnalysisStateAfter(div.getRight());
-			
+					SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
+							TypeEnvironment<InferredTypes>>> state = result.getAnalysisStateAfter(div.getRight());
+
 			Set<SymbolicExpression> reachableIds = new HashSet<>();
 			Iterator<SymbolicExpression> comExprIterator = state.getComputedExpressions().iterator();
 			if(comExprIterator.hasNext()) {
 				SymbolicExpression divisor = comExprIterator.next();
-					try {
-						reachableIds
-								.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
-						
-						for (SymbolicExpression s : reachableIds) {
+				try {
+					reachableIds
+							.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
 
-							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
+					for (SymbolicExpression s : reachableIds) {
+
+						Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
 // MY CODE STARTS HERE:
-							// TYPE CHECKER
-							boolean numericFound = types.stream().anyMatch(Type::isNumericType);
-							if (!numericFound) {
+						// TYPE CHECKER
+						boolean numericFound = types.stream().anyMatch(Type::isNumericType);
+						if (!numericFound) {
 							// If the type doesn't belong to numeric type
-								tool.warnOn(div, "DivisionByZeroChecker: the operand at '" + div.getLocation() + "' must have a numeric type, found " + types);
-								System.err.println("DEBUG: DivisionByZeroChecker: the operand at '" + div.getLocation() + "' must have a numeric type, found " + types);
-								continue;
-							}
-
-							// DIVISION BY ZERO CHECKER
-							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
-							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
-
-							// Checks if interval is null
-							if (intervalAbstractValue == null) {
-								tool.warnOn(div, "DivisionByZeroChecker: intervalAbstractValue is null, skipping...");
-								continue;
-							}
-							// Checks if interval is bottom
-							if (intervalAbstractValue.isBottom()) {
-								tool.warnOn(div, "DivisionByZeroChecker: intervalAbstractValue is bottom, skipping...");
-								continue;
-							}
-
-							MathNumber low = intervalAbstractValue.interval.getLow();
-							MathNumber high = intervalAbstractValue.interval.getHigh();
-
-							if (low.equals(MathNumber.ZERO) && high.equals(MathNumber.ZERO)) {
-								tool.warnOn(div, "DivisionByZeroChecker: DEFINITE division by zero detected!");
-								System.err.println("DEBUG: Definite division by zero at " + div.getLocation());
-							} else if (low.compareTo(MathNumber.ZERO) <= 0 && high.compareTo(MathNumber.ZERO) >= 0) {
-								tool.warnOn(div, "DivisionByZeroChecker: POTENTIAL division by zero detected (interval includes 0)!");
-								System.err.println("DEBUG: Potential division by zero at " + div.getLocation());
-							}
+							tool.warnOn(div, "DivisionByZeroChecker: the operand at '" + div.getLocation() + "' must have a numeric type, found " + types);
+							System.err.println("DEBUG: DivisionByZeroChecker: the operand at '" + div.getLocation() + "' must have a numeric type, found " + types);
+							continue;
 						}
-// END OF MY CODE
-					} catch (SemanticException e) {
-						e.printStackTrace();
+
+						// DIVISION BY ZERO CHECKER
+						ValueEnvironment<Intervals> valueState = state.getState().getValueState();
+						Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
+
+						// Checks if interval is null
+						if (intervalAbstractValue == null) {
+							tool.warnOn(div, "DivisionByZeroChecker: intervalAbstractValue is null, skipping...");
+							continue;
+						}
+						// Checks if interval is bottom
+						if (intervalAbstractValue.isBottom()) {
+							tool.warnOn(div, "DivisionByZeroChecker: intervalAbstractValue is bottom, skipping...");
+							continue;
+						}
+
+						MathNumber low = intervalAbstractValue.interval.getLow();
+						MathNumber high = intervalAbstractValue.interval.getHigh();
+
+						boolean definitelyZero =
+								low.compareTo(MathNumber.ZERO) == 0 &&
+										high.compareTo(MathNumber.ZERO) == 0;
+
+						if (definitelyZero) {
+							tool.warnOn(div,
+									"DivisionByZeroChecker: DEFINITE division by zero detected!");
+							System.err.println("DEBUG: Definite division by zero at " + div.getLocation());
+						} else if (low.compareTo(MathNumber.ZERO) <= 0 &&
+								high.compareTo(MathNumber.ZERO) >= 0) {
+							tool.warnOn(div,
+									"DivisionByZeroChecker: POTENTIAL division by zero detected (interval includes 0)!");
+							System.err.println("DEBUG: Potential division by zero at " + div.getLocation());
+						}
 					}
+// END OF MY CODE
+				} catch (SemanticException e) {
+					e.printStackTrace();
+				}
 
 
 			}
@@ -120,8 +127,8 @@ SemanticCheck<
 
 	// compute possible dynamic types / runtime types
 	private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div,
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state) throws SemanticException {
-		
+											  SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state) throws SemanticException {
+
 		Set<Type> possibleDynamicTypes = new HashSet<>();
 		Type dynamicTypes = state.getDynamicTypeOf(s, div, state);
 		if(dynamicTypes != null && !dynamicTypes.isUntyped()) {
@@ -132,10 +139,10 @@ SemanticCheck<
 				for( Type t : runtimeTypes)
 					possibleDynamicTypes.add(t);
 		}
-		
+
 		return possibleDynamicTypes;
-	
+
 	}
-	
+
 
 }

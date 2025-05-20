@@ -2,6 +2,7 @@ package it.unive.scsr;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
@@ -26,19 +27,19 @@ import it.unive.scsr.intervals.numbers.*;
 public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Comparable<Intervals> {
 
   public final NumericInterval interval;
-  public final Numeric<?> threshold;
+  public final Numeric<?> wideningThreshold;
 
-  public Intervals(NumericInterval interval, Numeric<?> threshold) {
+  public Intervals(NumericInterval interval, Numeric<?> wideningThreshold) {
     this.interval = interval;
-    this.threshold = threshold;
+    this.wideningThreshold = wideningThreshold;
   }
 
-  public Intervals(SigNum lower, SigNum upper, Numeric<?> threshold) {
-    this(new NumericInterval(lower, upper), threshold);
+  public Intervals(SigNum lower, SigNum upper, Numeric<?> wideningThreshold) {
+    this(new NumericInterval(lower, upper), wideningThreshold);
   }
 
-  public Intervals(Numeric<?> threshold) {
-    this(NumericInterval.INFINITY, threshold);
+  public Intervals(Numeric<?> wideningThreshold) {
+    this(NumericInterval.INFINITY, wideningThreshold);
   }
 
   public Intervals() {
@@ -145,23 +146,33 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
 
   @Override
   public Intervals wideningAux(Intervals other) {
-    SigNum newLower;
-    SigNum newUpper;
-    if (other.interval.high.compareTo(interval.high) > 0) {
-      // High value is increasing.
-      newUpper = PlusInfinity.INSTANCE;
-    } else {
-      newUpper = interval.high;
-    }
+    // Implementation for calculating unstable bounds. This approach typically expands the interval
+    // to include the 'other' interval's range if it extends beyond the current interval.
+    Supplier<NumericInterval> unstableBounds =
+        () ->
+            new NumericInterval(
+                other.interval.low.compareTo(interval.low) < 0
+                    ? MinusInfinity.INSTANCE
+                    : interval.low,
+                other.interval.high.compareTo(interval.high) > 0
+                    ? PlusInfinity.INSTANCE
+                    : interval.high);
 
-    if (other.interval.low.compareTo(interval.low) < 0) {
-      // Low value is decreasing.
-      newLower = MinusInfinity.INSTANCE;
-    } else {
-      newLower = interval.low;
-    }
+    // Implementation for threshold-based widening. This approach expands the interval to infinity
+    // if its bounds cross a predefined widening threshold.
+    Supplier<NumericInterval> threshold =
+        () -> {
+          var min = interval.low.min(other.interval.high).asSigNum();
+          var max = interval.high.max(other.interval.high).asSigNum();
+          return new NumericInterval(
+              min.compareTo(wideningThreshold.negate()) > 0 ? min : MinusInfinity.INSTANCE,
+              max.compareTo(wideningThreshold) < 0 ? max : PlusInfinity.INSTANCE);
+        };
 
-    return changeInterval(new NumericInterval(newLower, newUpper));
+    // Apply the chosen widening strategy: if 'wideningThreshold' is null, use unstableBounds;
+    // otherwise, use the threshold-based widening. The resulting interval then replaces the current
+    // one.
+    return changeInterval(wideningThreshold == null ? unstableBounds.get() : threshold.get());
   }
 
   @Override
@@ -209,6 +220,6 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
   }
 
   public Intervals changeInterval(NumericInterval interval) {
-    return new Intervals(interval, threshold);
+    return new Intervals(interval, wideningThreshold);
   }
 }

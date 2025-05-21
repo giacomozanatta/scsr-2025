@@ -84,6 +84,18 @@ public class Intervals
 	}
 
 	/**
+	 * Builds the interval.
+	 *
+	 * @param low  the lower bound
+	 * @param high the higher bound
+	 */
+	public Intervals(
+			float low,
+			float high) {
+		this(new FloatInterval(low, high));
+	}
+
+	/**
 	 * Builds the top interval.
 	 */
 	public Intervals() {
@@ -210,8 +222,12 @@ public class Intervals
 			Integer i = (Integer) constant.getValue();
 			Intervals singletonInterval = new Intervals(i,i);
 			return singletonInterval;
+		} else if (constant.getValue() instanceof Float) {
+			Float i = (Float) constant.getValue();
+			Intervals singletonInterval = new Intervals(i,i);
+			return singletonInterval;
 		}
-		
+
 		return top();
 	}
 

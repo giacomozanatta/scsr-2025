@@ -43,7 +43,6 @@ public class DivisionByZeroTest {
 				DefaultConfiguration.defaultTypeDomain());
 
 
-		// TODO: useful?
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 
 		conf.semanticChecks.add(new DivisionByZeroChecker(OverflowChecker.NumericalSize.FLOAT32));

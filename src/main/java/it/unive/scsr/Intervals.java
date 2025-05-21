@@ -12,6 +12,7 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.StringRepresentation;
@@ -106,7 +107,7 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		if(operator instanceof NegatableOperator) {
+		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
 			// Negating [a, b] produces [-b, -a]
 			return new Intervals(arg.interval.mul(FloatInterval.MINUS_ONE));
 		}

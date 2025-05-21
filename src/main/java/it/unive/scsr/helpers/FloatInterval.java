@@ -185,7 +185,7 @@ public class FloatInterval implements Iterable<Long>, Comparable<FloatInterval> 
         return isSingleton() && low != null && low.equals(new BigDecimal(n));
     }
 
-    private static FloatInterval cacheAndRound(
+    private static FloatInterval cache(
             FloatInterval i) {
         if (i.is(0))
             return ZERO;
@@ -193,7 +193,7 @@ public class FloatInterval implements Iterable<Long>, Comparable<FloatInterval> 
             return ONE;
         if (i.is(-1))
             return MINUS_ONE;
-        return new FloatInterval(i.low.roundDown(), i.high.roundUp());
+        return new FloatInterval(i.low, i.high);
     }
 
     /**
@@ -208,7 +208,7 @@ public class FloatInterval implements Iterable<Long>, Comparable<FloatInterval> 
         if (isInfinity() || other.isInfinity())
             return INFINITY;
 
-        return cacheAndRound(new FloatInterval(low.add(other.low), high.add(other.high)));
+        return cache(new FloatInterval(low.add(other.low), high.add(other.high)));
     }
 
     /**
@@ -223,7 +223,7 @@ public class FloatInterval implements Iterable<Long>, Comparable<FloatInterval> 
         if (isInfinity() || other.isInfinity())
             return INFINITY;
 
-        return cacheAndRound(new FloatInterval(low.subtract(other.high), high.subtract(other.low)));
+        return cache(new FloatInterval(low.subtract(other.high), high.subtract(other.low)));
     }
 
     private static MathNumber min(
@@ -266,13 +266,13 @@ public class FloatInterval implements Iterable<Long>, Comparable<FloatInterval> 
             return INFINITY;
 
         if (low.compareTo(MathNumber.ZERO) >= 0 && other.low.compareTo(MathNumber.ZERO) >= 0)
-            return cacheAndRound(new FloatInterval(low.multiply(other.low), high.multiply(other.high)));
+            return cache(new FloatInterval(low.multiply(other.low), high.multiply(other.high)));
 
         MathNumber ll = low.multiply(other.low);
         MathNumber lh = low.multiply(other.high);
         MathNumber hl = high.multiply(other.low);
         MathNumber hh = high.multiply(other.high);
-        return cacheAndRound(new FloatInterval(min(ll, lh, hl, hh), max(ll, lh, hl, hh)));
+        return cache(new FloatInterval(min(ll, lh, hl, hh), max(ll, lh, hl, hh)));
     }
 
     /**
@@ -319,7 +319,7 @@ public class FloatInterval implements Iterable<Long>, Comparable<FloatInterval> 
             else if (higher.includes(lower))
                 return higher;
             else
-                return cacheAndRound(new FloatInterval(lower.low.compareTo(higher.low) > 0 ? higher.low : lower.low,
+                return cache(new FloatInterval(lower.low.compareTo(higher.low) > 0 ? higher.low : lower.low,
                         lower.high.compareTo(higher.high) < 0 ? higher.high : lower.high));
         }
     }

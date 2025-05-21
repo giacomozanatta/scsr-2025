@@ -73,9 +73,7 @@ public class DivisionByZeroChecker implements
 
                         Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
 
-                        // TODO: implement type checks, it is required a numerical type
-
-                        // TODO: Types NumericalSize.FLOAT8 and NumericalSize.FLOAT16 ?
+                        // implemented type checks, it is required a numerical type
                         boolean typeMatches = (size == NumericalSize.INT8 && types.contains(Int8Type.INSTANCE))
                                 || (size == NumericalSize.INT16 && types.contains(Int16Type.INSTANCE))
                                 || (size == NumericalSize.INT32 && types.contains(Int32Type.INSTANCE))
@@ -84,6 +82,7 @@ public class DivisionByZeroChecker implements
                                 || (size == NumericalSize.UINT32 && types.contains(UInt32Type.INSTANCE))
                                 || (size == NumericalSize.FLOAT32 && types.contains(Float32Type.INSTANCE));
 
+                        // Only a specific type is considered on each analysis
                         if(typeMatches){
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 

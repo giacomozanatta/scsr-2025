@@ -21,7 +21,8 @@ public class DivisionByZeroTest {
 	@Test
 	public void testDivisionByZero() throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/SCSR_FinalTask2025_Programs/879899-by-zero.imp");
+		Program program = IMPFrontend.processFile("inputs/division-by-zero.imp");
+		//Program program = IMPFrontend.processFile("inputs/SCSR_FinalTask2025_Programs/908677-benchmark-divbyzero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();

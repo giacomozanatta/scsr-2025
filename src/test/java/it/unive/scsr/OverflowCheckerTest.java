@@ -25,7 +25,7 @@ public class OverflowCheckerTest {
     public void testOverflow() throws ParsingException, AnalysisException {
 
         // Parse input program
-        Program program = IMPFrontend.processFile("inputs/studentsIMP/890488_890441overflow.imp");
+        Program program = IMPFrontend.processFile("inputs/overflow.imp");
 
         // Configure LiSA
         LiSAConfiguration conf = new DefaultConfiguration();

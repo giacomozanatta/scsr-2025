@@ -51,11 +51,17 @@ class DivisionByZero {
         return;
     }
 
-    calcMean(arr, length){
+    helperSum(arr, length) {
         def sum = 0;
         for (def i = 0; i < length; i = i + 1){
             sum = sum + arr[i];
         }
+
+        return sum;
+    }
+
+    calcMean(arr, length){
+        def sum = this.helperSum(arr, length);
 
         def mean = sum / length;                    // length possibly zero
         return mean;
@@ -72,10 +78,7 @@ class DivisionByZero {
     }
 
     arrayNormalization(arr, length){
-        def sum = 0;
-        for (def i = 0; i < length; i = i + 1){
-            sum = sum + arr[i];
-        }
+        def sum = this.helperSum(arr, length);
 
         for (def j = 0; j < length; j = j + 1){
             arr[j] = arr[j] / sum;                  // Requires NumericalSize.FLOAT32
@@ -100,6 +103,22 @@ class DivisionByZero {
       result[3] = a * invDet;
 
       return result;
+    }
+
+    minValueDiv(arr, length) {
+        def min = arr[0];
+        for (def i = 1; i < length; i = i + 1) {
+            if (arr[i] < min)
+                min = arr[i];
+        }
+        def res = 10 / min;                         // Possible div by zero
+        return res;
+    }
+
+    functionDiv(x) {
+        def f = x * x - x;
+        def res = 1 / f;                        // div by zero for x = 0 or 1
+        return res;
     }
 
     // Credit to 880036_divby0_test_v0.imp

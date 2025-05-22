@@ -1,0 +1,29 @@
+/*
+    Script designed to test the Division By Zero analysis.
+    Description: The algorithm proposed is the calculation of the Euler's number (e).
+
+    Author: Andrea Da Lio - 884046
+    Version: 1.0
+*/
+class DivByZeroTest{
+
+    print(s){
+        //Print a text on the screen
+    }
+
+
+    calculate_e() {
+        def e = 0;
+        def factorial = 1;
+        def max_terms = 10000;
+        for (def i = 0; i < max_terms; i = i + 1) {
+            if (i > 0) {
+                factorial = factorial * i;
+            }
+            def tmp = 1 / factorial;
+            e = e + tmp;
+        }
+        this.print(e);
+    }
+
+}

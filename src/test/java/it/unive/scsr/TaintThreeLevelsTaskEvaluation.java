@@ -34,7 +34,7 @@ public class TaintThreeLevelsTaskEvaluation {
 	public void testTaintThreeLevels() throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
 		//Program program = IMPFrontend.processFile("inputs/taint-3lvs-eval.imp");
-		Program program = IMPFrontend.processFile("inputs/taint-complex.imp");
+		Program program = IMPFrontend.processFile("inputs/studentsIMP/879899-taint-3lvs.imp");
 		// we load annotation for identify sources, sanitizer, and sinks during the analysis and checker execution
 		loadAnnotations(program);
 		

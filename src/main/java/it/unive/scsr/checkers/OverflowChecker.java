@@ -89,6 +89,7 @@ public class OverflowChecker implements
 			dynamicTypes.add(staticType);
 		}
 		boolean isNumeric = dynamicTypes.stream().anyMatch(this::isNumeric);
+		boolean isFloat = dynamicTypes.stream().anyMatch(this::isFloatingPointType);
 		if (!isNumeric) {
 			System.err.printf("[WARNING] Variable '%s' in %s has the following non-numeric type: %s%n", id.getName(), id.getCodeLocation(), dynamicTypes);
 			return;
@@ -133,14 +134,17 @@ public class OverflowChecker implements
 			}
 			// Underflow over low magnitude numbers (FLOAT8/16/32)
 			double posMin = getMinPositiveNormalized();
-			if (posMin > 0) {
+
+			if (posMin == 0 || !isFloat ) {
+				continue;
+			}
+			else {
 				double absLow  = Math.abs(low);
 				double absHigh = Math.abs(high);
-
 				boolean intervalIsZero = (low == 0.0 && high == 0.0);
 
 				if (!intervalIsZero) {
-					if (highFinite && absHigh < posMin && absLow < posMin) {
+					if (absHigh < posMin && absLow < posMin) {
 						// Definite underflow
 						System.err.printf("[%s] Underflow (low magnitude) in %s: |%.3e| < %.3e location %s%n",
 								size, id.getName(), high, posMin, id.getCodeLocation());

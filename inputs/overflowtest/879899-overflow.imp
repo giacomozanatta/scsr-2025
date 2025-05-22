@@ -121,6 +121,10 @@ class Test {
         int_array[1] = 0;
 
         for (def i = 0; i < 2; i = i + 1) {
+            // Increment the first and the second element by 'i'. This line is within a loop, meaning static analysis
+            // tools might parse it multiple times. This repeated analysis can lead to the application of a "widening
+            // operator" in interval analysis, which conservatively expands the possible range of 'int_array[0]',
+            // potentially resulting in a reported "possible overflow" even if it won't actually overflow at runtime.
             int_array[0] = int_array[0] + i;    // Since this will be parsed more than once, the widening operator will be applied resulting in a possible overflow.
             int_array[1] = int_array[1] + i;    // Since this will be parsed more than once, the widening operator will be applied resulting in a possible overflow.
         }

@@ -5,14 +5,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.lattices.Satisfiability;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
-import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.ComparisonOperator;
 import it.unive.lisa.symbolic.value.operator.binary.*;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
@@ -201,22 +198,6 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
     // If the 'operator' is not a ComparisonOperator, the satisfiability cannot be determined by
     // this logic, so return UNKNOWN.
     return Satisfiability.UNKNOWN;
-  }
-
-  @Override
-  public ValueEnvironment<Intervals> assumeBinaryExpression(
-      ValueEnvironment<Intervals> environment,
-      BinaryOperator operator,
-      ValueExpression left,
-      ValueExpression right,
-      ProgramPoint src,
-      ProgramPoint dest,
-      SemanticOracle oracle)
-      throws SemanticException {
-
-    // Any assumptions should be implemented here!
-    return BaseNonRelationalValueDomain.super.assumeBinaryExpression(
-        environment, operator, left, right, src, dest, oracle);
   }
 
   public Intervals changeInterval(NumericInterval interval) {

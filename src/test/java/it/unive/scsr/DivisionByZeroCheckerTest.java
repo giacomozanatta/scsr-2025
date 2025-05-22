@@ -25,11 +25,11 @@ public class DivisionByZeroCheckerTest {
     public void testDivisionByZero() throws ParsingException, AnalysisException {
 
         // Parse input program
-        Program program = IMPFrontend.processFile("inputs/studentsIMP/884046-DivByZero.imp");
+        Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
 
         // Configure LiSA
         LiSAConfiguration conf = new DefaultConfiguration();
-        conf.workdir = "outputs/divbyzero-checker/students";
+        conf.workdir = "outputs/divbyzero-checker";
         conf.analysisGraphs = GraphType.HTML;
         conf.jsonOutput = true;                        // JSON report
 
@@ -44,8 +44,8 @@ public class DivisionByZeroCheckerTest {
                 FullStackToken.getSingleton());
 
         // Add semantic check for each numerical size
-       // for (NumericalSize size : NumericalSize.values())  adds redundancy if num size = size
-            conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.FLOAT16));
+        // for (NumericalSize size : NumericalSize.values())  adds redundancy if num size = size
+        conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.FLOAT16));
 
         // Launch LiSA
         LiSA lisa = new LiSA(conf);

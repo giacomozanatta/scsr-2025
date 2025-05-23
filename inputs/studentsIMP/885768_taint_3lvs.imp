@@ -1,0 +1,76 @@
+class taint {
+
+	source1(){
+		return "/n";
+	}
+
+	source2(){
+	    return "  ";
+	}
+
+	source3(){
+	    return ";rm -rf /";
+	}
+
+    // remove the substr
+	sanitizer1(stringline){
+	    def dangerous = "/n";
+	    def result = stringline;
+
+	    // is str contained inside stringline variable?
+	    if ( strcon(stringline, str) ){
+           result = strrep(stringline, str, " ");
+	    }
+
+	    return result;
+	}
+
+    // remove shell commands like dangerous ";"
+    sanitizer2(stringline) {
+        def dangerous = ";rm -rf /";
+        def cleaned = "";
+
+        if (strcon(stringline, dangerous)) {
+            cleaned = strrep(stringline, dangerous, "");
+        } else {
+            cleaned = stringline;
+        }
+
+        return cleaned;
+    }
+
+
+	sink1(shell_command){
+	    // shell execution
+	}
+
+
+	test_shell1() {
+		def command = "ls -al";
+		this.sink(command); // ok
+	}
+
+	test_shell2() {
+		def t = this.source1();
+
+		this.sink1(t); // a tainted value flows in a sink!
+	}
+
+	test_sanitization1() {
+		def command = "ls -al /n";
+		def s = this.sanitizer1(command);
+		this.sink1(s);  // the value is clean due to sanitization
+	}
+	test_sanitization2() {
+		def command = "ls -al;rm -rf /";
+		def safe = this.sanitizer2(command);
+		this.sink1(safe);
+	}
+
+    test_combined() {
+        def raw = "ls /n ;rm -rf /";
+        def step1 = this.sanitizer1(raw);
+        def safe = this.sanitizer2(step1);
+        this.sink1(safe);
+    }
+}

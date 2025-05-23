@@ -1,31 +1,144 @@
 class Main {
-    main() {
-        def x = 0;
-        def y = 0;
-        def z = 0;
-        def w = 0;
-        def a = 0;
-        def b = 0;
 
-        x = 10; // NO (after this assignment)
-        y = 20; // NO (after this assignment)
-        z = x + y; // OF (NO + NO -> OF)
-        
-        w = -x; // OF (neg(NO) -> OF)
+    // Signed integer overflow (positive)
+    int_overflow_pos() {
+        def x = 2147483640; // near Integer.MAX_VALUE
+        x = x + 100; // should overflow for INT32
+    }
 
-        a = z * y; // OF (OF * NO -> OF)
-        b = 5;     // NO (after this assignment)
-        // b = b / 0; // This would be an error/exception in IMP, not directly an overflow state from the domain for the operation itself before execution.
-                  // Division by zero is typically handled by runtime semantics or specific checks.
-                  // Our Overflow domain would make (NO / NO) -> OF due to potential overflow like MIN_INT / -1
-        
-        // At this point, x is 10 (NO)
-        if (x > 5) { 
-            x = x + 200; // x was NO (from 10), 200 is NO. x becomes OF.
-        } else {
-            // This branch not taken if x is 10
-            x = x - 200; 
+    // Signed integer underflow (negative)
+    int_underflow_neg() {
+        def x = -2147483640; // near Integer.MIN_VALUE
+        x = x - 100; // should underflow for INT32
+    }
+
+    // Negation edge case: -MIN_INT
+    int_negate_min() {
+        def x = -2147483647 - 1; // Integer.MIN_VALUE
+        x = -x; // should overflow for INT32
+    }
+
+    // Multiplication overflow
+    int_mul_overflow() {
+        def x = 100000;
+        def y = 50000;
+        def z = x * y; // should overflow for INT32
+    }
+
+    // Multiplication underflow (negative)
+    int_mul_underflow() {
+        def x = -100000;
+        def y = 50000;
+        def z = x * y; // should underflow for INT32
+    }
+
+    // Division overflow: MIN_INT / -1
+    int_div_overflow() {
+        def x = -2147483647 - 1; // Integer.MIN_VALUE
+        def y = -1;
+        def z = x / y; // should overflow for INT32
+    }
+
+    // Unsigned integer overflow (UINT8)
+    uint8_overflow() {
+        def x = 250;
+        x = x + 10; // should overflow for UINT8
+    }
+
+    // Unsigned integer underflow (UINT8)
+    uint8_underflow() {
+        def x = 5;
+        x = x - 10; // should underflow for UINT8
+    }
+
+    // Float overflow (FLOAT32)
+    float_overflow() {
+        def x = 340000000.0; // use a large float literal
+        x = x * 10.0; // should overflow for FLOAT32
+    }
+
+    // Float underflow (FLOAT32)
+    float_underflow() {
+        def x = -340000000.0; // use a large negative float literal
+        x = x * 10.0; // should underflow for FLOAT32
+    }
+
+    // Branching: overflow only on one path
+    branch_overflow(cond) {
+        def x = 2147483640;
+        if (cond) {
+            x = x + 100; // overflow if cond is true
         }
-        // After the if, x is OF (due to the taken branch)
+    }
+
+    // Loop-induced overflow
+    loop_overflow() {
+        def x = 2147483600;
+        for (def i = 0; i < 10; i = i + 1) {
+            x = x + 10; // will overflow for INT32
+        }
+    }
+
+    // New test case: Simple overflow
+    simple_overflow() {
+        def x = 2147483647;
+        x = x + 1; // This will overflow
+    }
+
+    // Parameterized addition overflow
+    param_add_overflow(a) {
+        def x = 2147483640;
+        x = x + a; // overflow if a > 7
+    }
+
+    // Parameterized subtraction underflow
+    param_sub_underflow(a) {
+        def x = -2147483640;
+        x = x - a; // underflow if a > 7
+    }
+
+    // Parameterized multiplication overflow
+    param_mul_overflow(a, b) {
+        def x = a * b; // overflow if a and b are large enough
+    }
+
+    // Parameterized unsigned overflow
+    param_uint8_overflow(a) {
+        def x = 250;
+        x = x + a; // overflow if a > 5
+    }
+
+    // Parameterized unsigned underflow
+    param_uint8_underflow(a) {
+        def x = 5;
+        x = x - a; // underflow if a > 5
+    }
+
+    // Parameterized float overflow
+    param_float_overflow(a) {
+        def x = 340000000.0;
+        x = x * a; // overflow if a > 10
+    }
+
+    // Parameterized float underflow
+    param_float_underflow(a) {
+        def x = -340000000.0;
+        x = x * a; // underflow if a < -10
+    }
+
+    // Parameterized loop overflow
+    param_loop_overflow(n) {
+        def x = 2147483600;
+        for (def i = 0; i < n; i = i + 1) {
+            x = x + 10; // overflow if n > 4
+        }
+    }
+
+    // Parameterized branch overflow
+    param_branch_overflow(a, flag) {
+        def x = 2147483640;
+        if (flag) {
+            x = x + a; // overflow if a > 7 and flag is true
+        }
     }
 }

@@ -1,5 +1,6 @@
 // Academic year 2024/2025
 // 879899 - basic benchmark for evaluating float overflow for different sizes.
+
 class Test {
 
     benchmark() {

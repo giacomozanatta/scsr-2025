@@ -1,0 +1,20 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating division by zero.
+
+class Test {
+
+    benchmark() {
+        def iterations = 10;    // Initialize 'iterations' to 10. This variable will serve as a countdown for the loop.
+        def sum = 45;           // Initialize 'sum' to 45. This variable will be modified within the loop.
+
+        // Start a while loop that continues as long as 'iterations' is greater than 0.
+        while (iterations > 0) {
+            iterations = iterations - 1;
+            sum = sum - iterations;
+        }
+
+        // After the loop, 'sum' will be 0. This line attempts to perform a division by zero, which will result in a
+        // runtime error. Depending on the accuracy of the analysis, this will be marked as a warning or not.
+        def division_by_zero = 1 / sum;
+    }
+}

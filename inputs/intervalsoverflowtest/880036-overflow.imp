@@ -37,7 +37,5 @@ class Tests {
 		def NO_pos_ofl        = -NO_neg_ofl;
 		def maybe_pos_ofl_1   = -maybe_neg_ofl_1;
 		def sure_pos_ofl_1    = -sure_neg_ofl_1;
-
 	}
-   
 }

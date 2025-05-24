@@ -1,0 +1,27 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating loops during overflow analysis.
+
+class Test {
+
+    benchmark() {
+
+        def base = 0;
+        def upperbound = 5;
+        def to_increment = 125;
+
+        while (upperbound > base) {
+            to_increment = to_increment + 1;
+            upperbound = upperbound - 1;
+        }
+
+        // Depending on the accuracy of the parsing, the lub variable will have the value [1, 1] or [1, 128]. This is
+        // because the if condition in the following code is always met.
+        def lub = 0;
+
+        if (upperbound <= base) { lub = 128; }
+        else { lub = 1; }
+
+        // If the analysis is accurate enough, the lub will be marked as significantly too large for the int8 size.
+        def is_definite = lub;
+    }
+}

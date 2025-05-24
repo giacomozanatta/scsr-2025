@@ -76,7 +76,7 @@ public class OverflowTest {
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 		 
 		// the OverflowChecker is executed after the numerical analysis and it checks if a abstract numerical value leads to an overflow/underflow
-		conf.semanticChecks.add(new OverflowChecker(size));
+		conf.semanticChecks.add(new OverflowChecker<>(size));
 		 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

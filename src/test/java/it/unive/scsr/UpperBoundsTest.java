@@ -32,7 +32,7 @@ public class UpperBoundsTest {
 		
 		conf.abstractState = DefaultConfiguration.simpleState(
 				DefaultConfiguration.defaultHeapDomain(),
-				new ValueEnvironment<>(new UpperBounds(true)),
+				new ValueEnvironment<>(new UpperBounds()),
 				DefaultConfiguration.defaultTypeDomain());
 		
 		// we instantiate LiSA with our configuration

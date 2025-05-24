@@ -1,6 +1,5 @@
 package it.unive.scsr.utils;
 
-import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.lattices.Satisfiability;
 import it.unive.lisa.symbolic.value.operator.ComparisonOperator;
 import it.unive.lisa.symbolic.value.operator.binary.*;
@@ -8,7 +7,7 @@ import it.unive.lisa.symbolic.value.operator.binary.*;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-public abstract class BiSatisfiabilityDispatcher<T extends Lattice<T>> {
+public abstract class BiSatisfiabilityDispatcher<T> {
 
   private final Map<Class<?>, BiFunction<T, T, Satisfiability>> functionByClass;
 

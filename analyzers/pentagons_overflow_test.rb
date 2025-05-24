@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Analyzers
-  class OverflowTest < Base
+  class PentagonsOverflowTest < Base
     def mangle(messages)
       # Procedure to quickly combine array methods i.e., uniq + join
       uniq_join = proc { |array| array.uniq.join(',') }

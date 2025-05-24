@@ -5,10 +5,11 @@ import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-import it.unive.lisa.symbolic.value.operator.binary.ComparisonLt;
+import it.unive.lisa.symbolic.value.operator.ComparisonOperator;
 import it.unive.scsr.intervals.NumericInterval;
 import it.unive.scsr.intervals.numbers.IntervalNumber;
 import it.unive.scsr.intervals.numbers.PlusInfinity;
+import it.unive.scsr.pentagons.BinarySatisfiability;
 import org.apache.commons.collections4.CollectionUtils;
 
 import it.unive.lisa.analysis.BaseLattice;
@@ -278,15 +279,14 @@ public class Pentagons implements ValueDomain<Pentagons>, BaseLattice<Pentagons>
       return satisfiability;
     }
 
-    // If the satisfiability is still UNKNOWN, we try a more specific check for less-than
-    // comparisons between identifiers in the upper bounds domain. This applies if the expression is
-    // a binary expression with a "less than" operator, and both operands are identifiers.
     if (expression instanceof BinaryExpression binaryExpression
-        && binaryExpression.getOperator() instanceof ComparisonLt
-        && binaryExpression.getLeft() instanceof Identifier lId
-        && binaryExpression.getRight() instanceof Identifier rId
-        && upperbounds.getState(lId).contains(rId)) {
-      return Satisfiability.SATISFIED;
+        && binaryExpression.getOperator() instanceof ComparisonOperator comparisonOperator
+        && binaryExpression.getLeft() instanceof Identifier left
+        && binaryExpression.getRight() instanceof Identifier right) {
+
+      return Optional.ofNullable(new BinarySatisfiability(upperbounds).findBy(comparisonOperator))
+          .map(f -> f.apply(left, right))
+          .orElse(Satisfiability.UNKNOWN);
     }
 
     // If none of the above checks yield a definite satisfiability, the result remains UNKNOWN.

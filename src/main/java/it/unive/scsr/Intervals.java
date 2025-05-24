@@ -159,7 +159,7 @@ public class Intervals implements BaseNonRelationalValueDomain<Intervals>, Compa
     // if its bounds cross a predefined widening threshold.
     Supplier<NumericInterval> threshold =
         () -> {
-          var min = interval.low.min(other.interval.high).asSigNum();
+          var min = interval.low.min(other.interval.low).asSigNum();
           var max = interval.high.max(other.interval.high).asSigNum();
           return new NumericInterval(
               min.compareTo(wideningThreshold.negate()) > 0 ? min : MinusInfinity.INSTANCE,

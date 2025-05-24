@@ -99,11 +99,25 @@ public class OverflowChecker<T extends ValueDomain<T>>
       CheckToolWithAnalysisResults<
               SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool) {
+
+    // Iterate over each entry in the 'exitStates' map. Each entry consists of a 'key' and a 'value'
+    // which is a collection of 'ExitState' objects.
     exitStates.forEach(
         (key, value) -> {
           var data =
               value.stream()
-                  .filter(state -> state.result.isValuable())
+                  .filter(
+                      state ->
+                          // Filter the states:
+                          //    -   For IntegerOverflow, keep it if it's a definite overflow.
+                          //    -   For DecimalOverflow, keep it if it's a definite overflow OR if
+                          //        it's only close to zero (indicating a potential precision
+                          //        issue).
+                          switch (state.result) {
+                            case IntegerChecker.IntegerOverflow overflow -> overflow.isDefinite();
+                            case DecimalChecker.DecimalOverflow overflow ->
+                                overflow.isDefinite() || overflow.onlyCloseToZero();
+                          })
                   .reduce(
                       (first, second) -> {
                         try {

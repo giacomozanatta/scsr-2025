@@ -10,6 +10,7 @@ import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
+import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.cfg.CFG;
@@ -20,15 +21,15 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.type.*;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
 import it.unive.scsr.checkers.overflow.Message;
 import it.unive.scsr.checkers.overflow.checkers.DecimalChecker;
 import it.unive.scsr.checkers.overflow.checkers.IntegerChecker;
 import it.unive.scsr.checkers.overflow.checkers.SizeChecker;
 
-public class OverflowChecker
+public class OverflowChecker<T extends ValueDomain<T>>
     implements SemanticCheck<
-        SimpleAbstractState<
-            PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+        SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>> {
 
   // Represents the exit state of an analysis, containing abstract data and the overflow level.
   public record ExitState(Intervals abstractData, SizeChecker.OverflowResult result) {}
@@ -67,8 +68,7 @@ public class OverflowChecker
   @Override
   public void beforeExecution(
       CheckToolWithAnalysisResults<
-              SimpleAbstractState<
-                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+              SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool) {
     exitStates.clear();
   }
@@ -76,8 +76,7 @@ public class OverflowChecker
   @Override
   public boolean visit(
       CheckToolWithAnalysisResults<
-              SimpleAbstractState<
-                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+              SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool,
       CFG graph,
       Statement node) {
@@ -98,8 +97,7 @@ public class OverflowChecker
   @Override
   public void afterExecution(
       CheckToolWithAnalysisResults<
-              SimpleAbstractState<
-                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+              SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool) {
     exitStates.forEach(
         (key, value) -> {
@@ -170,8 +168,7 @@ public class OverflowChecker
 
   private void checkVariableRef(
       CheckToolWithAnalysisResults<
-              SimpleAbstractState<
-                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+              SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool,
       VariableRef ref,
       CFG graph,
@@ -226,29 +223,40 @@ public class OverflowChecker
               if (isTypeAligned) {
                 // Computes the exit state for the specified target.
                 var state = analyzer.getStateAfter(target);
-                var env = state.getValueState();
+                var valueDomain = state.getValueState();
 
-                if (env.knowsIdentifier(id)) {
+                if (valueDomain.knowsIdentifier(id)) {
+                  ExitState analysisResult = null;
 
-                  // Since this checker deals with the interval domain, the environment state of the
-                  // value must be an interval.
-                  var intervals = env.getState(id);
+                  if (valueDomain instanceof Pentagons pentagons) {
+                    analysisResult = analysisForPentagons(pentagons, id);
+                  } else if (valueDomain instanceof ValueEnvironment<?> environment
+                      && environment.getState(id) instanceof Intervals intervals) {
+                    analysisResult = analysisForIntervals(intervals);
+                  }
 
-                  // The overflow depends on the size of NumericalSize.
-                  var stickiness =
-                      SizeChecker.findBy(size)
-                          .map(sizeChecker -> sizeChecker.isOverflowing(intervals))
-                          .orElse(null);
-
-                  if (stickiness != null && stickiness.isValuable()) {
+                  if (analysisResult != null && analysisResult.result.isValuable()) {
                     // Add the result as an exit state.
                     var key = new ExitKey(id.getCodeLocation(), id, size);
                     var currentSet = exitStates.getOrDefault(key, new HashSet<>());
-                    currentSet.add(new ExitState(intervals, stickiness));
+                    currentSet.add(analysisResult);
                     exitStates.put(key, currentSet);
                   }
                 }
               }
             });
+  }
+
+  private ExitState analysisForPentagons(Pentagons pentagons, Variable id) {
+    // Delegate analysis to intervals.
+    return pentagons.getIntervals(id).map(this::analysisForIntervals).orElse(null);
+  }
+
+  private ExitState analysisForIntervals(Intervals intervals) {
+    // The overflow depends on the size of NumericalSize.
+    return SizeChecker.findBy(size)
+        .map(sizeChecker -> sizeChecker.isOverflowing(intervals))
+        .map(result -> new ExitState(intervals, result))
+        .orElse(null);
   }
 }

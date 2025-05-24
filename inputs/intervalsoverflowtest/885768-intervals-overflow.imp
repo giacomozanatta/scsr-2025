@@ -1,0 +1,104 @@
+class Matrix {
+    data;
+    size;
+    rows; //rows
+    cols; //cols
+
+    ~Matrix(rows, cols, value) {
+        def size = rows * cols;
+        this.size = size;
+	    this.data = new float[size];
+    }
+
+    index(i, j) {
+        return i * this.cols + j;
+    }
+
+    get(i, j) {
+        def index = this.index(i, j);
+        def dat = this.data;
+        def ret = dat[index];
+        return ret;
+    }
+
+    set(i, j, value) {
+        def index = this.index(i, j);
+        def dat = this.data;
+        dat[index] = value;
+        this.data = dat;
+    }
+
+    erase(){
+        def dat = this.data;
+
+        for ( def i = 0; i < this.rows; i = i + 1){
+            for ( def j = 0; j < this.cols; j = j + 1){
+                def index = this.index(i, j);
+                dat[index] = 0.0;
+            }
+        }
+
+        this.data = dat;
+    }
+
+    det(){
+        def res = 1;
+        def dat = this.data;
+        def stop_flag = 0;
+
+        for (def i = 0; i < this.size; i = i+1){
+            def index_i = this.index(i, i);
+            def pivot = dat[index_i];
+
+            if (pivot != 0){
+                for (def j = i+1; j < this.size; j = j+1){
+                    def index_j = this.index(i, j);
+                    def factor = dat[index_j] / pivot;
+
+                    for (def k = i; k < this.size; k = k+1){
+                        def index_jk = this.index(j, k);
+                        def index_ik = this.index(i, k);
+                        dat[index_jk] = dat[index_jk] - factor * dat[index_ik];
+                    }
+                }
+            }else{
+                stop_flag = 1;
+            }
+
+            if( stop_flag == 1 )
+                res = 0;
+            else
+                res = res * pivot;
+        }
+
+        this.data = dat;
+        return res;
+    }
+
+    multiply(number) {
+        def dat = this.data;
+
+        for (def i = 0; i < this.rows; i = i+1) {
+            for (def j = 0; j < this.cols; j = j+1) {
+                def index_i_j = this.index(i, j);
+                def val = dat[index_i_j];
+                val = val * number;
+            }
+        }
+
+        this.data = dat;
+    }
+
+    scale(scale_factor){
+        return this.size * scale_factor;
+    }
+
+    test_float8_underflow(){
+       this.multiply(-0.000000001);  //underflow expected
+    }
+
+    test_integer_underflow(){
+        def matrix = new Matrix(2,2,3.14);
+        matrix.multiply(-120000);   //underflow expected...
+    }
+}

@@ -1,0 +1,72 @@
+class Overflow {
+
+    interval(min, max) {
+        def some = 0;
+        if (true) {
+            some = min;
+        }
+        else{
+            some = max;
+        }
+        return some;                                      // some         = [min, max]
+    }
+
+    // UINT
+	test_bad_uint8(){
+	    def ok = this.interval(0, 255);             // ok
+	    def possible1 = this.interval(0, 256);      // possible overflow
+        def possible2 = this.interval(-1, 250);     // possible underflow
+        def possible3 = this.interval(-1, 256);     // possible under+over
+        def definite1 = this.interval(298, 300);    // definite overflow
+        def definite2 = this.interval(-3, -2);      // definite underflow
+        def definite3 = this.interval(400, 400);    // definite overflow
+        def definite4 = this.interval(-10, -10);    // definite underflow
+	}
+
+    test_bad_uint16() {
+        def ok = this.interval(0, 65535);                   // ok
+        def possible1 = this.interval(0, 65536);            // possible overflow
+        def possible2 = this.interval(-1, 65500);           // possible underflow
+        def possible3 = this.interval(-1, 70000);           // possible under+over
+        def definite1 = this.interval(70000, 80000);        // definite overflow
+        def definite2 = this.interval(-500, -1);            // definite underflow
+    }
+
+    // INT
+    test_bad_int8() {
+        def ok = this.interval(-128, 127);                     // ok
+        def possible1 = this.interval(120, 130);               // possible overflow
+        def possible2 = this.interval(-130, -100);             // possible underflow
+        def definite1 = this.interval(128, 150);               // definite overflow
+        def definite2 = this.interval(-200, -129);             // definite underflow
+    }
+
+    test_bad_int16() {
+        def ok = this.interval(-32768, 32767);                 // ok
+        def possible1 = this.interval(32000, 33000);           // possible overflow
+        def possible2 = this.interval(-33000, -32000);         // possible underflow
+        def definite1 = this.interval(40000, 50000);           // definite overflow
+        def definite2 = this.interval(-40000, -33000);         // definite underflow
+    }
+
+    // FLOAT
+	test_bad_float8(){
+        def possible_over1 = this.interval(0.0, 241);                  // possible overflow
+        def possible_over2 = this.interval(0.0, 300.01);               // possible overflow
+        def possible_under1 = this.interval(-0.001, 0.0);              // possible underflow
+        def possible_under2 = this.interval(0.0, 0.0001);              // possible underflow
+        def possible_under3 = this.interval(-0.002, 0.002);            // possible underflow => precision loss
+
+        def definite1_over = this.interval(250, 320.3);                // definte overflow
+        def definite2_over = this.interval(-240.1, -237.1);            // definite overflow
+    }
+
+    test_bad_float16() {
+        def ok = this.interval(-65500, 65500);                  // ok
+        def possible1 = this.interval(0, 65510);                // possible overflow
+        def possible2 = this.interval(0.0, 0.00000005);         // possible underflow (denormalized)
+        def possible3 = this.interval(-0.00003, 0.00003);       // possible underflow
+        def definite1 = this.interval(70000, 80000);            // definite overflow
+        def definite2 = this.interval(-70000, -66000);          // definite overflow
+    }
+}

@@ -1,0 +1,32 @@
+class divisionByZero {
+    f0() {
+        def a = 10;
+        def b = 0;      
+        def c = a / b;  
+        return;
+    }
+
+    f1() {
+        def a = 1000000000;
+        def b = 1000000000;
+        def c = a - b;      
+        def d = a / c;  
+        return;
+    }
+
+    f2() {
+        def a = 1000000000;
+        def b = -1000000000;
+        def c = a + b;      
+        def d = a / c;  
+        return;
+    }
+
+    f3() {
+        def a = 1000000000;
+        def b = 0;
+        def c = a * b;      
+        def d = a / c;  
+        return;
+    }
+}

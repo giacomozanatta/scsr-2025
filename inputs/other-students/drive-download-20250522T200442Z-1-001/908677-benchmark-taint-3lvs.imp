@@ -1,0 +1,108 @@
+// TaintThreeLevelsBenchmarks.imp
+class TaintThreeLevelsBenchmarks {
+
+  readInt() {
+    // Simulate reading an integer from an untrusted source
+    return 42; // Placeholder for actual input
+  }
+  readString() {
+    // Simulate reading a string from an untrusted source
+    return "untrusted"; // Placeholder for actual input
+  }
+  htmlEscape(s) {
+    // Simulate HTML escaping
+    return s; // Placeholder for actual escaping
+  }
+  sqlQuote(s) {
+    // Simulate SQL quoting
+    return s.replace("'", "''"); // Placeholder for actual quoting
+  }
+  sinkInt(x) {
+    // Simulate a sink for integers
+    return "Sink Int: " + x;
+  }
+  sinkStr(x) {
+    // Simulate a sink for strings
+    return "Sink Str: " + x;
+  }
+  
+
+  // sources, sanitizers, and sinks
+  sourceInt()       { return this.readInt(); }
+  sourceStr()       { return this.readString(); }
+  sanitizeHtml(s)   { return this.htmlEscape(s); }
+  sanitizeSql(s)    { return this.sqlQuote(s); }
+
+  // 1: Direct taint to int‐sink
+  flow1() {
+    def x = this.sourceInt();
+    this.sinkInt(x);
+  }
+
+  // 2: Sanitized before sink
+  flow2() {
+    def s = this.sourceStr();
+    def clean = this.sanitizeHtml(s);
+    this.sinkStr(clean);
+  }
+
+  // 3: Conditional taint
+  flow3(b) {
+    def t = 0;
+    if (b) t = this.sourceInt(); else t = 5;
+    this.sinkInt(t);
+  }
+
+  // 4: Loop‐driven taint accumulation
+  flow4(n) {
+    def sum = 0;
+    for (def i = 0; i < n; i = i + 1) {
+      sum = sum + this.sourceInt();
+    }
+    this.sinkInt(sum);
+  }
+
+  // 5: SQL injection example
+  flow5() {
+    def u = this.sourceStr();
+    def q = "SELECT * FROM users WHERE name=" + u;
+    this.sinkStr(q);
+  }
+
+  // 6: Mixed sanitization and concat
+  flow6() {
+    def p1 = this.sourceStr();
+    def p2 = this.sourceStr();
+    def both = this.sanitizeSql(p1) + this.sanitizeSql(p2);
+    this.sinkStr(both);
+  }
+
+  // 8: Nested calls and re‐sanitization
+  helper(x) {
+    return this.sanitizeHtml(x);
+  }
+  flow8() {
+    def raw = this.sourceStr();
+    def h1  = this.helper(raw);
+    def h2  = this.helper(h1) + raw;
+    this.sinkStr(h2);
+  }
+
+  // 9: Token propagation and clean
+  flow9() {
+    def tok = this.sourceStr();
+    def t2  = tok;       // tainted
+    def t3  = this.sanitizeSql(t2); // cleaned for SQL context
+    this.sinkStr(t3);
+  }
+
+  // 10: Multi‐sink different levels
+  flow10() {
+    def a = this.sourceInt();
+    this.sinkInt(a);                // tainted
+    def b = a + 1;
+    this.sinkInt(b);                // still tainted
+    def c = b * 0;             // now 0, clean?
+    this.sinkInt(c);                // clean (always 0)
+  }
+}

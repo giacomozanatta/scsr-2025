@@ -1,0 +1,101 @@
+class Matrix {
+    data;
+    size;
+    rows; //rows
+    cols; //cols
+
+    ~Matrix(rows, cols, value) {
+        def size = rows * cols;
+        this.size = size;
+	    this.data = new float[size];
+
+	    def dat = this.data;
+        for (def i = 0; i < this.size; i = i + 1) {
+            dat[i] = value;
+        }
+        this.data = dat;
+    }
+
+    index(i, j) {
+        return i * this.cols + j;
+    }
+
+    get(i, j) {
+        def index = this.index(i, j);
+        def dat = this.data;
+        def ret = dat[index];
+        return ret;
+    }
+
+    set(i, j, value) {
+        def index = this.index(i, j);
+        def dat = this.data;
+        dat[index] = value;
+        this.data = dat;
+    }
+
+    erase(){
+        def dat = this.data;
+
+        for ( def i = 0; i < this.rows; i = i + 1){
+            for ( def j = 0; j < this.cols; j = j + 1){
+                def index = this.index(i, j);
+                dat[index] = 0.0;
+            }
+        }
+
+        this.data = dat;
+    }
+
+    is_squared(){
+        def result = 0;
+        if ( this.rows == this.cols )
+            result = 1;
+        else
+            result = 0;
+        return result;
+    }
+
+    det(){
+        def res = 1;
+        def dat = this.data;
+        def stop_flag = 0;
+
+        for (def i = 0; i < this.rows; i = i+1){
+            def index_ii = this.index(i, i);
+            def pivot = dat[index_ii];
+
+            if (pivot != 0){
+                for (def j = i+1; j < this.rows; j = j+1){
+                    def index_ji = this.index(j, i);
+                    def factor = dat[index_ji] / pivot;
+
+                    for (def k = i; k < this.rows; k = k+1){
+                        def index_jk  = this.index(j, k);
+                        def index_ik   = this.index(i, k);
+                        dat[index_jk] = dat[index_jk] - factor * dat[index_ik];
+                    }
+                }
+            }else{
+                stop_flag = 1;
+            }
+
+            if( stop_flag == 1 )
+                res = 0;
+            else
+                res = res * pivot;
+        }
+
+        this.data = dat;
+        return res;
+    }
+
+    test_det(){
+        def res = -1; //emtpy
+        def a = new Matrix(2,2,3);
+        if ( a.is_squared() )
+            res = a.det();
+        return res;
+    }
+
+}

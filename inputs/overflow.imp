@@ -1,0 +1,102 @@
+class overflow {
+  // signed 8-bit  [-128..127]
+  f_int8_max() {
+    def s8_max = 120;
+    s8_max = s8_max + 10;   // overflow (>127)
+    return;
+  }
+
+  f_int8_min() {
+    def s8_min = -128;
+    s8_min = s8_min - 10;   // underflow (<-128)
+    return;
+  }
+
+  f_int8_max_product() {
+    def s8_max = 120;
+    s8_max = s8_max * 10;   // overflow (>127)
+    return;
+  }
+
+  f_int8_min_product() {
+    def s8_min = -128;
+    s8_min = s8_min * 10;   // underflow (<-128)
+    return;
+  }
+
+  // signed 16-bit  [-32768..32767]
+  f_int16_max() {
+    def s16_max = 32760;
+    s16_max = s16_max + 1000; // overflow (>32767)
+    return;
+  }
+
+  f_int16_min() {
+    def s16_min = -32768;
+    s16_min = s16_min - 500;  // underflow (<-32768)
+    return;
+  }
+
+  f_int16_max_product() {
+    def s16_max = 32760;
+    s16_max = s16_max * 100; // overflow (>32767)
+    return;
+  }
+
+  f_int16_min_product() {
+    def s16_min = -32768;
+    s16_min = s16_min * 100;  // underflow (<-32768)
+    return;
+  }
+
+  // unsigned 8-bit  [0..255]
+  f_uint8_max() {
+    def u8_max = 250;
+    u8_max = u8_max + 10;      // overflow (>255)
+    return;
+  }
+
+  f_uint8_min() {
+    def u8_min = 5;
+    u8_min = u8_min - 10;      // underflow (<0)
+    return;
+  }
+
+    f_uint8_max_product() {
+    def u8_max = 250;
+    u8_max = u8_max * 10;      // overflow (>255)
+    return;
+  }
+
+  f_uint8_min_product() {
+    def u8_min = -5;
+    u8_min = u8_min * 10;      // underflow (<0)
+    return;
+  }
+
+  // unsigned 16-bit  [0..65535]
+  f_uint16_max() {
+    def u16_max = 65000;
+    u16_max = u16_max + 600;   // overflow (>65535)
+    return;
+  }
+
+  f_uint16_min() {
+    def u16_min = 1;
+    u16_min = u16_min - 2;     // underflow (<0)
+    return;
+  }
+
+  f_uint16_max() {
+    def u16_max = 65000;
+    u16_max = u16_max * 100;   // overflow (>65535)
+    return;
+  }
+
+  f_uint16_min() {
+    def u16_min = -1;
+    u16_min = u16_min * 2;     // underflow (<0)
+    return;
+  }
+
+}

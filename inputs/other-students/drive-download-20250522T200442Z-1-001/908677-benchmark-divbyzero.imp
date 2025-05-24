@@ -1,0 +1,140 @@
+class DivByZeroBenchmarks {
+
+    // 1. Simple constant zero division
+    simple_constant_zero() {
+        def a = 5;
+        def b = 0;
+        def c = a / b; // Definite division by zero
+        return c;
+    }
+
+    // 2. Division by variable possibly zero (via branching)
+    branch_maybe_zero(flag) {
+        def x = 10;
+        def y = 1;
+        if (flag) {
+            y = 0;
+        }
+        def z = x / y; // Possible division by zero if flag is true
+        return z;
+    }
+
+    // 3. Division by expression that can be zero
+    expr_zero(i) {
+        def d = 100 / (i - i); // Always zero
+        return d;
+    }
+
+    // 4. Loop decrement can reach zero
+    loop_decrement(n) {
+        def denom = n;
+        while (denom > 0) {
+            denom = denom - 1;
+        }
+        def res = 10 / denom; // Possible division by zero if n > 0
+        return res;
+    }
+
+    // 5. Division by array element (array contains zero)
+    array_element(idx) {
+        def arr = new int[3];
+        arr[0] = 5;
+        arr[1] = 0;
+        arr[2] = 10;
+        def d = 100 / arr[idx]; // Possible div by zero if idx == 1
+        return d;
+    }
+
+    // 6. Division by parameter
+    param_guard(x) {
+        def div = 0;
+        def y = 0;
+        if (x != 0) {
+          y = 50 / div;
+        }
+        return y;
+    }
+
+    // 7. Nested branch, zero in one path
+    nested_branches(a, b) {
+        def denom = 1;
+        if (a > 10) {
+            if (b < 0) {
+                denom = 0;
+            }
+        }
+        def z = 99 / denom; // Possible division by zero if (a>10 && b<0)
+        return z;
+    }
+
+    // 8. Division by result of arithmetic involving input
+    division_arithmetic_input(p) {
+        def d = 42 / (2 * p - p - p); // Denominator is always zero
+        return d;
+    }
+
+    // 9. Safe division with assertive nonzero
+    always_safe_div() {
+        def x = 10;
+        def y = 2;
+        def z = x / y; // Always safe
+        return z;
+    }
+
+    // 10. Division in a for loop, divisor changes in loop
+    for_loop_divisor() {
+        def result = 0;
+        for (def i = -2; i <= 2; i = i + 1) {
+            result = result + (10 / i); // Definite division by zero at i == 0
+        }
+        return result;
+    }
+
+    // 11. Division by function result (function may return zero)
+    callsite_zero(a) {
+        def denom = this.getPossiblyZero(a);
+        def res = 1 / denom; // May be division by zero depending on input
+        return res;
+    }
+
+    getPossiblyZero(flag) {
+        if (flag) {
+            return 0;
+        } else {
+            return 7;
+        }
+    }
+
+    // 12. Division by array sum (can be zero)
+    sum_array_division() {
+        def arr = new int[4];
+        arr[0] = -1;
+        arr[1] = 1;
+        arr[2] = 0;
+        arr[3] = 0;
+        def sum = arr[0] + arr[1] + arr[2] + arr[3]; // sum is 0
+        def res = 77 / sum; // Definite division by zero
+        return res;
+    }
+
+    // 13. Multi-parameter path sensitive
+    multi_param_paths(x, y) {
+        def d = 1;
+        if (x == y) {
+            d = x - y;
+        }
+        def z = 10 / d; // division by zero if x == y
+        return z;
+    }
+
+    // 14. Division by field (simulate real-life object field, simplified)
+    div_by_field() {
+        def obj = new SimpleObj();
+        obj.val = 0;
+        def a = 4 / obj.val; // Definite division by zero
+        return a;
+    }
+}
+class SimpleObj {}
+    val;
+}

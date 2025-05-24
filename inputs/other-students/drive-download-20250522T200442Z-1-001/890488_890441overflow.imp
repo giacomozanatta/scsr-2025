@@ -1,0 +1,41 @@
+class overflow {
+
+    fun0(){ //to check if the length of the mantissa is controlled or gets to occupy every bit of BigDecimal
+        def a = 5;
+        def b = 3;
+        def g = a/b;
+        def h = 2.5;
+    }
+
+    compute_instant_power() {
+        def current_mA = 2800;         // example: 2800 mA read from a sensor
+        def voltage_mV = 3700;         // example: 3.7V -> 3700 mV
+
+        def power_mW = current_mA * voltage_mV / 1000;             // power_mW = [10360.0000, 10360.0000]
+
+        if (current_mA > 3000) {
+            power_mW = power_mW + 0.1;
+        }
+
+        return power_mW;                                           // power_mW = [10360.0000, 10360.1000]
+    }
+
+
+    daily_energy_summary() {
+
+        def inst_power      = this.compute_instant_power();        // inst_power      = [10360.0000, 10360.1000]
+        def energy_Wh       = inst_power * 24 / 1000;              // energy_Wh       = [248.6400, 248.6424]
+        def peak_energy_Wh  = energy_Wh + 1000;                    // peak_energy_Wh  = [1248.6400, 1248.6424]
+        def scaled_peak_Wh  = peak_energy_Wh * 100;                // scaled_peak_Wh  = [124864.0000, 124864.0000]
+
+        def excess_energy   = scaled_peak_Wh - 150000;             // excess_energy   = [-25136.0000, -25135.7600]
+        def tiny_fraction   = excess_energy / 1000000;             // tiny_fraction   = [-0.02514, -0.02514]
+        def shift_adjust    = tiny_fraction - 0.0005;              // shift_adjust    = [-0.02564,-0.02564]
+        def underflow_chk   = shift_adjust / 1000;                 // underflow_chk   = [-0.00003, -0.00003]
+
+        def neg_scaled_Wh   = -scaled_peak_Wh;                     // neg_scaled_Wh   = [-124865.0000, -124864.0000]
+        def balanced_Wh     = -neg_scaled_Wh;                      // balanced_Wh     = [124864.0000, 124865.0000]
+
+    }
+
+}

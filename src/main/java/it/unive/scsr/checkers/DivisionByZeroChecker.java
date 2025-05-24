@@ -22,6 +22,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.IntInterval;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
@@ -71,14 +73,41 @@ SemanticCheck<
 							
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
 						
-			
 							// TODO: implement type checks, it is required a numerical type
+
+
+							boolean hasNumeric = types.stream()
+        					.anyMatch(t -> t.isNumericType());  
+
+							if (!hasNumeric)          
+    							return;
+
+
+							// --------------------------------------------------------- //
+
 			
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 							
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 							
 							// TODO: add checks for division by zero
+
+
+							if (!intervalAbstractValue.isBottom() && !intervalAbstractValue.isTop()) {
+    							IntInterval iv = intervalAbstractValue.interval;
+
+    							boolean mayContainZero =
+            							iv.getLow().compareTo(MathNumber.ZERO) <= 0 &&
+            							iv.getHigh().compareTo(MathNumber.ZERO) >= 0;
+
+    							if (mayContainZero) {
+        							tool.warnOn(div, "Possible division by zero: divisor can evaluate to 0");
+    							}
+							}
+
+
+							// --------------------------------------------------------- //
+
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();

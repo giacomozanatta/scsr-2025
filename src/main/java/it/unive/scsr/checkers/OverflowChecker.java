@@ -21,6 +21,8 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.IntInterval;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 
 public class OverflowChecker implements
@@ -38,6 +40,38 @@ SemanticCheck<
 		FLOAT16, // signed float 16-bit
 		FLOAT32, // signed float 32-bit
 	}
+
+	// -------------------------------------------------------- //
+
+	private static MathNumber asNumber(int n) {
+    	return new IntInterval(n, n).getLow();   
+	}
+
+	private static MathNumber boundMin(NumericalSize sz) {
+		switch (sz) {
+			case INT8:   return asNumber(-128);
+			case INT16:  return asNumber(-32768);
+			case INT32:  return asNumber(-2147483648);
+			case UINT8:  return asNumber(0);     
+			case UINT16: return asNumber(0);     
+			case UINT32: return asNumber(0);         
+			default:     return MathNumber.MINUS_INFINITY; 
+		}
+	}
+
+	private static MathNumber boundMax(NumericalSize sz) {
+		switch (sz) {
+			case INT8:   return asNumber(127);
+			case INT16:  return asNumber(32767);
+			case INT32:  return asNumber(2147483647);
+			case UINT8:  return asNumber(255);
+			case UINT16: return asNumber(65535);
+			case UINT32: return asNumber((int) 4294967295L);    
+			default:     return MathNumber.PLUS_INFINITY;  
+		}
+	}
+			
+	// -------------------------------------------------------- //
 	
 	private NumericalSize size;
 	
@@ -79,6 +113,16 @@ SemanticCheck<
 				
 		// TODO: implement type checks, it is required a numerical type
 		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
+
+
+		boolean numericStatic = staticType.isNumericType();
+		boolean numericDynamic = dynamicTypes.stream().anyMatch(Type::isNumericType);
+		if (!numericStatic && !numericDynamic) {
+			return;
+		}
+
+
+		// ----------------------------------------------------------------------------------- //
 		
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
@@ -88,6 +132,36 @@ SemanticCheck<
 				
 				// TODO: implement logic for overflow/underflow checks
 				// hint: it depends to the NumericalSize size
+                                                                      
+                                                                      
+				if (intervalAbstractValue == null || intervalAbstractValue.isTop() || intervalAbstractValue.isBottom())
+					return;
+				
+				IntInterval iv = intervalAbstractValue.interval;
+				MathNumber low  = iv.getLow();
+				MathNumber high = iv.getHigh();
+
+				switch (size) {
+				case FLOAT8: case FLOAT16: case FLOAT32:
+					return;
+				default:
+					MathNumber min = boundMin(size);
+					MathNumber max = boundMax(size);
+				
+					boolean underflow = low.compareTo(min) < 0;
+					boolean overflow  = high.compareTo(max) > 0;
+				
+					if (underflow || overflow) {
+						String msg = (underflow && overflow)
+							? "Possible underflow *and* overflow for variable '"+id.getName()+"'"
+							: overflow ? "Possible overflow (> "+max+") for '"+id.getName()+"'"
+								: "Possible underflow (< "+min+") for '"+id.getName()+"'";
+						tool.warnOn(node, msg);
+					}
+				}
+                                                                      
+																      
+				// ------------------------------------------------ //
 		}
 		
 		

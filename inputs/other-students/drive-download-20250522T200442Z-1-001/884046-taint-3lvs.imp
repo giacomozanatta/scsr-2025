@@ -1,0 +1,116 @@
+/*
+    Script designed to test the taint analysis.
+    Configuration:
+    -sources: sourceLogin,getUsernameInInput,getPasswordInInput
+    -sinks: queryDB
+    -sanitizers: sanitizeString, calculateHash
+
+    Author: Andrea Da Lio - 884046
+    Version: 1.0
+*/
+
+/*
+    Class to store the user information
+*/
+class User {
+    username;
+    password;
+
+    ~User(username, password) {
+        this.username = username;
+        this.password = password;
+    }
+}
+
+class LoginTaint {
+
+    /******** Source Functions ********/
+    getUsernameInInput(){
+        return "admin";
+    }
+
+    getPasswordInInput(){
+        return "password";
+    }
+
+	sourceLogin(){
+	    def username = this.getUsernameInInput();
+	    def password = this.getPasswordInInput();
+	    return new User(username, password);
+	}
+    /******** End source Functions ********/
+
+    /******** Sanitize Functions **********/
+	sanitizeString(data){
+	    //Simulate a sanitization function
+	    def cleanedData = "";
+		return cleanedData;
+	}
+
+    calculateHash(password, salt){
+        //Hash the password with the salt
+        def hash = password + salt;
+        return hash;
+    }
+
+    /******** End sanitize Functions ********/
+    /******** Sink Functions **********/
+    queryDB(query){
+        //Simulate a database query
+    }
+
+    /******** End sink Functions **********/
+
+	getUserFromDB(username,password){
+	    def sanitizedUser = this.sanitizeString(username);
+	    def sanitizedPass = this.sanitizeString(password);
+	    def query = "SELECT * FROM users WHERE username = '" + sanitizedUser + "' AND password = '" + sanitizedPass + "'";
+        this.queryDB(query);
+        return new User("admin", "c38df5707a7c1785d1e8759c6315252d0796f44a");
+    }
+
+	retrieveSalt(username){
+	    def query = "SELECT salt FROM users_salts WHERE username = '" + username + "'";
+	    //Taint value passed to the sink function
+        this.queryDB(query);
+        return "0ead0c0f0b0e0d0c0";
+    }
+
+    //Function to log messages
+	logMessage(logLevel, data){
+	   //Save information into the log
+	}
+
+    //Main function of the test
+    //Return true if the login is successful, false otherwise
+    login(){
+        //Get the user from the source
+        def info = this.sourceLogin();
+        //Extract the username and password
+        def user = info.getUsername();
+        def pass = info.getPassword();
+        if(strlen(user) == 0 || strlen(pass) == 0){
+            this.logMessage("ERROR", "Username or password not given");
+            return false;
+        }else{
+                def userFromDB = this.getUserFromDB(user, pass);
+                if(userFromDB == null){
+                    this.logMessage("ERROR", "User not found");
+                    return false;
+                }else{
+                    //A tainted value is used in function
+                    def salt = this.retrieveSalt(user);
+
+                    def hash = this.calculateHash(pass, salt);
+                    //Check if the password (encrypted) matches the one given by the user
+                    if(hash == userFromDB.password){
+                        this.logMessage("INFO", "User logged in");
+                        return true;
+                    }else{
+                        this.logMessage("ERROR", "Password is incorrect");
+                        return false;
+                    }
+                }
+        }
+    }
+}

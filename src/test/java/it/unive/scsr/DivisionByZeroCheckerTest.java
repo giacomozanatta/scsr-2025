@@ -25,7 +25,7 @@ public class DivisionByZeroCheckerTest {
     public void testDivisionByZero() throws ParsingException, AnalysisException {
 
         // Parse input program
-        Program program = IMPFrontend.processFile("inputs/studentsIMP/885768_divbyzero.imp");
+        Program program = IMPFrontend.processFile("inputs/electronics.imp");
 
         // Configure LiSA
         LiSAConfiguration conf = new DefaultConfiguration();
@@ -42,7 +42,7 @@ public class DivisionByZeroCheckerTest {
         // Configure interprocedural analysis
         conf.interproceduralAnalysis = new ContextBasedAnalysis<>(
                 FullStackToken.getSingleton());
-
+        conf.wideningThreshold=10;
         // Add semantic check for each numerical size
         // for (NumericalSize size : NumericalSize.values())  adds redundancy if num size = size
         conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.FLOAT16));

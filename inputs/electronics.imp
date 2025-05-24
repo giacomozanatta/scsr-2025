@@ -1,0 +1,45 @@
+// Author: Liberalato Alessandro - 908093
+// Try this file with both overflow and divbyzero checkers
+class electronics {
+
+resistorSeries() {
+// Computes the series between two resistors
+def R1 = 10000;
+def R2 = 70000;
+def Rs = R1 + R2;   // will trigger some overflows
+}
+
+resistorParallel() {
+// Computes the parallel between two resistors
+def R3 = 10000;
+def R4 = 20000;
+def R5 = 0;
+def a = 1 / R3;
+def b = 1 / R4;
+def c = 1 / R5;    // division by zero
+def Rp = (1 / (a + b + c));
+}
+applyOhm() {
+// Ohm's law to computer R as V/I
+def current = 0.0000000000000000000000000000000000001;  //low magnitude
+def voltage = 10.000000000000000000000000000000000001;
+def resistance = voltage / current;  // will trigger overflows
+}
+capacitorsCircuit() {
+// Computes the equivalent between to capacitors in parallel (C1 + C2)
+def C1 = 0.000047;
+def C2 = 0.000068;
+def Cp = C1 + C2;
+// Computes the series between the previously obtained capacitor Cp and C3 as 1/((1/Cp)+(1/C3))
+def C3 = 0.000033;
+def a = 1 / C3;
+def b = 1 / Cp;
+def Ceq = (1 / (a + b));     // all operations should be safe
+}
+computePowers(Rb) {
+def V = 1000;
+def Ra = 100;
+def P1 = (V*V)/Ra;	 // overflow for some types
+def P2 = (V*V)/Rb;	 // potential div. by 0
+}
+}

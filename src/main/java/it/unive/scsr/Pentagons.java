@@ -221,10 +221,11 @@ public class Pentagons implements ValueDomain<Pentagons>, BaseLattice<Pentagons>
 
               newIntervals = newIntervals.putState(id, intersection);
             }
-          } else if (be.getRight() instanceof Constant) {
-            // This handles the case of the form var z = x - c. Since this is a subtraction and the
-            // right operand is a constant (i.e. a positive value, not being a unary expression),
-            // the left variable to be assigned will have a value less than or equal to x.
+          } else if (!id.equals(x) && be.getRight() instanceof Constant) {
+            // This handles the case of the form var z = x - c. Since this is a subtraction and
+            // the right operand is a constant (i.e. a positive value, not being a unary
+            // expression), the left variable to be assigned will have a value less than or equal
+            // to x.
             newBounds = newBounds.putState(id, upperbounds.getState(x).add(x));
           }
         }

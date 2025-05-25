@@ -12,13 +12,14 @@ import java.util.function.Function;
 
 import static it.unive.scsr.utils.FilesUtils.*;
 
-public class DivisionByZeroTest {
+public class IntervalsDivisionByZeroTest {
 
   // A private static nested class representing a program resource specialized for division by zero
   // checking, extending ProgramResource and parameterized with DivisionByZeroChecker and a
   // ValueEnvironment of Intervals. It is initialized with input and output directory paths.
   private static class DivisionByZeroProgram
-      extends ProgramResource<DivisionByZeroChecker, ValueEnvironment<Intervals>> {
+      extends ProgramResource<
+          DivisionByZeroChecker<ValueEnvironment<Intervals>>, ValueEnvironment<Intervals>> {
     public DivisionByZeroProgram(String inputFile, String outputDirectory) {
       super(inputFile, outputDirectory);
     }
@@ -42,7 +43,7 @@ public class DivisionByZeroTest {
         .map(
             program ->
                 program.toLiSARunner(
-                    Set.of(new DivisionByZeroChecker()), new ValueEnvironment<>(new Intervals())))
+                    Set.of(new DivisionByZeroChecker<>()), new ValueEnvironment<>(new Intervals())))
         .forEach(Runnable::run);
   }
 }

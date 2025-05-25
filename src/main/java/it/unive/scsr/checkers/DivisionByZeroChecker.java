@@ -8,6 +8,7 @@ import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
+import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.cfg.CFG;
@@ -17,13 +18,13 @@ import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
 import it.unive.scsr.checkers.divisionbyzero.Message;
 import it.unive.scsr.intervals.numbers.IntervalNumber;
 
-public class DivisionByZeroChecker
+public class DivisionByZeroChecker<T extends ValueDomain<T>>
     implements SemanticCheck<
-        SimpleAbstractState<
-            PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+        SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>> {
 
   private record Data(CodeLocation codeLocation, SymbolicExpression expression) {}
 
@@ -32,8 +33,7 @@ public class DivisionByZeroChecker
   @Override
   public void beforeExecution(
       CheckToolWithAnalysisResults<
-              SimpleAbstractState<
-                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+              SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool) {
     divisionsByZero.clear();
   }
@@ -41,8 +41,7 @@ public class DivisionByZeroChecker
   @Override
   public boolean visit(
       CheckToolWithAnalysisResults<
-              SimpleAbstractState<
-                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+              SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool,
       CFG graph,
       Statement node) {
@@ -55,8 +54,7 @@ public class DivisionByZeroChecker
   @Override
   public void afterExecution(
       CheckToolWithAnalysisResults<
-              SimpleAbstractState<
-                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+              SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool) {
     // Write the warning using the tool provided.
     divisionsByZero.stream()
@@ -72,8 +70,7 @@ public class DivisionByZeroChecker
 
   private void checkDivision(
       CheckToolWithAnalysisResults<
-              SimpleAbstractState<
-                  PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>>
+              SimpleAbstractState<PointBasedHeap, T, TypeEnvironment<InferredTypes>>>
           tool,
       CFG graph,
       Division div) {
@@ -96,16 +93,30 @@ public class DivisionByZeroChecker
                           // For each expression reachable from the first one calculated, if it is
                           // of numeric type, the abstract domain is calculated.
                           if (Analyzer.anyNumericalType(expression, div, state)) {
+                            Intervals domain = null;
+
+                            if (state.getValueState() instanceof Pentagons pentagons) {
+                              // ...
+                              domain =
+                                  Analyzer.evalOrThrow(
+                                      pentagons.getIntervalsEnvironment(),
+                                      (ValueExpression) expression,
+                                      div,
+                                      state);
+                            } else if (state.getValueState() instanceof ValueEnvironment<?> env) {
+                              // ...
+                              domain =
+                                  Analyzer.evalOrThrow(
+                                              env, (ValueExpression) expression, div, state)
+                                          instanceof Intervals intEvaluation
+                                      ? intEvaluation
+                                      : null;
+                            }
 
                             // With the abstract domain, it is possible to know whether the right
                             // side of a division expression is a zero value.
-                            var domain =
-                                Analyzer.evalOrThrow(
-                                    state.getValueState(),
-                                    (ValueExpression) expression,
-                                    div,
-                                    state);
-                            if (domain.interval.is(IntervalNumber.ofPrimitiveOrThrow(0))) {
+                            if (domain != null
+                                && domain.interval.is(IntervalNumber.ofPrimitiveOrThrow(0))) {
                               divisionsByZero.add(
                                   new Data(expression.getCodeLocation(), expression));
                             }

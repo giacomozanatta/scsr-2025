@@ -359,6 +359,10 @@ public class Pentagons implements ValueDomain<Pentagons>, BaseLattice<Pentagons>
     return Optional.ofNullable(intervals.getState(id));
   }
 
+  public ValueEnvironment<Intervals> getIntervalsEnvironment() {
+    return new ValueEnvironment<>(intervals.lattice, intervals.getMap());
+  }
+
   // Computes the closure of the Pentagons abstract domain. This operation refines the upper bounds
   // for each identifier based on the definite less-than relationships observed between intervals.
   private Pentagons closure() throws SemanticException {

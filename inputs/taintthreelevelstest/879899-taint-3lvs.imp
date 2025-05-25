@@ -1,3 +1,11 @@
+/*
+    879899 - Academic year 204/2025
+    Configuration:
+    -sources: source_SQL, source_HTML, source_PATH
+    -sinks: sink_SQL, sink_HTML, sink_PATH
+    -sanitizers: sanitize_SQL, sanitize_HTML, sanitize_PATH
+*/
+
 class Test {
 
 	source_SQL() { return "untrusted SQL input"; }          // Returns a string representing untrusted SQL input, simulating a source of potentially malicious data.

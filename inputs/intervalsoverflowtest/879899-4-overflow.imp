@@ -21,7 +21,7 @@ class Test {
         if (upperbound <= base) { lub = 128; }
         else { lub = 1; }
 
-        // If the analysis is accurate enough, the lub will be marked as significantly too large for the int8 size.
+        // If the analysis is accurate enough, the lub will be marked as definitely too large for the int8 size.
         def is_definite = lub;
     }
 }

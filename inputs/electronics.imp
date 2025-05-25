@@ -10,7 +10,7 @@ def Rs = R1 + R2;   // will trigger some overflows
 }
 
 resistorParallel() {
-// Computes the parallel between two resistors
+// Computes the parallel between three resistors
 def R3 = 10000;
 def R4 = 20000;
 def R5 = 0;

@@ -25,7 +25,7 @@ public class TaintThreeLevelsTaskEvaluation {
 	
 	
 	// we define the signatures for matching sources, sanitizers, and sinks
-	String[] sources = new String[] {"source1", "source2","source3"};
+	String[] sources = new String[] {"source1", "source2", "source3", "strinline"};
 	String[] sanitizers = new String[] {"sanitizer1", "sanitizer2"};
 	String[] sinks = new String[] {"sink1"};
 	

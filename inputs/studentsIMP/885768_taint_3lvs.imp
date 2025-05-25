@@ -16,7 +16,7 @@ class taint {
 	sanitizer1(stringline){
 	    def dangerous = "/n";
 	    def result = stringline;
-
+        def str = this.source2();
 	    // is str contained inside stringline variable?
 	    if ( strcon(stringline, str) ){
            result = strrep(stringline, str, " ");

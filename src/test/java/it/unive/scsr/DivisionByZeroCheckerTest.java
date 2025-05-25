@@ -25,7 +25,7 @@ public class DivisionByZeroCheckerTest {
     public void testDivisionByZero() throws ParsingException, AnalysisException {
 
         // Parse input program
-        Program program = IMPFrontend.processFile("inputs/electronics.imp");
+        Program program = IMPFrontend.processFile("inputs/studentsIMP/879899-2-by-zero.imp");
 
         // Configure LiSA
         LiSAConfiguration conf = new DefaultConfiguration();

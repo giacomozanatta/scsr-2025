@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Analyzers
-  class DivisionByZeroTest < Base
+  class PentagonsDivisionByZeroTest < Base
     def mangle(messages)
       messages.transform_values do |set|
         { descriptions: set.map { _1['warning']['description'] }.join(','),

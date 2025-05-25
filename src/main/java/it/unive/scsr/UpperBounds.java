@@ -42,7 +42,8 @@ public class UpperBounds
     this.isTop = bounds.isEmpty();
   }
 
-  // Make this UpperBounds constructor private to prevent the isTop flag from being writable by callers.
+  // Make this UpperBounds constructor private to prevent the isTop flag from being writable by
+  // callers.
   private UpperBounds(Set<Identifier> bounds, boolean isTop) {
     this.bounds = bounds;
     this.isTop = isTop;
@@ -108,57 +109,76 @@ public class UpperBounds
       ProgramPoint dest,
       SemanticOracle oracle)
       throws SemanticException {
+    // If the left or right expressions are not identifiers, this analysis cannot refine the
+    // environment, so return the environment as is.
     if (!(left instanceof Identifier x && right instanceof Identifier y)) {
       return environment;
     }
 
     if (operator instanceof ComparisonEq) {
-      // This block handles the case where the comparison operator is "equals" (x == y). When x
-      // equals y, their abstract states must be consistent. This is achieved by taking the greatest
-      // lower bound (glb) of their current states, which effectively computes their union. This new
-      // state, is then applied to both x and y.
-      var set = environment.getState(x).glb(environment.getState(y));
+      // This block handles the case where the comparison operator is "equals" (x == y). If x == y,
+      // then their upper bounds become identical. The glb of their current upper bound sets
+      // represents this shared, refined knowledge. Identifiers x and y are then removed from their
+      // own sets to avoid self-referential bounds or unnecessary complexity within the UpperBounds
+      // set itself, as they are now considered equal.
+      var set = environment.getState(x).glb(environment.getState(y)).remove(x).remove(y);
       return environment.putState(x, set).putState(y, set);
     }
 
     if (operator instanceof ComparisonLt) {
-      // This block handles the case where the comparison operator is "less than" (x < y). If x is
-      // less than y, the state of x is refined. The new state for x is the glb of its current
-      // state, the glb of its current state with y's state, and a new upper bound created from y
-      // (implying x cannot be greater than or equal to y).
-      return environment.putState(
-          x,
+      // This block handles the case where the comparison operator is "less than" (x < y). For x: If
+      // x < y, then x's upper bounds are refined by taking the glb with y's current upper bounds
+      // and also by adding y itself as an upper bound (x cannot be greater than or equal to y).
+      // Identifier x is then removed from its own upper bound set as it's being refined relative to
+      // y.
+      var xSet =
           environment
               .getState(x)
               .glb(environment.getState(y))
-              .glb(new UpperBounds(Collections.singleton(y))));
+              .glb(new UpperBounds(Collections.singleton(y)))
+              .remove(x);
+
+      // For y: If x < y, then y cannot be bounded by x. So, we remove x from y's upper bound set.
+      var ySet = environment.getState(y).remove(x);
+
+      // Update the environment with the refined upper bound sets for both x and y.
+      return environment.putState(x, xSet).putState(y, ySet);
     }
 
     if (operator instanceof ComparisonLe) {
       // This block handles the case where the comparison operator is "less than or equals" (x <=
-      // y). If x is less than or equal to y, the state of x is refined. The new state for x is the
-      // glb of its current state and y's state.
-      return environment.putState(x, environment.getState(x).glb(environment.getState(y)));
+      // y). For x: x's upper bounds are refined by the glb with y's upper bounds. Identifiers x and
+      // y are then removed from x's bounds, as they are now related by <=. For y: y cannot be
+      // bounded by x.
+      var xSet = environment.getState(x).glb(environment.getState(y)).remove(x).remove(y);
+      var ySet = environment.getState(y).remove(x);
+      return environment.putState(x, xSet).putState(y, ySet);
     }
 
     if (operator instanceof ComparisonGt) {
       // This block handles the case where the comparison operator is "greater than" (x > y), which
-      // is equivalent to y < x. The state of y is refined. The new state for y is the glb of its
-      // current state, the glb of its current state with x's state, and a new upper bound created
-      // from x (implying y cannot be greater than or equal to x).
-      return environment.putState(
-          y,
+      // is equivalent to y < x. The logic is symmetrical to the ComparisonLt case, but applied to
+      // y.
+      var ySet =
           environment
               .getState(x)
               .glb(environment.getState(y))
-              .glb(new UpperBounds(Collections.singleton(x))));
+              .glb(new UpperBounds(Collections.singleton(x)))
+              .remove(y);
+
+      // For x: If x > y, then x cannot be bounded by y.
+      var xSet = environment.getState(x).remove(y);
+
+      // Update the environment with the refined upper bound sets for both y and x.
+      return environment.putState(y, ySet).putState(x, xSet);
     }
 
     if (operator instanceof ComparisonGe) {
       // This block handles the case where the comparison operator is "greater than or equals" (x >=
-      // y), which is equivalent to y <= x. The state of y is refined. The new state for y is the
-      // glb of its current state and x's state.
-      return environment.putState(y, environment.getState(x).glb(environment.getState(y)));
+      // y), which is equivalent to y <= x. The logic is symmetrical to the ComparisonLe case.
+      var ySet = environment.getState(y).glb(environment.getState(x)).remove(x).remove(y);
+      var xSet = environment.getState(x).remove(y);
+      return environment.putState(y, ySet).putState(x, xSet);
     }
 
     return environment;
@@ -210,6 +230,13 @@ public class UpperBounds
   public UpperBounds add(Identifier id) {
     var res = new HashSet<>(bounds);
     res.add(id);
+    return new UpperBounds(res);
+  }
+
+  // ...
+  private UpperBounds remove(Identifier id) {
+    var res = new HashSet<>(bounds);
+    res.remove(id);
     return new UpperBounds(res);
   }
 }

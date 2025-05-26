@@ -112,8 +112,6 @@ public class OverflowChecker implements
 				// IEEE 754 half-precision float: approx -65504 to 65504
 				bounds = new FloatInterval(-65504.0f, 65504.0f);
 			} else if (this.size == NumericalSize.FLOAT32) {
-				// Use Float.MIN_VALUE for smallest positive, -Float.MAX_VALUE for lowest
-				// negative
 				bounds = new FloatInterval(-Float.MAX_VALUE, Float.MAX_VALUE);
 			}
 			if (bounds != null) {

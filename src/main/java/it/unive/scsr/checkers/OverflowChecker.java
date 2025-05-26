@@ -21,6 +21,7 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.helpers.FloatInterval;
 
@@ -100,11 +101,11 @@ public class OverflowChecker implements
 			} else if (this.size == NumericalSize.INT32) {
 				bounds = new FloatInterval(Integer.MIN_VALUE, Integer.MAX_VALUE);
 			} else if (this.size == NumericalSize.UINT8) {
-				bounds = new FloatInterval(0, 255);
+				bounds = new FloatInterval(MathNumber.ZERO, new MathNumber(255));
 			} else if (this.size == NumericalSize.UINT16) {
-				bounds = new FloatInterval(0, 65535);
+				bounds = new FloatInterval(MathNumber.ZERO, new MathNumber(65535));
 			} else if (this.size == NumericalSize.UINT32) {
-				bounds = new FloatInterval(0, 4294967295L);
+				bounds = new FloatInterval(MathNumber.ZERO, new MathNumber(4294967295L));
 			} else if (this.size == NumericalSize.FLOAT8) {
 				// 8-bit floats are not standard; using plausible range for demonstration
 				bounds = new FloatInterval(-127.0f, 127.0f);

@@ -25,15 +25,15 @@ public class TaintThreeLevelsTaskEvaluation {
 	
 	
 	// we define the signatures for matching sources, sanitizers, and sinks
-	String[] sources = new String[] {"source1", "source2"};
-	String[] sanitizers = new String[] {"sanitizer1", "sanitizer2"};
-	String[] sinks = new String[] {"sink1", "sinks"};
+	String[] sources = new String[] {"source_user"};
+	String[] sanitizers = new String[] {"sanitizer_html", "sanitizer_sql"};
+	String[] sinks = new String[] {"sink_html_page", "sink_query"};
 	
 
 	@Test
 	public void testTaintThreeLevels() throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/taint-3lvs-eval.imp");
+		Program program = IMPFrontend.processFile("inputs/880092-taint-3lvls.imp");
 
 		// we load annotation for identify sources, sanitizer, and sinks during the analysis and checker execution
 		loadAnnotations(program);
@@ -42,7 +42,7 @@ public class TaintThreeLevelsTaskEvaluation {
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/taint-3lvs-eval";
+		conf.workdir = "outputs/taint-3lvs";
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

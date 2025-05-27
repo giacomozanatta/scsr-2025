@@ -11,28 +11,38 @@ import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.imp.IMPFrontend;
 import it.unive.lisa.imp.ParsingException;
 import it.unive.lisa.program.Program;
+import it.unive.scsr.checkers.OverflowChecker;
+import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
-public class IntervalsTest {
+public class OverflowTest {
 
 	@Test
-	public void testIntervals() throws ParsingException, AnalysisException {
+	public void testOverflow() throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/intervals.imp");
+		Program program = IMPFrontend.processFile("inputs/908677-benchmark-overflow.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/intervals";
+		conf.workdir = "outputs/overflow";
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;
 
-		// we specify the analysis that we want to execute
+		// we specify to create a json file containing warnings triggered by the
+		// analysis
+		conf.jsonOutput = true;
+
+		// we specify the analysis that we want to execute, using Intervals for the
+		// checker
 		conf.abstractState = DefaultConfiguration.simpleState(
 				DefaultConfiguration.defaultHeapDomain(),
-				new ValueEnvironment<>(new Intervals()),
+				new ValueEnvironment<>(new Intervals()), // Using the Intervals domain for the checker
 				DefaultConfiguration.defaultTypeDomain());
+
+		// Add the OverflowChecker, configured for INT8
+		conf.semanticChecks.add(new OverflowChecker(NumericalSize.INT32));
 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

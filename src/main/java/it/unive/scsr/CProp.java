@@ -24,14 +24,9 @@ import java.util.stream.Stream;
 
 public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
 
-    // IMPLEMENTATION NOTE:
-    // the code below is outside of the scope of the course. You can uncomment
-    // it to get your code to compile. Be aware that the code is written
-    // expecting that a field named "id" and a field named "constant" exist
-    // in this class: if you name them differently, change also the code below
-    // to make it work by just using the name of your choice instead of
-    // "id"/"constant". If you don't have these fields in your
-    // solution, then you should make sure that what you are doing is correct :)
+public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
+	private final Identifier id;
+	private final Integer constant;
 
     // - Implement your solution using the DefiniteDataFlowDomain.
     //   - What would happen if you used a PossibleDataFlowDomain instead? Think about it (or try it), but remember to deliver the Definite version.

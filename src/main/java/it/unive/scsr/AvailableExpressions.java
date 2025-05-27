@@ -2,7 +2,6 @@ package it.unive.scsr;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;

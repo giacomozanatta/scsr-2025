@@ -1,0 +1,94 @@
+class DivisionTest {
+    
+    testDivisionByZero() {
+        // Test case 1: Always zero - literal zero
+        def result1 = 10 / 0;
+        
+        // Test case 2: Always zero - variable assigned zero
+        def zero = 0;
+        def result2 = 5 / zero;
+        
+        // Test case 3: Possibly zero - conditional assignment
+        def x = 5;
+        def divisor = 0; // Initialize with default value
+        if (x > 3) {
+            divisor = 0;
+        } else {
+            divisor = 2;
+        }
+        def result3 = 100 / divisor;
+        
+        // Test case 4: Possibly zero - loop that may reach zero
+        def counter = 3;
+        while (counter > 0) {
+            counter = counter - 1;
+        }
+        def result4 = 42 / counter;
+        
+        // Test case 5: Safe division - non-zero value
+        def safeDiv = 5;
+        def result5 = 20 / safeDiv;
+        
+        // Test case 6: Possibly zero - user input simulation
+        def userInput = 0; // simulating user providing zero
+        if (userInput != 0) {
+            def result6 = 15 / userInput;
+        }
+        
+        // Test case 7: Float division by zero
+        def floatZero = 0.0;
+        def result7 = 3.14 / floatZero;
+        
+        // Test case 8: Expression that evaluates to zero
+        def a = 5;
+        def b = 5;
+        def result8 = 10 / (a - b);
+        
+        // Test case 9: Multiple divisions in sequence
+        def val1 = 100;
+        def val2 = 0;
+        def val3 = 2;
+        def result9 = val1 / val2 / val3;
+        
+        // Test case 10: Division in conditional
+        def condition = true;
+        if (condition) {
+            def zeroVal = 0;
+            def result10 = 50 / zeroVal;
+        }
+    }
+    
+    testWithParameters(param) {
+        // Test case 11: Parameter could be zero
+        def result = 25 / param;
+        return result;
+    }
+    
+    testComplexScenario() {
+        // Test case 12: Complex scenario with array
+        def a = new int[3];
+        a[0] = 1;
+        a[1] = 2;
+        a[2] = 3;
+        
+        def index = 1;
+        def result = 100 / a[index];
+        a[1] = a[1] - 2;
+        result = result / a[index];
+        
+        // Test case 13: Method call result as divisor
+        def methodResult = this.getValue();
+        def finalResult = 200 / methodResult;
+    }
+    
+    getValue() {
+        return 0; // This method returns zero
+    }
+}
+
+// Main execution
+def test = new DivisionTest();
+test.testDivisionByZero();
+test.testWithParameters(0);
+test.testWithParameters(5);
+test.testComplexScenario();

@@ -1,0 +1,12 @@
+class Main {
+    // Unsigned integer underflow (UINT8)
+    uint8_underflow() {
+        def x = 5;
+        x = x - 10; // should underflow for UINT8
+    }
+
+    uint8_overflow() {
+        def x = 250;
+        x = x + 10; // should overflow for UINT8
+    }
+}

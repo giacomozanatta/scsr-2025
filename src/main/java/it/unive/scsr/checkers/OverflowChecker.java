@@ -108,10 +108,10 @@ public class OverflowChecker implements
 				bounds = new FloatInterval(MathNumber.ZERO, new MathNumber(4294967295L));
 			} else if (this.size == NumericalSize.FLOAT8) {
 				// 8-bit floats are not standard; using plausible range for demonstration
-				bounds = new FloatInterval(-127.0f, 127.0f);
+				bounds = new FloatInterval(new MathNumber(-127.0f), new MathNumber(127.0f));
 			} else if (this.size == NumericalSize.FLOAT16) {
 				// IEEE 754 half-precision float: approx -65504 to 65504
-				bounds = new FloatInterval(-65504.0f, 65504.0f);
+				bounds = new FloatInterval(new MathNumber(-65504.0f), new MathNumber(65504.0f));
 			} else if (this.size == NumericalSize.FLOAT32) {
 				bounds = new FloatInterval(-Float.MAX_VALUE, Float.MAX_VALUE);
 			}

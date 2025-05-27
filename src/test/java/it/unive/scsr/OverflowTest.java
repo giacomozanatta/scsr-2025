@@ -19,7 +19,7 @@ public class OverflowTest {
 	@Test
 	public void testOverflow() throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/overflow.imp");
+		Program program = IMPFrontend.processFile("inputs/908677-benchmark-overflow.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
@@ -42,7 +42,7 @@ public class OverflowTest {
 				DefaultConfiguration.defaultTypeDomain());
 
 		// Add the OverflowChecker, configured for INT8
-		conf.semanticChecks.add(new OverflowChecker(NumericalSize.FLOAT32));
+		conf.semanticChecks.add(new OverflowChecker(NumericalSize.INT32));
 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

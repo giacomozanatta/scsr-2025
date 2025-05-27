@@ -23,8 +23,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
-
-public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CProp> {
 	private final Identifier id;
 	private final Integer constant;
 
@@ -64,8 +62,6 @@ public class CProp implements DataflowElement<DefiniteDataflowDomain<CProp>, CPr
     }
 
     // MY CODE BELOW
-    private final Identifier id;
-    private final Integer constant;
 
     public CProp(Identifier id, Integer constant) {
         this.id = id;

@@ -42,7 +42,7 @@ public class OverflowTest {
 				DefaultConfiguration.defaultTypeDomain());
 
 		// Add the OverflowChecker, configured for INT8
-		conf.semanticChecks.add(new OverflowChecker(NumericalSize.UINT8));
+		conf.semanticChecks.add(new OverflowChecker(NumericalSize.FLOAT32));
 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

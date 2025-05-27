@@ -53,14 +53,14 @@ class Main {
 
     // Float overflow (FLOAT32)
     float_overflow() {
-        def x = 340000000.0; // use a large float literal
-        x = x * 10.0; // should overflow for FLOAT32
+        def x = 340282346638528859811704183484516925.0; // use a large float literal
+        x = x * 10000000.0; // should overflow for FLOAT32
     }
 
     // Float underflow (FLOAT32)
     float_underflow() {
-        def x = -340000000.0; // use a large negative float literal
-        x = x * 10.0; // should underflow for FLOAT32
+        def x = -34028234663852885981170418348451692.0; // use a large negative float literal
+        x = x * 1000000.0; // should underflow for FLOAT32
     }
 
     // Branching: overflow only on one path

@@ -114,6 +114,9 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
         if (left == BOTTOM || right == BOTTOM)
             return BOTTOM;
 
+        if (left == TOP || right == TOP)
+            return TOP;
+
         if (operator instanceof DivisionOperator)
             return TOP;
 
@@ -129,8 +132,6 @@ public class Parity implements BaseNonRelationalValueDomain<Parity> {
                 return EVEN;
             if (left == ODD && right == ODD)
                 return ODD;
-            if (left == TOP || right == TOP)
-                return TOP;
         }
 
         return TOP;

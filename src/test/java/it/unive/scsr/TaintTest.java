@@ -1,5 +1,6 @@
 package it.unive.scsr;
 
+import it.unive.scsr.checkers.TaintThreeLevelsChecker;
 import org.junit.Test;
 
 import it.unive.lisa.AnalysisException;
@@ -32,7 +33,8 @@ public class TaintTest {
 	@Test
 	public void testTaint() throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/taint.imp");
+		//Program program = IMPFrontend.processFile("inputs/890550_taintthreelevels.imp");
+		Program program = IMPFrontend.processFile("inputs/890550_taintthreelevels.imp");
 
 		// we load annotation for identify sources, sanitizer, and sinks during the analysis and checker execution
 		loadAnnotations(program);
@@ -53,14 +55,15 @@ public class TaintTest {
 		
 		 conf.abstractState = DefaultConfiguration.simpleState(
 				DefaultConfiguration.defaultHeapDomain(),
-				new ValueEnvironment<>(new Taint()),
+				new ValueEnvironment<>(new TaintThreeLevels()),
 				DefaultConfiguration.defaultTypeDomain());
 		 
 		 // we specify to perform an interprocedural analysis (require to recognize calls to sources, sanitizers, and sinks)
 		 conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 		 
 		 // the TaintChecker is executed after the Taint analysis and it checks if a tainted value is flowed in a sink
-		 conf.semanticChecks.add(new TaintChecker());
+		 //conf.semanticChecks.add(new TaintChecker());
+		conf.semanticChecks.add(new TaintThreeLevelsChecker());
 		 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

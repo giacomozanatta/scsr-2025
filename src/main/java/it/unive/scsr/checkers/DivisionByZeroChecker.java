@@ -23,11 +23,11 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 public class DivisionByZeroChecker implements
 SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
-
 	private NumericalSize size;
 	public DivisionByZeroChecker(NumericalSize size) {
 		this.size = size;
@@ -66,8 +66,10 @@ SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, T
 
 						// ADDED: implement type checks, it is required a numerical type
 						boolean isNumeric = types.stream().anyMatch(Type::isNumericType);
-						if (!isNumeric)
+						if (!isNumeric) {
+							tool.warnOn(div, "NOT numeric Interval!");
 							continue;
+						}
 
 						ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 						Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());

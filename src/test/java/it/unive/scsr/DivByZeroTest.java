@@ -1,5 +1,6 @@
 package it.unive.scsr;
 
+import it.unive.scsr.checkers.*;
 import org.junit.Test;
 
 import it.unive.lisa.AnalysisException;
@@ -14,7 +15,6 @@ import it.unive.lisa.imp.ParsingException;
 import it.unive.lisa.interprocedural.context.ContextBasedAnalysis;
 import it.unive.lisa.interprocedural.context.FullStackToken;
 import it.unive.lisa.program.Program;
-import it.unive.scsr.checkers.DivisionByZeroChecker;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 public class DivByZeroTest {
@@ -22,17 +22,18 @@ public class DivByZeroTest {
 
 	@Test
 	public void testDivByZeroInterval() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-divbyzero");
+		runAnalysis(new ValueEnvironment<>(new HybridIntervals()), HybridOverflowChecker.NumericalSize.UINT8, "intervals-divbyzero");
 	}
 	
 	/*@Test
-	public void testtestDivByZeroPentagons() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.UINT8, "intervals-pentagons");
+	public void testDivByZeroPentagons() throws ParsingException, AnalysisException {
+		runAnalysis(new HybridPentagons(), HybridOverflowChecker.NumericalSize.UINT8, "intervals-pentagons");
 	}*/
 	
-	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
+	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, HybridOverflowChecker.NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
+		//Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
+		Program program = IMPFrontend.processFile("inputs/othersIMP/908677-benchmark-divbyzero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
@@ -57,15 +58,13 @@ public class DivByZeroTest {
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 		 
 		// the OverflowChecker is executed after the numerical analysis and it checks if a abstract numerical value leads to an overflow/underflow
-		conf.semanticChecks.add(new DivisionByZeroChecker(size));
+		conf.semanticChecks.add(new HybridDivisionByZeroChecker(size));
+		//conf.semanticChecks.add(new HybridDivisionByZeroPentagonsChecker(size));
 		 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);
-		
 
 		// finally, we tell LiSA to analyze the program
 		lisa.run(program);
 	}
-
-	
 }

@@ -10,11 +10,8 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.NumericNegation;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
+import it.unive.lisa.symbolic.value.operator.*;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
@@ -97,14 +94,15 @@ public class Intervals
 	@Override
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		
-		// TODO: The semantics of negation should be implemented here! 
-		
+
+		if (arg.isBottom())
+			return bottom();
+
 		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
-			
+			return new Intervals(arg.interval.mul(new IntInterval(-1,-1)));
 		}
-		
-		return top();
+
+		return  top();
 	}
 	
 	@Override
@@ -216,42 +214,83 @@ public class Intervals
 			Intervals singletonInterval = new Intervals(i,i);
 			return singletonInterval;
 		}
-		
+
 		return top();
 	}
 
 	@Override
 	public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
 			SemanticOracle oracle) throws SemanticException {
-		
-		
+
+
 		if(left.isBottom() || right.isBottom())
 			return bottom();
-		
+
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
-		
+
 		if(operator instanceof AdditionOperator)  {
-			
+
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
-			
+
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
-			
-			return new Intervals(lA.add(lB), uA.add(uB));
-			
-		} else 
-			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
-		if( operator instanceof SubtractionOperator) {
-			
+
+			MathNumber first = lA.add(lB);
+			MathNumber second = uA.add(uB);
+
+			return new Intervals(first.min(second), first.max(second));
+
+		} else if (operator instanceof SubtractionOperator) {
+
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+
+			MathNumber newLow  = lA.subtract(uB); // NOTA: lA - uB
+			MathNumber newHigh = uA.subtract(lB); // NOTA: uA - lB
+
+			return new Intervals(newLow, newHigh);
+
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+
+			MathNumber first = lA.multiply(lB);
+			MathNumber second = lA.multiply(uB);
+			MathNumber third = uA.multiply(lB);
+			MathNumber fourth = uA.multiply(uB);
+
+			MathNumber min = first.min(second).min(third).min(fourth);
+			MathNumber max = first.max(second).max(third).max(fourth);
+
+			return new Intervals(min, max);
+		} else if (operator instanceof DivisionOperator){
+
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+
+			MathNumber first = lA.divide(lB);
+			MathNumber second = lA.divide(uB);
+			MathNumber third = uA.divide(lB);
+			MathNumber fourth = uA.divide(uB);
+
+			MathNumber min = first.min(second).min(third).min(fourth);
+			MathNumber max = first.max(second).max(third).max(fourth);
+
+			return new Intervals(min, max);
 		}
-			
+
 		return top();
 	}
 

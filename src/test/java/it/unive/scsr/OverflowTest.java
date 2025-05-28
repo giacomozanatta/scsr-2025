@@ -1,5 +1,7 @@
 package it.unive.scsr;
 
+import it.unive.scsr.checkers.HybridOverflowChecker;
+import it.unive.scsr.checkers.HybridOverflowPentagonsChecker;
 import org.junit.Test;
 
 import it.unive.lisa.AnalysisException;
@@ -18,41 +20,39 @@ import it.unive.scsr.checkers.OverflowChecker;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 public class OverflowTest {
-	
-
 	@Test
 	public void testOverflowIntervalsUINT8() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-uint8");
+		runAnalysis(new ValueEnvironment<>(new HybridIntervals()), HybridOverflowChecker.NumericalSize.UINT8, "intervals-uint8");
 	}
 	
 	@Test
 	public void testOverflowIntervalsINT16() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "intervals-int16");
+		runAnalysis(new ValueEnvironment<>(new HybridIntervals()), HybridOverflowChecker.NumericalSize.INT16, "intervals-int16");
 	}
 	
 	@Test
 	public void testOverflowIntervalsFLOAT8() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT8, "intervals-float8");
+		runAnalysis(new ValueEnvironment<>(new HybridIntervals()), HybridOverflowChecker.NumericalSize.FLOAT8, "intervals-float8");
 	}
 	
 	/*@Test
 	public void testOverflowPentagonsUINT8() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.UINT8, "pentagons-uint8");
+		runAnalysis(new HybridPentagons(), HybridOverflowChecker.NumericalSize.UINT8, "pentagons-uint8");
 	}
 	
 	@Test
 	public void testOverflowPentagonsINT16() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.INT16, "pentagons-int16");
+		runAnalysis(new HybridPentagons(), HybridOverflowChecker.NumericalSize.INT16, "pentagons-int16");
 	}
 	
 	@Test
 	public void testOverflowPentagonsFLOAT8() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.FLOAT8, "pentagons-float8");
+		runAnalysis(new HybridPentagons(), HybridOverflowChecker.NumericalSize.FLOAT8, "pentagons-float8");
 	}*/
 	
-	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
+	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, HybridOverflowChecker.NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/overflow.imp");
+		Program program = IMPFrontend.processFile("inputs/othersIMP/908093_Overflow.IMP");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
@@ -77,7 +77,8 @@ public class OverflowTest {
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 		 
 		// the OverflowChecker is executed after the numerical analysis and it checks if a abstract numerical value leads to an overflow/underflow
-		conf.semanticChecks.add(new OverflowChecker(size));
+		//conf.semanticChecks.add(new OverflowChecker(size));
+		conf.semanticChecks.add(new HybridOverflowChecker(size));
 		 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

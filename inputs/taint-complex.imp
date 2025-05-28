@@ -101,13 +101,13 @@ class taint_complex {
     		def t = 0;
 
     		for (def i = 0; i < 5; i = i + 1) {
-    			def temp = this.source1();
+    			def temp = this.source();
     			t = t + temp;
     			if (i > 4) {
-    			this.sanitizer1(t);
+    			this.sanitizer(t);
     			}
     		}
 
-    		this.sink1(t); // t may be tainted or clean, so TOP
+    		this.sink(t); // t may be tainted or clean, so TOP
     	}
 }

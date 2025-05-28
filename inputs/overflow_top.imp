@@ -1,0 +1,20 @@
+class Main {
+    main() {
+        def var_stays_top = 0; 
+
+        // According to Overflow.evalNonNullConstant, assigning a non-integer 
+        // constant (like a string) will result in the TOP state for this domain.
+        var_stays_top = "this is a string value"; 
+        // At this point, 'var_stays_top' is TOP in the Overflow abstract domain.
+
+        // If 'var_stays_top' is used in subsequent operations, 
+        // the TOP state will likely propagate. For example:
+        // def another_var = 0;
+        // another_var = var_stays_top; // 'another_var' would also become TOP.
+        // def yet_another = var_stays_top + 5; // 'yet_another' would also become TOP.
+
+        // Since no further assignments change 'var_stays_top' to a value
+        // that the Overflow domain would evaluate to something other than TOP,
+        // its abstract state remains TOP for the remainder of its scope.
+    }
+}

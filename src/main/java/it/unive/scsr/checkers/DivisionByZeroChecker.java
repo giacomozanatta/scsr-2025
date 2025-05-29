@@ -89,7 +89,6 @@ public class DivisionByZeroChecker implements
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 
 
-							// TODO: add checks for division by zero
 							System.out.println("Symbol: " + s + " has possible dynamic types " + types + " and value in [" + intervalAbstractValue.interval.getLow() + ", " + intervalAbstractValue.interval.getHigh() + "]");
 							if (intervalAbstractValue.isZero()) {
 								tool.warnOn(div, "Always zero");

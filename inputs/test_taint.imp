@@ -1,0 +1,256 @@
+class Test {
+
+	source_SQL() { return "untrusted SQL input"; }          // Returns a string representing untrusted SQL input, simulating a source of potentially malicious data.
+	sanitize_SQL(input) { return "sanitized SQL input"; }   // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful SQL constructs.
+	sink_SQL(input) {}                                      // Represents a sink where SQL input is used. This could be a database query execution.
+
+	source_HTML() { return "untrusted HTML input"; }        // Returns a string representing untrusted HTML input, simulating a source of potentially malicious data.
+    sanitize_HTML(input) { return "sanitized HTML input"; } // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful HTML constructs.
+	sink_HTML(input) {}                                     // Represents a sink where HTML input is used. This could be rendering HTML content in a web page.
+
+	source_PATH() { return "untrusted PATH reference"; }    // Returns a string representing an untrusted PATH reference, simulating a source of potentially malicious file system paths.
+	sanitize_PATH(input) { return "sanitized PATH input"; } // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful path components.
+	sink_PATH(input) {}                                     // Represents a sink where a file system path is used. This could be file access operations.
+
+	benchmark() {
+        def clean_str_value = "CLEAN";  // Defines a clean string value that is not considered tainted.
+
+        def _1_taint = this.source_SQL();           // Retrieves untrusted SQL input from the source.
+        this.sink_SQL(_1_taint);                    // Passes the untrusted SQL input directly to the sink (demonstrating a potential vulnerability).
+        this.sink_SQL(this.sanitize_SQL(_1_taint)); // Passes the sanitized version of the SQL input to the sink (demonstrating a mitigation).
+
+        def _2_top = clean_str_value + this.source_HTML();  // Concatenates a clean string with untrusted HTML input. The resulting string may be considered tainted due to the inclusion of untrusted input.
+        this.sink_HTML(_2_top);                             // Passes the tainted HTML string directly to the sink (demonstrating a potential vulnerability).
+        this.sink_HTML(this.sanitize_HTML(_2_top));         // Passes the sanitized version of the HTML string to the sink (demonstrating a mitigation).
+
+        def _3_clean = "/hard/coded/path";                      // Defines a hardcoded, clean file system path.
+        def _3_clean_to_top = _3_clean + this.source_PATH();    // Concatenates the clean path with untrusted PATH input, making the resulting path tainted.
+        def _3_sanitized = this.sanitize_PATH(_3_clean_to_top); // Sanitizes the tainted path.
+        this.sink_PATH(_3_clean);                               // Passes the original clean path to the sink.
+        this.sink_PATH(_3_clean_to_top);                        // Passes the tainted path to the sink (demonstrating a potential vulnerability).
+        this.sink_PATH(_3_sanitized);                           // Passes the sanitized path to the sink (demonstrating a mitigation).
+	}
+}
+
+// 908093 - IMP file for Taint Analysis
+class taint_complex {
+
+	source() {
+		return -42;
+	}
+
+	sanitizer(v) {
+		return 0;
+	}
+
+	sink(v) {
+	}
+
+	complex1() {
+		def x = this.source();
+		def y = 0;
+		def z = x + y;
+
+		if (x > 0) {
+			z = this.sanitizer(z);
+		}
+
+		this.sink(z);  // could be tainted (sanitization is conditioned), I expect TOP
+	}
+
+	complex2(b1, b2) {
+		def a = 0;
+		if (b1) {
+			a = this.source();
+		}
+
+		def b = this.sanitizer(a);
+		if (b2) {
+			a = b; // a is sanitized based on the condition
+		}
+
+		this.sink(a); // could be tainted or clean, so I expect TOP
+	}
+
+	complex3(b) {
+		def t = this.source();
+		def c = 1;
+
+		while (b) {
+			c = c + 1;
+			if (c > 3) {
+				t = this.sanitizer(t);
+			}
+		}
+
+		this.sink(t); // based on the outcome of the while loop it could be tainted
+	}
+
+	complex4() {
+		def a = this.source();
+		def b = a + 1;
+		def c = b * 2;
+		def d = c / 2 - 1;
+
+		this.sink(d); // tainted value propagation
+	}
+
+	complex5() {
+		def x = 0;
+		def y = this.source();
+
+		if (x == 0) {
+			y = this.sanitizer(y);
+		}
+
+		def z = x + y;
+
+		this.sink(z); // always sanitized, I expect clean
+	}
+
+	complex6() {
+		def arr = new int[3];
+
+		arr[0] = 5;
+		arr[1] = this.source();  // this is tainted
+		arr[2] = 10;
+
+		this.sink(arr[0]); // clean
+		this.sink(arr[1]); // tainted
+		this.sink(arr[2]); // clean
+	}
+
+	complex7(i) {
+		def arr = new int[2];
+
+		arr[0] = 0;
+		arr[1] = this.source();  // tainted
+
+		def val = arr[i];  // i is dynamic so can't be determined if tainted or clean
+
+		this.sink(val); // TOP: could be tainted or clean
+	}
+
+    complex8() {
+    		def t = 0;
+
+    		for (def i = 0; i < 5; i = i + 1) {
+    			def temp = this.source1();
+    			t = t + temp;
+    			if (i > 4) {
+    			this.sanitizer1(t);
+    			}
+    		}
+
+    		this.sink1(t); // t may be tainted or clean, so TOP
+    	}
+}
+
+// TaintThreeLevelsBenchmarks.imp
+class TaintThreeLevelsBenchmarks {
+
+  readInt() {
+    // Simulate reading an integer from an untrusted source
+    return 42; // Placeholder for actual input
+  }
+  readString() {
+    // Simulate reading a string from an untrusted source
+    return "untrusted"; // Placeholder for actual input
+  }
+  htmlEscape(s) {
+    // Simulate HTML escaping
+    return s; // Placeholder for actual escaping
+  }
+  sqlQuote(s) {
+    // Simulate SQL quoting
+    return s.replace("'", "''"); // Placeholder for actual quoting
+  }
+  sinkInt(x) {
+    // Simulate a sink for integers
+    return "Sink Int: " + x;
+  }
+  sinkStr(x) {
+    // Simulate a sink for strings
+    return "Sink Str: " + x;
+  }
+
+
+  // sources, sanitizers, and sinks
+  sourceInt()       { return this.readInt(); }
+  sourceStr()       { return this.readString(); }
+  sanitizeHtml(s)   { return this.htmlEscape(s); }
+  sanitizeSql(s)    { return this.sqlQuote(s); }
+
+  // 1: Direct taint to int‐sink
+  flow1() {
+    def x = this.sourceInt();
+    this.sinkInt(x);
+  }
+
+  // 2: Sanitized before sink
+  flow2() {
+    def s = this.sourceStr();
+    def clean = this.sanitizeHtml(s);
+    this.sinkStr(clean);
+  }
+
+  // 3: Conditional taint
+  flow3(b) {
+    def t = 0;
+    if (b) t = this.sourceInt(); else t = 5;
+    this.sinkInt(t);
+  }
+
+  // 4: Loop‐driven taint accumulation
+  flow4(n) {
+    def sum = 0;
+    for (def i = 0; i < n; i = i + 1) {
+      sum = sum + this.sourceInt();
+    }
+    this.sinkInt(sum);
+  }
+
+  // 5: SQL injection example
+  flow5() {
+    def u = this.sourceStr();
+    def q = "SELECT * FROM users WHERE name=" + u;
+    this.sinkStr(q);
+  }
+
+  // 6: Mixed sanitization and concat
+  flow6() {
+    def p1 = this.sourceStr();
+    def p2 = this.sourceStr();
+    def both = this.sanitizeSql(p1) + this.sanitizeSql(p2);
+    this.sinkStr(both);
+  }
+
+  // 8: Nested calls and re‐sanitization
+  helper(x) {
+    return this.sanitizeHtml(x);
+  }
+  flow8() {
+    def raw = this.sourceStr();
+    def h1  = this.helper(raw);
+    def h2  = this.helper(h1) + raw;
+    this.sinkStr(h2);
+  }
+
+  // 9: Token propagation and clean
+  flow9() {
+    def tok = this.sourceStr();
+    def t2  = tok;       // tainted
+    def t3  = this.sanitizeSql(t2); // cleaned for SQL context
+    this.sinkStr(t3);
+  }
+
+  // 10: Multi‐sink different levels
+  flow10() {
+    def a = this.sourceInt();
+    this.sinkInt(a);                // tainted
+    def b = a + 1;
+    this.sinkInt(b);                // still tainted
+    def c = b * 0;             // now 0, clean?
+    this.sinkInt(c);                // clean (always 0)
+  }
+}

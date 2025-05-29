@@ -155,7 +155,7 @@ SemanticCheck<
 				
 				// TODO: implement logic for overflow/underflow checks
 				// hint: it depends to the NumericalSize size
-			if (intervalAbstractValue != null && intervalAbstractValue.interval != null && !intervalAbstractValue.isTop()) {
+			/*if (intervalAbstractValue != null && intervalAbstractValue.interval != null && !intervalAbstractValue.isTop()) {
 				MathNumber low = intervalAbstractValue.interval.getLow();
 				MathNumber high = intervalAbstractValue.interval.getHigh();
 
@@ -181,6 +181,8 @@ SemanticCheck<
 			}
 			else if(size != null && intervalAbstractValue != null && intervalAbstractValue.isTop())
 				tool.warnOn(node, "Infinite value in the Interval of variable " + id.getName());
+				*/
+			 
 		}
 	}
 

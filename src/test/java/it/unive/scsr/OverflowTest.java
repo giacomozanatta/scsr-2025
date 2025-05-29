@@ -1,5 +1,7 @@
 package it.unive.scsr;
 
+import it.unive.scsr.checkers.HybridOverflowChecker;
+//import it.unive.scsr.checkers.HybridOverflowChecker.NumericalSize;
 import org.junit.Test;
 
 import it.unive.lisa.AnalysisException;
@@ -52,7 +54,7 @@ public class OverflowTest {
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/Testover.imp");
+		Program program = IMPFrontend.processFile("inputs/overflow.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
@@ -77,7 +79,14 @@ public class OverflowTest {
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 		 
 		// the OverflowChecker is executed after the numerical analysis and it checks if a abstract numerical value leads to an overflow/underflow
-		conf.semanticChecks.add(new OverflowChecker(size));
+		if(valueEnv instanceof Pentagons){
+
+			System.out.println("------- OverflowChecker Pentagons -------");
+		}
+		else if(valueEnv instanceof ValueEnvironment){
+			conf.semanticChecks.add(new OverflowChecker(size));
+			System.out.println("------- OverflowChecker Intervals -------");
+		}
 		 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

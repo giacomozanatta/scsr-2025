@@ -1,5 +1,16 @@
 class overflow {
 
+    f0(){
+        def i=2.3;
+        def x = 5;
+        def g = 242.0;
+    }
+
+    f00(){
+        def a = 5;
+        def b = 3;
+        def g = a/b;
+    }
 
 	f1() {
 		def i = 2;
@@ -51,6 +62,10 @@ class overflow {
 				def d = 32767 + b;
 			}
 	}
-	
+
+	f7(b){
+
+	}
+
 	
 }

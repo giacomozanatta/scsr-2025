@@ -14,13 +14,15 @@ import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
-import it.unive.lisa.util.numeric.IntInterval;
-import it.unive.lisa.util.numeric.MathNumber;
-import it.unive.lisa.util.numeric.MathNumberConversionException;
+//import it.unive.lisa.util.numeric.IntInterval;
+import it.unive.scsr.CustomIntInterval;
+import it.unive.scsr.CustomMathNumber;
+import it.unive.scsr.CustomMathNumberConversionException;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
+import it.unive.scsr.FloatInterval;
 
-import static it.unive.lisa.util.numeric.IntInterval.MINUS_ONE;
+//import static it.unive.lisa.util.numeric.IntInterval.MINUS_ONE;
 
 public class Intervals
 		// instances of this class are lattice elements such that:
@@ -36,17 +38,17 @@ public class Intervals
 	/**
 	 * The interval represented by this domain element.
 	 */
-	public final IntInterval interval;
+	public final CustomIntInterval interval;
 	
 	/**
 	 * The abstract zero ({@code [0, 0]}) element.
 	 */
-	public static final Intervals ZERO = new Intervals(IntInterval.ZERO);
+	public static final Intervals ZERO = new Intervals(CustomIntInterval.ZERO);
 
 	/**
 	 * The abstract top ({@code [-Inf, +Inf]}) element.
 	 */
-	public static final Intervals TOP = new Intervals(IntInterval.INFINITY);
+	public static final Intervals TOP = new Intervals(CustomIntInterval.INFINITY);
 
 	/**
 	 * The abstract bottom element.
@@ -56,10 +58,10 @@ public class Intervals
 	/**
 	 * Builds the interval.
 	 * 
-	 * @param interval the underlying {@link IntInterval}
+	 * @param interval the underlying {@link CustomIntInterval}
 	 */
 	public Intervals(
-			IntInterval interval) {
+			CustomIntInterval interval) {
 		this.interval = interval;
 	}
 
@@ -70,9 +72,9 @@ public class Intervals
 	 * @param upper the higher bound
 	 */
 	public Intervals(
-			MathNumber lower,
-			MathNumber upper) {
-		this(new IntInterval(lower, upper));
+			CustomMathNumber lower,
+			CustomMathNumber upper) {
+		this(new CustomIntInterval(lower, upper));
 	}
 
 	/**
@@ -84,14 +86,14 @@ public class Intervals
 	public Intervals(
 			int low,
 			int high) {
-		this(new IntInterval(low, high));
+		this(new CustomIntInterval(low, high));
 	}
 
 	/**
 	 * Builds the top interval.
 	 */
 	public Intervals() {
-		this(IntInterval.INFINITY);
+		this(CustomIntInterval.INFINITY);
 	}
 	
 	@Override
@@ -102,7 +104,7 @@ public class Intervals
 			return bottom();
 
 		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
-            return new Intervals(arg.interval.mul(new IntInterval(-1,-1)));
+            return new Intervals(arg.interval.mul(new CustomIntInterval(-1,-1)));
 		}
 		
 		return  top();
@@ -111,20 +113,20 @@ public class Intervals
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
 		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+		CustomIntInterval a = this.interval;
+		CustomIntInterval b = other.interval;
 		
-		MathNumber lA = a.getLow();
-		MathNumber lB = b.getLow();
+		CustomMathNumber lA = a.getLow();
+		CustomMathNumber lB = b.getLow();
 		
-		MathNumber uA = a.getHigh();
-		MathNumber uB = b.getHigh();
+		CustomMathNumber uA = a.getHigh();
+		CustomMathNumber uB = b.getHigh();
 		
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
 		
-		MathNumber newLower = lA.max(lB);
-		MathNumber newUpper = uA.min(uB);
+		CustomMathNumber newLower = lA.max(lB);
+		CustomMathNumber newUpper = uA.min(uB);
 		
 		Intervals newInterval = new Intervals(newLower, newUpper);
 		
@@ -134,17 +136,17 @@ public class Intervals
 	@Override
 	public Intervals lubAux(Intervals other) throws SemanticException {
 		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+		CustomIntInterval a = this.interval;
+		CustomIntInterval b = other.interval;
 		
-		MathNumber lA = a.getLow();
-		MathNumber lB = b.getLow();
+		CustomMathNumber lA = a.getLow();
+		CustomMathNumber lB = b.getLow();
 		
-		MathNumber uA = a.getHigh();
-		MathNumber uB = b.getHigh();
+		CustomMathNumber uA = a.getHigh();
+		CustomMathNumber uB = b.getHigh();
 		
-		MathNumber newLower = lA.min(lB);
-		MathNumber newUpper = uA.max(uB);
+		CustomMathNumber newLower = lA.min(lB);
+		CustomMathNumber newUpper = uA.max(uB);
 		
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
@@ -235,67 +237,67 @@ public class Intervals
 		if(left.isBottom() || right.isBottom())
 			return bottom();
 		
-		IntInterval a = left.interval;
-		IntInterval b = right.interval;
+		CustomIntInterval a = left.interval;
+		CustomIntInterval b = right.interval;
 		
 		if(operator instanceof AdditionOperator)  {
 			
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
+			CustomMathNumber lA = a.getLow();
+			CustomMathNumber lB = b.getLow();
 			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
+			CustomMathNumber uA = a.getHigh();
+			CustomMathNumber uB = b.getHigh();
 
-			MathNumber first = lA.add(lB);
-			MathNumber second = uA.add(uB);
+			CustomMathNumber first = lA.add(lB);
+			CustomMathNumber second = uA.add(uB);
 			
 			return new Intervals(first.min(second), first.max(second));
 			
 		} else if (operator instanceof SubtractionOperator) {
 
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
+			CustomMathNumber lA = a.getLow();
+			CustomMathNumber lB = b.getLow();
 
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
+			CustomMathNumber uA = a.getHigh();
+			CustomMathNumber uB = b.getHigh();
 
-			MathNumber newLow  = lA.subtract(uB); // NOTA: lA - uB
-			MathNumber newHigh = uA.subtract(lB); // NOTA: uA - lB
+			CustomMathNumber newLow  = lA.subtract(uB); // NOTA: lA - uB
+			CustomMathNumber newHigh = uA.subtract(lB); // NOTA: uA - lB
 
 			return new Intervals(newLow, newHigh);
 
 	} else if( operator instanceof MultiplicationOperator) {
 
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
+			CustomMathNumber lA = a.getLow();
+			CustomMathNumber lB = b.getLow();
 
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
+			CustomMathNumber uA = a.getHigh();
+			CustomMathNumber uB = b.getHigh();
 
-			MathNumber first = lA.multiply(lB);
-			MathNumber second = lA.multiply(uB);
-			MathNumber third = uA.multiply(lB);
-			MathNumber fourth = uA.multiply(uB);
+			CustomMathNumber first = lA.multiply(lB);
+			CustomMathNumber second = lA.multiply(uB);
+			CustomMathNumber third = uA.multiply(lB);
+			CustomMathNumber fourth = uA.multiply(uB);
 
-			MathNumber min = first.min(second).min(third).min(fourth);
-			MathNumber max = first.max(second).max(third).max(fourth);
+			CustomMathNumber min = first.min(second).min(third).min(fourth);
+			CustomMathNumber max = first.max(second).max(third).max(fourth);
 
 			return new Intervals(min, max);
 		} else if (operator instanceof DivisionOperator){
 
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
+			CustomMathNumber lA = a.getLow();
+			CustomMathNumber lB = b.getLow();
 
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
+			CustomMathNumber uA = a.getHigh();
+			CustomMathNumber uB = b.getHigh();
 
-			MathNumber first = lA.divide(lB);
-			MathNumber second = lA.divide(uB);
-			MathNumber third = uA.divide(lB);
-			MathNumber fourth = uA.divide(uB);
+			CustomMathNumber first = lA.divide(lB);
+			CustomMathNumber second = lA.divide(uB);
+			CustomMathNumber third = uA.divide(lB);
+			CustomMathNumber fourth = uA.divide(uB);
 
-			MathNumber min = first.min(second).min(third).min(fourth);
-			MathNumber max = first.max(second).max(third).max(fourth);
+			CustomMathNumber min = first.min(second).min(third).min(fourth);
+			CustomMathNumber max = first.max(second).max(third).max(fourth);
 
 			return new Intervals(min, max);
 		}
@@ -326,16 +328,16 @@ public class Intervals
 	public Intervals wideningAux(
 			Intervals other)
 			throws SemanticException {
-		MathNumber newLower, newUpper;
+		CustomMathNumber newLower, newUpper;
 		if (other.interval.getHigh().compareTo(interval.getHigh()) > 0)
 			//  high value is increasing 
-			newUpper = MathNumber.PLUS_INFINITY;
+			newUpper = CustomMathNumber.PLUS_INFINITY;
 		else
 			newUpper = interval.getHigh();
 
 		if (other.interval.getLow().compareTo(interval.getLow()) < 0)
 			//  low value is decreasing
-			newLower = MathNumber.MINUS_INFINITY;
+			newLower = CustomMathNumber.MINUS_INFINITY;
 		else
 			newLower = interval.getLow();
 
@@ -348,7 +350,7 @@ public class Intervals
 	public Intervals narrowingAux(
 			Intervals other)
 			throws SemanticException {
-		MathNumber newLow, newHigh;
+		CustomMathNumber newLow, newHigh;
 		newHigh = interval.getHigh().isInfinite() ? other.interval.getHigh() : interval.getHigh();
 		newLow = interval.getLow().isInfinite() ? other.interval.getLow() : interval.getLow();
 		return new Intervals(newLow, newHigh);

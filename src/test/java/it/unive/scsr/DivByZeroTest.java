@@ -27,12 +27,12 @@ public class DivByZeroTest {
 	
 	@Test
 	public void testtestDivByZeroPentagons() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.UINT8, "intervals-pentagons");
+		runAnalysis(new HybridPentagons(), NumericalSize.UINT8, "intervals-pentagons");
 	}
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
+		Program program = IMPFrontend.processFile("inputs/890488divzero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();

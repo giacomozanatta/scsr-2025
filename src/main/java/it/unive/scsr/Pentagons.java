@@ -158,7 +158,7 @@ public class Pentagons
 		ValueEnvironment<UpperBounds> newBounds = upperbounds.assign(id, expression, pp, oracle);
 		ValueEnvironment<Intervals> newIntervals = intervals.assign(id, expression, pp, oracle);
 		
-		
+		/*
 		if(expression instanceof  BinaryExpression) {
 			BinaryExpression be = (BinaryExpression) expression;
 			BinaryOperator op = be.getOperator();
@@ -180,7 +180,7 @@ public class Pentagons
 				}
 			} 
 			
-		}
+		}*/
 		
 		return new Pentagons(newBounds,newIntervals).closure();
 	}

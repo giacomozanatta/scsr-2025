@@ -1,0 +1,17 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating float overflow for different sizes.
+class Test {
+
+    benchmark() {
+        // Association of simple floating point variables to evaluate the basic correctness of the validation.
+        def just_zero_fp = 0.0;                             // This should not generate any warnings.
+        def close_to_zero_8 = 0.015624;                     // This should generate a warning since the value for float8 is close to zero.
+        def round_to_zero_8 = 0.001953124;                  // This should generate a warning since the value for float8 will round to zero.
+        def close_to_zero_16 = 0.00006103515624;            // This should generate a warning since the value for float8 and float16 are close to zero.
+        def round_to_zero_16 = 0.000000059604644775390625;  // This should generate a warning since the value for float8 and float16 will round to zero.
+
+        def small_float_32 = 0.00000000000000000000009;             // Base value for compute small 32 floating point values.
+        def close_to_zero_32 = small_float_32 * small_float_32;     // This should generate a warning since the value for float8, float16, and float32 are close to zero.
+        def round_to_zero_32 = close_to_zero_32 * small_float_32;   // This should generate a warning since the value for float8, float16, and float32 will round to zero.
+    }
+}

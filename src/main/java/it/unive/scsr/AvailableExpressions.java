@@ -2,7 +2,6 @@ package it.unive.scsr;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
@@ -74,9 +73,12 @@ public class AvailableExpressions
         return getVariablesIn(expression);
     }
 
+    /** Returns all variables involved in the input expression `expression` **/
     private static Collection<Identifier> getVariablesIn(
             ValueExpression expression) {
         Collection<Identifier> result = new HashSet<>();
+
+        // The expression needs to be parsed depending on its type, and subexpressions needs to be recursively inspected
 
         if (expression == null)
             return result;
@@ -107,6 +109,8 @@ public class AvailableExpressions
     public Collection<AvailableExpressions> gen(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
         Collection<AvailableExpressions> result = new HashSet<>();
         AvailableExpressions ae = new AvailableExpressions(expression);
+        // We can consider this expression as available only if it does not update one of its variables (like a = a + b)
+        // And only if meaningful
         if (!ae.getInvolvedIdentifiers().contains(id) && filter(expression)) {
             result.add(ae);
         }
@@ -123,6 +127,7 @@ public class AvailableExpressions
         return result;
     }
 
+    /** Used to determine if a certain expression is useful to keep tracked **/
     private static boolean filter(ValueExpression expression) {
         if (expression instanceof Identifier) {
             return false;
@@ -140,8 +145,8 @@ public class AvailableExpressions
 
     @Override
     public Collection<AvailableExpressions> kill(Identifier id, ValueExpression expression, ProgramPoint pp, DefiniteDataflowDomain<AvailableExpressions> domain) throws SemanticException {
-        // we kill all of the elements that refer to expressions using the
-        // variable being assinged
+        // we kill (by returning them) all of the elements that refer to expressions using the
+        // variable being assigned
         Collection<AvailableExpressions> result = new HashSet<>();
 
         for (AvailableExpressions ae : domain.getDataflowElements()) {

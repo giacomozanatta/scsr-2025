@@ -1,0 +1,108 @@
+class AdvancedNumericLimits {
+    ~AdvancedNumericLimits() {}
+
+    int8_min()  { return -128; }
+    int8_max()  { return 127; }
+    uint8_max() { return 255; }
+    int16_min() { return -32768; }
+    int16_max() { return 32767; }
+    uint16_max() { return 65535; }
+}
+
+class OverflowDivisionTests {
+
+    stressAddLoop(n) {
+        def sum = 0;
+        for (def i = 0; i < n; i = i + 1) {
+            sum = sum + 1000;
+        }
+        return sum;
+    }
+
+    stressSubLoop(n) {
+        def val = 0;
+        for (def i = 0; i < n; i = i + 1) {
+            val = val - 500;
+        }
+        return val;
+    }
+
+    complexBranching(flag1, flag2) {
+        def a = 127;
+        if (flag1) {
+            a = a + 100;
+            if (flag2) {
+                a = a + 200;
+            } else {
+                a = a - 500;
+            }
+        }
+        return a;
+    }
+
+    mixSignedUnsigned() {
+        def limits = new AdvancedNumericLimits();
+        def a = limits.int8_max() + limits.uint8_max();     // likely overflow for int8
+        def b = limits.uint16_max() - limits.int16_min();   // possible overflow for uint16
+        def c = a + b;
+        def d = c * 2;
+        return d;
+    }
+
+    floatingOverflowCase() {
+        def x = 100000.0;
+        def y = x * x * 10.0;
+        def z = y / 0.00001;
+        return z;
+    }
+
+    floatingUnderflowCase() {
+        def tiny = 0.00000001;
+        def val = tiny * 0.001;
+        return val;
+    }
+
+    divisionByZeroWithBranch(x) {
+        def a = 100;
+        def b = x - 10;
+        if (b == 0) {
+            a = a / b;   // definite div by zero if x == 10
+        } else {
+            a = a / (b + 1);  // never zero here
+        }
+        return a;
+    }
+
+    nestedDivisionAndOverflow(flag, n) {
+        def a = 10;
+        def b = 0;
+        if (flag) {
+            b = n;
+        }
+        else {
+            b = 0;
+        }
+        def c = 1000 / (b - n);
+        def d = a * c * 10000;
+        return d;
+    }
+
+    arrayBoundaryAndDiv(idx) {
+        def arr = new int[4];
+        arr[0] = 10;
+        arr[1] = 0;
+        arr[2] = -5;
+        arr[3] = 127;
+        def v = arr[idx];
+        def result = 50 / v;   // potential div by zero if idx==1, overflow if v==-5,127, etc.
+        return result;
+    }
+
+    underflowOnUnsigned() {
+        def u8 = 0;
+        u8 = u8 - 1;
+        def u16 = 0;
+        u16 = u16 - 1;
+        return u8 + u16;
+    }
+}

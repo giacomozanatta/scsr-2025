@@ -27,4 +27,20 @@ class cp {
 
 		return;
 	}
+
+	f2() {
+	    def a = 3;
+	    def x = 3 * 4;
+	    def y = a * x;
+	    a = a + 1;
+
+	    if((x / 3) > 0){
+	        def z = -(x / 5);
+	    }
+	    else{
+	        def z = -10;
+	    }
+
+	    return;
+	}
 }

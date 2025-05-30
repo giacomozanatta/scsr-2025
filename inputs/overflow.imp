@@ -1,0 +1,18 @@
+class overflow {
+
+    overflow_signed_int() {
+        // Signed int
+        def a = 127 + 1;                    // OVERFLOW (int8 max = 127)
+        def b = -128 - 1;                   // UNDERFLOW (int8 min = -128)
+
+        def c = 32767 + 1;                  // OVERFLOW (int16 max)
+        def d = -32768 - 1;                 // UNDERFLOW (int16 min)
+
+        def e = 1147483647 + 1994967295;             // OVERFLOW (int32 max)
+        def f = -1147483648 - 1994967295;            // UNDERFLOW (int32 min)
+
+        def ok1 = 10 + 20;
+
+        def x = 0 - 1;
+    }
+}

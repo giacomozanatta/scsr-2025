@@ -1,5 +1,6 @@
 package it.unive.scsr;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 import it.unive.lisa.analysis.Lattice;
@@ -13,7 +14,6 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
-import it.unive.lisa.symbolic.value.operator.unary.StringLength;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -34,17 +34,17 @@ public class Intervals
 	/**
 	 * The interval represented by this domain element.
 	 */
-	public final IntInterval interval;
+	public final NumericInterval interval;
 	
 	/**
 	 * The abstract zero ({@code [0, 0]}) element.
 	 */
-	public static final Intervals ZERO = new Intervals(IntInterval.ZERO);
+	public static final Intervals ZERO = new Intervals(NumericInterval.ZERO);
 
 	/**
 	 * The abstract top ({@code [-Inf, +Inf]}) element.
 	 */
-	public static final Intervals TOP = new Intervals(IntInterval.INFINITY);
+	public static final Intervals TOP = new Intervals(NumericInterval.INFINITY);
 
 	/**
 	 * The abstract bottom element.
@@ -56,8 +56,7 @@ public class Intervals
 	 * 
 	 * @param interval the underlying {@link IntInterval}
 	 */
-	public Intervals(
-			IntInterval interval) {
+	public Intervals(NumericInterval interval) {
 		this.interval = interval;
 	}
 
@@ -67,10 +66,8 @@ public class Intervals
 	 * @param lower  the lower bound
 	 * @param upper the higher bound
 	 */
-	public Intervals(
-			MathNumber lower,
-			MathNumber upper) {
-		this(new IntInterval(lower, upper));
+	public Intervals(MathNumber lower, MathNumber upper) {
+		this(new NumericInterval(lower, upper));
 	}
 
 	/**
@@ -79,17 +76,26 @@ public class Intervals
 	 * @param low  the lower bound
 	 * @param high the higher bound
 	 */
-	public Intervals(
-			int low,
-			int high) {
-		this(new IntInterval(low, high));
+	public Intervals(int low, int high) {
+		//this(new MathNumber(low), new MathNumber(high));
+		this.interval = new NumericInterval(low, high);
 	}
 
 	/**
 	 * Builds the top interval.
 	 */
 	public Intervals() {
-		this(IntInterval.INFINITY);
+		this(NumericInterval.INFINITY);
+	}
+
+	public Intervals(double low, double high) {
+		//this(new MathNumber(low), new MathNumber(high));
+		this.interval = new NumericInterval(low, high);
+	}
+
+	public Intervals(float low, float high) {
+		//this(new MathNumber(low), new MathNumber(high));
+		this.interval = new NumericInterval(low, high);
 	}
 	
 	@Override
@@ -100,7 +106,7 @@ public class Intervals
 
 		if(operator instanceof NumericNegation) {
 			if(!arg.isTop())
-				return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
+				return new Intervals(arg.interval.mul(NumericInterval.MINUS_ONE));
 		}
 
 		return top();
@@ -108,9 +114,9 @@ public class Intervals
 	
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
-		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+
+		NumericInterval a = this.interval;
+		NumericInterval b = other.interval;
 		
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
@@ -131,9 +137,9 @@ public class Intervals
 
 	@Override
 	public Intervals lubAux(Intervals other) throws SemanticException {
-		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+
+		NumericInterval a = this.interval;
+		NumericInterval b = other.interval;
 		
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
@@ -169,6 +175,8 @@ public class Intervals
 	public boolean isTop() {
 		return interval != null && interval.isInfinity();
 	}
+
+	public boolean isZero() { return interval.isZero(); }
 	
 	@Override
 	public Intervals bottom() {
@@ -210,12 +218,17 @@ public class Intervals
 	@Override
 	public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		if(constant.getValue() instanceof Integer) {
-			Integer i = (Integer) constant.getValue();
-			Intervals singletonInterval = new Intervals(i,i);
-			return singletonInterval;
+		Object value = constant.getValue();
+		if (value instanceof Integer) {
+			Integer i = (Integer) value;
+			return new Intervals(i, i);
+		} else if (value instanceof Double) {
+			Double d = (Double) value;
+			return new Intervals(d, d);
+		} else if (value instanceof Float) {
+			Float f = (Float) value;
+			return new Intervals(f, f);
 		}
-		
 		return top();
 	}
 
@@ -226,9 +239,9 @@ public class Intervals
 		
 		if(left.isBottom() || right.isBottom())
 			return bottom();
-		
-		IntInterval a = left.interval;
-		IntInterval b = right.interval;
+
+		NumericInterval a = left.interval;
+		NumericInterval b = right.interval;
 		
 		if(operator instanceof AdditionOperator)  {
 			
@@ -245,7 +258,7 @@ public class Intervals
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
 			
 		if( operator instanceof SubtractionOperator) {
-			return new Intervals(a.diff(b));
+			return new Intervals(a.sub(b));
 		} else if( operator instanceof MultiplicationOperator) {
 			if(a.is(0) || b.is(0))
 				return ZERO;
@@ -327,7 +340,4 @@ public class Intervals
 		
 		return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest, oracle);
 	}
-	
-
-	
 }

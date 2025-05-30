@@ -1,0 +1,36 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating division by zero.
+
+class Test {
+
+    benchmark() {
+        def zero = 0;       // Represents the integer value zero.
+        def zero_fp = 0.0;  // Represents the floating-point value zero.
+        def one = 1;        // Represents the integer value one.
+        def one_fp = 1.0;   // Represents the floating-point value one.
+        def two = 2;        // Represents the integer value two.
+        def two_fp = 2.0;   // Represents the floating-point value two.
+        def three = 3;      // Represents the integer value three.
+        def three_fp = 3.0; // Represents the floating-point value three.
+        def five = 5;       // Represents the integer value five.
+        def five_fp = 5.0;  // Represents the floating-point value five.
+
+        def _1 = one / zero;                                        // Division by zero for integers, likely results in an exception.
+        def _2 = one / one;                                         // Division of one by one, resulting in one.
+        def _3 = one / ((two * three) / (three * five));            // Division of 1 by the result of (6 / 15), which simplifies to (1 / 0) for integer divisions.
+        def _4 = one / ((two * three) / five);                      // Division of 1 by the result of (6 / 5), which is (1 / 1) for integer divisions.
+        def _5 = one / ((two_fp * three_fp) - (five_fp + one_fp));  // Division of 1 by the result of (6.0 - 6.0), which is division by 0.0 for floating-point numbers.
+        def _6 = one / (one_fp / two_fp);                           // Division of 1 by the result of (1.0 / 2.0), which is (1 / 0.5).
+        def _7 = one / (one_fp / two);                              // Division of 1 by the result of (1.0 / 2), which is (1 / 0.5).
+
+        // This is the result of (39.7 / 0.0).
+        def _8 =
+            ((7.5 * (2 + 3) - (4.0 / 2)) + (6 * 1.2 - 3)) /
+            (((8 / 2.0) + (3.5 - 1.5)) - (5 + (1.0 * 1)));
+
+        // This is the result of (8.0 / 0.0).
+        def _9 =
+        ((((2.5 + 1.5) * (4 - 2)) + ((3 * 2) - (9.0 / 3))) - ((1.2 * 5) - (6 / 2))) /
+        (((((10 / 2.0 - 2.0) + (3.0 + 1.0)) - 5) * 1) - ((2.5 * 2 - 1.0) + 1.0) + 3);
+    }
+}

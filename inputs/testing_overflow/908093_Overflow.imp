@@ -1,0 +1,147 @@
+class overflow_underflow {
+
+    warningINT8() {
+    def z = "hello";        // STRING
+    def w = 99 + z;         // UNDEF. TYPE
+    }
+
+	testINT8() {
+		def a = 127;
+		def b = a + 1;      // OVERFLOW
+		def c = -128;
+		def d = c - 1;      // UNDERFLOW
+		def e = 50 + 50;    // OK
+	}
+
+	testUINT8() {
+		def a = 255;
+		def b = a + 1;      // OVERFLOW
+		def c = 0;
+		def d = c - 1;      // UNDERFLOW
+		def e = 100 + 100;  // OK
+	}
+
+
+	testINT16() {
+		def a = 32767;
+		def b = a + 1;       // OVERFLOW
+		def c = -32768;
+		def d = c - 1;       // UNDERFLOW
+		def e = 1000 + 2000; // OK
+	}
+
+
+	testUINT16() {
+		def a = 65535;
+		def b = a + 1;        // OVERFLOW
+		def c = 0;
+		def d = c - 1;        // UNDERFLOW
+		def e = 35000 + 25000; // OK
+	}
+
+
+	testINT32() {
+		def a = 2147483647;
+		def b = a + 1;        // OVERFLOW
+		def c = -2147483648.0;
+		def d = c - 1;        // UNDERFLOW
+	}
+
+
+	testUINT32() {
+		def a = 4294967295.0;
+		def b = a + 1;        // OVERFLOW
+		def c = 0;
+		def d = c - 1;        // UNDERFLOW
+	}
+
+
+	testFLOAT8() {
+		def a = 239.0;
+		def b = a * 2.783;    // OVERFLOW
+		def c = -239.0;
+		def d = c * 2.539;    // UNDERFLOW
+		def e = 0.1;
+		def f = e / 6.0;      // within the bounds
+	}
+
+
+	testFLOAT16() {
+		def a = 65000.0;
+		def b = a * 2.0;       // OVERFLOW
+		def c = -65000.0;
+		def d = c * 2.0;       // UNDERFLOW
+		def e = -1000.0;
+		def f = e / 0.05;      // OK
+		def g = f - 65000.0;   // UNDERFLOW
+	}
+
+
+	testFLOAT32() {
+		def a = 340000000000000000000000000000000000000.0;
+		def b = a * 10.0;              // OVERFLOW
+		def c = -340000000000000000000000000000000000000.0;
+		def d = c * 10.0;              // UNDERFLOW
+		def e = 100000000000000000000000000000000000000.0;
+		def f = (e / 1000.01) * a;     // OVERFLOW
+		// LOW MAGNITUDE
+		def g = 0.000000000000000000000000000000000000001;
+		def h = g - 0.000000000000000000000000000000000000000000000000000000000000000001;
+	}
+
+// CONDITIONED TEST CASES
+
+    // INT8 possible overflow
+	conditionalOverflowINT8(cond) {
+		def a = 100;
+		if (cond) {
+			a = 127;
+		}
+		def b = a + 1;  // possible overflow if a = 127
+	}
+
+	// UINT8 possible underflow
+	conditionalUnderflowUINT8(flag) {
+		def x = 10;
+		if (flag) {
+			x = 0;
+		}
+		def y = x - 1;  // y belongs to [-1, 9] so possible UNDERFLOW
+	}
+
+	// UINT16 possible overflow
+	loopOverflowUINT16(cond) {
+		def a = 0;
+		while (cond) {
+			a = a + 10000;
+		}
+		def b = a + 10000; // may be greater than 65535 so potential overflow
+	}
+
+	// INT16 possible overflow
+	preventedOverflowINT16(limit) {
+		def a = 32000;
+		if (limit < 0) {
+			a = a + 1000;  // safe if branch is not executed
+		}
+		def b = a + 500; // b is within [32500, 33500], overflow occurs if branch executed
+	}
+
+	// UINT32 possible underflow
+	preventedUnderflowUINT32(limit) {
+		def a = 1000;
+		if (limit < 0) {
+			a = a - 2000;  // may underflow if branch is executed
+		}
+		def b = a - 500;  // b is within [-1500, 500], possible underflow
+	}
+
+	// FLOAT16 no underflow/overflow
+	noUnderflowByConditionFLOAT16(small) {
+		def f = 1.0;
+		if (small) {
+			f = 0.07;
+		}
+		def result = f * 0.001;  // safe
+	}
+}

@@ -1,0 +1,30 @@
+class div_by_zero {
+
+    prova() {
+        def z = 1 / 0;
+
+        def a = 10;
+        def b = 0;
+        def c = a / b; // Divisione per zero
+
+        def d = 5;
+        def e = 2;
+        def f = d / e; // Divisione valida
+
+        def g = 8;
+        def h = 3 - 3;
+        def i = g / h; // Divisione per zero tramite espressione
+
+        def j = 7;
+        def k = 1;
+        def l = j / k; // Divisione valida
+    }
+
+    branch(a) {
+        if(a > 2) {
+            def b = 2 / a;
+        } else {
+            def c = 4 / 2;
+        }
+    }
+}

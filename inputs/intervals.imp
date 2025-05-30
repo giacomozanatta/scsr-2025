@@ -1,14 +1,24 @@
 class intervals {
 
 	basic() {
-		def i = 2;
-		def j = -10;
-		def a = i + j;
-		def s = i - j;
-		def m = i * j;
-		def d = i / j;
+        def i = 2;
+        def j = -10;
+        def a = i + j;
+        def s = i - j;
+        def m = i * j;
+        def d = i / j;
         def l = -i;
-	}
+    }
+
+    basic1() {
+        def i = 2.0;
+        def j = -10.0;
+        def a = i + j;
+        def s = i - j;
+        def m = i * j;
+        def d = i / j;
+        def l = -i;
+    }
 
 	branches(b) {
 		def x = 0;
@@ -17,15 +27,34 @@ class intervals {
        	else
            	x = -7;
 		return x;
-  }
+    }
+
+    branches1(b) {
+        def x = 0.0;
+        if (b)
+            x = x + 7.0;
+        else
+            x = -7.0;
+        return x;
+    }
 
 	loop(b) {
-			def c = 1;
-			
-			while (b < 3) {
-				c = c + 1;
-				b = b + 1; 
-			}
-			return c; 
+        def c = 1;
+
+        while (b < 3) {
+            c = c + 1;
+            b = b + 1;
+        }
+        return c;
 	}
+
+	loop1(b) {
+        def c = 1.0;
+
+        while (b < 3) {
+            c = c + 1.0;
+            b = b + 1.0;
+        }
+        return c;
+    }
 }

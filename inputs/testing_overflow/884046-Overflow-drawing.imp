@@ -1,0 +1,131 @@
+/*
+    Script designed to test overflow/underflow using integers.
+    Description: This program defines a simple graphics system with classes for exception handling,
+    mathematical operations, and a canvas that supports pixel and line drawing using Bresenham's algorithm.
+
+    Author: Andrea Da Lio - 884046
+    Version: 1.0
+*/
+
+//Class to represent an exception, with a method to log the error
+class Exception{
+    message;
+    ~Exception(m){
+        this.message = m;
+    }
+
+    log(){
+        //print the error message
+    }
+}
+
+class Math{
+    //Method to calculate the absolute value of a number
+    abs(n){
+        if(n < 0){
+            return -n;
+        }else{
+            return n;
+        }
+    }
+}
+
+
+class Canvas{
+    width;
+    height;
+
+    //The array of pixels (for simplicity, we assume 0 is white and 1 is black)
+    drawingArea;
+
+    ~Canvas(w,h){
+        this.width = w;
+        this.height = h;
+        def dimension = w*h;
+        this.drawingArea = new int[dimension];
+        this.clean();
+    }
+
+    clean(){
+        //Clean the canvas
+        for (def i = 0; i < this.width; i=i+1){
+            for (def j = 0; j < this.height; j=j+1){
+                def index = i+j*this.width;
+                def array = this.drawingArea;
+                array[index] = 0;
+                this.drawingArea = array;
+            }
+        }
+    }
+
+    //Draw a line on the canvas using Bresenham's principles
+    drawLine(canvas,x0,y0,x1,y1){
+        if(x0 < 0 || x0 >= this.width || y0 < 0 || y0 >= this.height){
+            def error = new Exception("x0 or y0 out of bounds") ;
+            error.log();
+        }else if(x1 < 0 || x1 >= this.width || y1 < 0 || y1 >= this.height){
+            def error = new Exception("x1 or y1 out of bounds") ;
+            error.log();
+        }else{
+
+            def array = this.drawingArea; //clone the drawing area
+            def width = this.width;
+
+            def math = new Math(); //Instantiate the Math class
+
+            def dx = x1 - x0;
+            def dy = y1 - y0;
+            def sx = 1 ;
+            if(dx <= 0){
+                sx = -1;
+            }
+            def sy = 1;
+            if(dy <= 0){
+                sy = -1;
+            }
+            dx = math.abs(dx);
+            dy = math.abs(dy);
+            def err = dx - dy;
+
+            def exit = false;
+            while (!exit) {
+
+                //Draw the pixel on the canvas
+                def index = x0 + y0 * width;
+                array[index] = 1;
+                
+                if(x0 == x1 && y0 == y1) {
+                    exit = true;
+                }
+                def err2 = err * 2;
+                if (err2 > -dy) {
+                    err = err - dy;
+                    x0 = x0 + sx;
+                }
+                if (err2 < dx) {
+                    err = err + dx;
+                    y0 = y0 + sy;
+                }
+            }
+
+            this.drawingArea = array; //Update the drawing area with the modified array
+        }
+    }
+
+    //Render the canvas
+    printCanvas(){
+
+    }
+
+}
+
+class Main{
+    //Main method to run the program
+    run(){
+        def canvas = new Canvas(100,100);
+        canvas.drawLine(canvas,0,0,50,50);
+        //canvas.drawLine(50,50,100,100);
+        //canvas.drawLine(100,100,0,0);
+        canvas.printCanvas();
+    }
+}

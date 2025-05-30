@@ -20,8 +20,10 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
@@ -68,26 +70,69 @@ SemanticCheck<
 								.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
 						
 						for (SymbolicExpression s : reachableIds) {
-							
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
-						
-			
+
 							// TODO: implement type checks, it is required a numerical type
+							if (!isNumericalType(types) || !isAnyTypeCompatible(types, size))
+								continue;
+
+							String varName = s.toString(); // fallback default
 			
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 							
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 							
 							// TODO: add checks for division by zero
+							if (intervalAbstractValue != null && !intervalAbstractValue.isBottom() && intervalAbstractValue.interval != null) {
+								MathNumber low = intervalAbstractValue.interval.getLow();
+								MathNumber high = intervalAbstractValue.interval.getHigh();
+
+								if (intervalAbstractValue.interval.is(0) || intervalAbstractValue.isZero()) {
+									String msg = "DivByZero Checker for size: " + size + " generated: DEFINITE division by zero ERROR on variable '" + varName + "': divisor has range [" + low + ", " + high + "]";
+									tool.warnOn(div, msg);
+									System.out.println(msg);
+								} else if (low.leq(MathNumber.ZERO) && high.geq(MathNumber.ZERO)) {
+									String msg = "DivByZero Checker for size: " + size + " generated: POSSIBLE division by zero ERROR on variable '" + varName + "': divisor has range [" + low + ", " + high + "]";
+									tool.warnOn(div, msg);
+									System.out.println(msg);
+								}
+							}
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();
 					}
-	
-
 			}
 		}
-		
+	}
+
+	private boolean isCompatibleWithSize(Type type, NumericalSize size) {
+		if (type == null || type.isUntyped() || !(type instanceof NumericType))
+			return false;
+
+		NumericType numType = (NumericType) type;
+
+		if (size == NumericalSize.FLOAT8 || size == NumericalSize.FLOAT16 || size == NumericalSize.FLOAT32)
+			return !numType.isIntegral();
+
+		if (size == NumericalSize.INT8 || size == NumericalSize.INT16 || size == NumericalSize.INT32
+				|| size == NumericalSize.UINT8 || size == NumericalSize.UINT16 || size == NumericalSize.UINT32)
+			return numType.isIntegral();
+
+		return false;
+	}
+
+	private boolean isAnyTypeCompatible(Set<Type> types, NumericalSize size) {
+		for (Type t : types)
+			if (isCompatibleWithSize(t, size))
+				return true;
+		return false;
+	}
+
+	private boolean isNumericalType(Set<Type> types) {
+		for (Type t : types)
+			if (t.isNumericType())
+				return true;
+		return false;
 	}
 
 	// compute possible dynamic types / runtime types

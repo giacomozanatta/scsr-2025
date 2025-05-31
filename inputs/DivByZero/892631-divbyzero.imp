@@ -1,0 +1,78 @@
+/*
+    IMP file for Division By Zero Checker
+    Author: 892631
+    Description: Short program to estimate fuel consumption and efficiency, remaining driving range
+*/
+
+class DivByZeroTest {
+
+    // function to calibrate raw sensor read value
+    getFuelLevel(sensor_value) {
+        def calibrated_value = sensor_value - 5;
+
+        if (calibrated_value < 0) {
+            calibrated_value = 0;
+        }
+
+        return calibrated_value;
+    }
+
+    // function to compute the kilometer per liter ratio given a distance and a sensor_value
+    estimateKilomPerLiter(distance, sensor_value) {
+        def fuel_used = this.getFuelLevel(sensor_value); // could be 0
+
+        if (fuel_used > 0 && distance > 0) {
+            fuel_used = fuel_used + 2;
+        }
+
+        def kpl = distance / fuel_used; // potential division by zero
+        return kpl;
+    }
+
+    // function to compute the average consumption
+    computeEfficiency(distance, fuel_array) {
+        def total_fuel = 0;
+
+        for (def i = 0; i < 5; i = i + 1) {
+            total_fuel = total_fuel + fuel_array[i];
+        }
+
+        def avg_kpl = this.estimateKilomPerLiter(distance, total_fuel);
+        return avg_kpl;
+    }
+
+    // function to compute the remaining range based on reserve fuel and driving mode
+    estimateEmergencyRange(sensor_value, mode) {
+        def consumption_rate = 0;
+
+        if (mode == 1) {               // ECO
+            consumption_rate = 10;
+        } else if (mode == 2) {        // NORMAL
+            consumption_rate = 15;
+        } else if (mode == 3) {        // SPORT
+            consumption_rate = 20;
+        }
+
+        def reserve_fuel = 5;
+        def fuel_available = this.getFuelLevel(sensor_value) + reserve_fuel;
+
+        def range = fuel_available / consumption_rate * 100; // range in kilometers
+        return range;
+    }
+
+    diagnostics() {
+        def fuel_samples = new int[5];
+        fuel_samples[0] = 1;
+        fuel_samples[1] = 0;
+        fuel_samples[2] = 0;
+        fuel_samples[3] = 2;
+        fuel_samples[4] = 1;
+
+        def efficiency = this.computeEfficiency(300, fuel_samples);
+        def emergency1 = this.estimateEmergencyRange(3, 1);     // ECO mode, low sensor value
+        def emergency3 = this.estimateEmergencyRange(10, 3);    // SPORT mode
+        def emergency4 = this.estimateEmergencyRange(5, 4);     // This mode doesn't exist, consumption_rate = 0
+
+        return efficiency + emergency1;
+    }
+}

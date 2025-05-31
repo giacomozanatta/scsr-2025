@@ -1,0 +1,17 @@
+// Safe sum of first N natural numbers (no overflow for small N)
+class SafeSum {
+
+    sumUpTo(n) {
+        def sum = 0;
+        for (def i = 1; i <= n; i = i + 1) {
+            sum = sum + i;
+        }
+        return sum;
+    }
+
+    test() {
+        def n = 100; // Well within int32 range
+        def result = this.sumUpTo(n);
+        return result;
+    }
+}

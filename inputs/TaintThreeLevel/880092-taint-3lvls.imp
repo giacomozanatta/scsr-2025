@@ -1,0 +1,94 @@
+class taint3lvs {
+
+    // ############### CONFIG for sources, sanitizers and sinks
+
+    // Could be a legitimate comment on a blog, or contain a XSS payload, or a query for a SQL injection
+	source_user(){
+		return "<script>alert(1)</script>";
+	}
+
+    // Sanitizes an html string before inserting it into the web page
+	sanitizer_html(html_string){
+		return "<p>This surely has no XSS</p>";
+	}
+
+    // Renders an html page
+	sink_html_page(html_content){
+	    return "<body>" + html_content + "</body>";
+	}
+
+	// Creates a SQL query with prepared statements so to prevent SQL injections
+	sanitizer_sql(query_string, query_params){
+	    return "SELECT * from products";
+	}
+
+	// Executes a query and returns the result
+	sink_query(query){
+	    return "Product #1";
+	}
+
+
+    // ############### TEST CASES
+
+
+    // Testing for XSS
+	post_user_comment_unsanitized() {
+		def comment = this.source_user();
+        def html_element = "<p>User has commented: " + comment + "</p>";
+		this.sink_html_page(html_element);
+	}
+
+    post_user_comment_sanitized() {
+    		def comment = this.source_user();
+            def html_element = "<p>User has commented: " + this.sanitizer_html(comment) + "</p>";
+    		this.sink_html_page(html_element);
+    }
+
+    // Both XSS and SQL injection
+    search_product_unsanitized(){
+        def product_name = this.source_user();
+        def query = "SELECT * FROM products WHERE productName = " + product_name + ";";
+        def product = this.sink_query(query);
+
+        def html = "<p>You searched for " + product_name + ": " + product + "</p>";
+        this.sink_html_page(html);
+    }
+
+    search_product_sanitized(){
+            def product_name = this.source_user();
+            def query = this.sanitizer_sql("SELECT * FROM products WHERE productName = $0", product_name);
+            def product = this.sink_query(query);
+
+            def html = "<p>You searched for " + this.sanitizer_html(product_name) + ": " + product + "</p>";
+            this.sink_html_page(html);
+    }
+
+    conditional_taint(a){
+        def possibly_tainted = "NOT_TAINTED";
+
+        if(a){
+            possibly_tainted = this.source_user();
+        }
+
+        this.sink_html_page(possibly_tainted);
+    }
+
+    conditional_taint_sanitized(a){
+        def possibly_tainted = "NOT_TAINTED";
+
+        if(a){
+            possibly_tainted = this.source_user();
+            possibly_tainted = this.sanitizer_html(possibly_tainted);
+        }
+
+        this.sink_html_page(possibly_tainted);
+    }
+
+    taint_expression(){
+        def not_tainted = "NOT_TAINTED";
+        not_tainted = not_tainted + this.source_user();
+
+        this.sink_html_page(not_tainted);
+    }
+
+}

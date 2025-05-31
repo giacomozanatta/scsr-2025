@@ -1,0 +1,27 @@
+// 100% vulnerable division by zero IMP program with correct IMP syntax, no print statements
+
+class Test {
+
+    divByZeroWithConstant() {
+        def a = 42;
+        def b = a / 0; // Division by zero with constant
+    }
+
+    divByZeroWithExpression() {
+        def x = 15;
+        def y = 5 - 5; // y = 0
+        def z = x / y; // Division by zero with expression
+    }
+
+    divByZeroWithVariablePropagation() {
+        def m = 100;
+        def n = 2 - 2; // n = 0
+        def result = m / n; // Division by zero after propagation
+    }
+
+    test() {
+        this.divByZeroWithConstant();
+        this.divByZeroWithExpression();
+        this.divByZeroWithVariablePropagation();
+    }
+}

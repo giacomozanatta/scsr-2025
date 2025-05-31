@@ -29,9 +29,9 @@ import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.annotations.Annotation;
 
 public class TaintThreeLevelsChecker implements
-SemanticCheck<
-		SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> {
-	
+		SemanticCheck<
+				SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> {
+
 	/**
 	 * Sink annotation.
 	 */
@@ -46,15 +46,15 @@ SemanticCheck<
 	public boolean visit(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
-		
+
 		if (!(node instanceof UnresolvedCall))
-			return true; 
+			return true;
 		UnresolvedCall call = (UnresolvedCall) node;
 		try {
 			for (AnalyzedCFG<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(call.getCFG())) {
-				
+
 				Call resolved = tool.getResolvedVersion(call, result);
 				if (resolved == null)
 					System.err.println("Error");
@@ -68,7 +68,7 @@ SemanticCheck<
 								AnalysisState<
 										SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>,
 												TypeEnvironment<InferredTypes>>> state = result
-														.getAnalysisStateAfter(call.getParameters()[i]);
+										.getAnalysisStateAfter(call.getParameters()[i]);
 								Set<SymbolicExpression> reachableIds = new HashSet<>();
 								for (SymbolicExpression e : state.getComputedExpressions())
 									reachableIds
@@ -79,8 +79,8 @@ SemanticCheck<
 
 									if(valueState.eval((ValueExpression) s, node, state.getState()).isAlwaysTainted())
 										tool.warnOn(call, "[DEFINITE] The value passed for the " + StringUtilities.ordinal(i + 1)
-										+ " parameter of this call is always tainted, and it reaches the sink at parameter '"
-										+ parameters[i].getName() + "' of " + resolved.getFullTargetName());
+												+ " parameter of this call is always tainted, and it reaches the sink at parameter '"
+												+ parameters[i].getName() + "' of " + resolved.getFullTargetName());
 									else if (valueState.eval((ValueExpression) s, node, state.getState())
 											.isPossiblyTainted())
 										tool.warnOn(call, "[POSSIBLE] The value passed for the " + StringUtilities.ordinal(i + 1)
@@ -90,7 +90,7 @@ SemanticCheck<
 							}
 
 					}
-				} 
+				}
 			}
 		} catch (SemanticException e) {
 			System.err.println("Cannot check " + node);
@@ -99,9 +99,5 @@ SemanticCheck<
 
 		return true;
 	}
-
-	
-		
-	
 
 }

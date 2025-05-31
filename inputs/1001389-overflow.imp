@@ -1,0 +1,33 @@
+// This program calculates the sum of all numbers in a range that are both palindromic and divisible by a given divisor.
+// Written by Yazan Slaila
+class PalindromicDivisorSum {
+
+    isPalindrome(n) {
+        def original = n;
+        def reversed = 0;
+        while (n > 0) {
+            def digit = n % 10;
+            reversed = reversed * 10 + digit;  // Reverse the digits
+            n = n / 10;
+        }
+        return original == reversed;
+    }
+
+    calculateSpecialSum(start, end, divisor) { // Calculate the sum of palindromic numbers divisible by a divisor
+        def sum = 0;
+        for (def i = start; i <= end; i = i + 1) {
+            if (this.isPalindrome(i) && i % divisor == 0) {
+                sum = sum + i;  // Possible overflow
+            }
+        }
+        return sum;
+    }
+
+    test() {
+        def start = 1;
+        def end = 10; // NO possible overflow
+        def divisor = 2;
+        def result = this.calculateSpecialSum(start, end, divisor);
+        return result;
+    }
+}

@@ -1,0 +1,18 @@
+// This program sums a large range, causing int32 overflow.
+class RangeSumOverflow {
+
+    calculateSum(start, end) {
+        def sum = 0;
+        for (def i = start; i <= end; i = i + 1) {
+            sum = sum + i; // This will overflow int32 for large ranges
+        }
+        return sum;
+    }
+
+    test() {
+        def start = 1;
+        def end = 2147483647; // Large enough to cause overflow
+        def result = this.calculateSum(start, end);
+        return result;
+    }
+}

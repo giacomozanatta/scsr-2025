@@ -1,0 +1,26 @@
+// This program demonstrates a data masking pipeline
+// Written by Yazan Slaila
+
+class DataMaskingPipeline {
+
+    maskData(data) {
+        // Mask all but the last 4 characters (no substring, just simple concatenation for IMP compatibility)
+        def masked = "**** **** **** " + data;
+        return masked;
+    }
+
+    test() {
+        // Simulate sensitive data from an untrusted source
+        def sensitiveData = this.getSensitiveData(); // here is the UNTRUSTED SOURCE
+
+        // Mask the sensitive data
+        def maskedData = this.maskData(sensitiveData);
+        // No print, just assignment
+        def dummy = maskedData;
+    }
+
+    getSensitiveData() {
+        // Simulate sensitive data from an untrusted source
+        return "1234567812345678"; // Example of a credit card number
+    }
+}

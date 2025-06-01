@@ -31,15 +31,14 @@ public class DivByZeroTest {
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, String path) throws ParsingException{
 		
-		String location = "benchmark-";
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/" + location + "divbyzero.imp");
+		Program program = IMPFrontend.processFile("inputs/exam_input_files/all-div_by_zero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/" + location + path;
+		conf.workdir = "outputs/exam_output_files/all-div_by_zero/" + path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

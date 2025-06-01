@@ -1,0 +1,1171 @@
+class Test {
+
+	source_SQL() { return "untrusted SQL input"; }          // Returns a string representing untrusted SQL input, simulating a source of potentially malicious data.
+	sanitize_SQL(input) { return "sanitized SQL input"; }   // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful SQL constructs.
+	sink_SQL(input) {}                                      // Represents a sink where SQL input is used. This could be a database query execution.
+
+	source_HTML() { return "untrusted HTML input"; }        // Returns a string representing untrusted HTML input, simulating a source of potentially malicious data.
+    sanitize_HTML(input) { return "sanitized HTML input"; } // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful HTML constructs.
+	sink_HTML(input) {}                                     // Represents a sink where HTML input is used. This could be rendering HTML content in a web page.
+
+	source_PATH() { return "untrusted PATH reference"; }    // Returns a string representing an untrusted PATH reference, simulating a source of potentially malicious file system paths.
+	sanitize_PATH(input) { return "sanitized PATH input"; } // Takes an input string and returns a sanitized version, simulating a process to remove potentially harmful path components.
+	sink_PATH(input) {}                                     // Represents a sink where a file system path is used. This could be file access operations.
+
+	benchmark() {
+        def clean_str_value = "CLEAN";  // Defines a clean string value that is not considered tainted.
+
+        def _1_taint = this.source_SQL();           // Retrieves untrusted SQL input from the source.
+        this.sink_SQL(_1_taint);                    // Passes the untrusted SQL input directly to the sink (demonstrating a potential vulnerability).
+        this.sink_SQL(this.sanitize_SQL(_1_taint)); // Passes the sanitized version of the SQL input to the sink (demonstrating a mitigation).
+
+        def _2_top = clean_str_value + this.source_HTML();  // Concatenates a clean string with untrusted HTML input. The resulting string may be considered tainted due to the inclusion of untrusted input.
+        this.sink_HTML(_2_top);                             // Passes the tainted HTML string directly to the sink (demonstrating a potential vulnerability).
+        this.sink_HTML(this.sanitize_HTML(_2_top));         // Passes the sanitized version of the HTML string to the sink (demonstrating a mitigation).
+
+        def _3_clean = "/hard/coded/path";                      // Defines a hardcoded, clean file system path.
+        def _3_clean_to_top = _3_clean + this.source_PATH();    // Concatenates the clean path with untrusted PATH input, making the resulting path tainted.
+        def _3_sanitized = this.sanitize_PATH(_3_clean_to_top); // Sanitizes the tainted path.
+        this.sink_PATH(_3_clean);                               // Passes the original clean path to the sink.
+        this.sink_PATH(_3_clean_to_top);                        // Passes the tainted path to the sink (demonstrating a potential vulnerability).
+        this.sink_PATH(_3_sanitized);                           // Passes the sanitized path to the sink (demonstrating a mitigation).
+	}
+}
+
+//  In order to let this source be correctly verified, please add the following setting on Lisa:
+
+//	String[] sources    = new String[] {"getFormField"};
+//	String[] sanitizers = new String[] {"sanitize"};
+//	String[] sinks      = new String[] {"runQuery"};
+
+//  In this experiment the pseude code of a search function is presented
+//  The user specifies which information he /she wants to search for along with the value of the parameter
+//  Example : search all customers where "fullname" contains "Rossi"
+//  The checker should highlight *NO WARNING* since the user input is completely sanitized before to be added to the sql query
+
+class CustomerHandler {
+	
+	doSearch() {
+		def agencyId    = "1234";
+		def searchBy    = this.getFormField("searchBy");
+		def searchValue = this.getFormField("searchValue");
+		def searchType  = this.getFormField("searchType");
+		
+		def customerTypes = new string[10];
+		customerTypes[0] = "client";
+		customerTypes[1] = "prospect";
+		def onlyActive = true;
+		
+        if (agencyId == null) {
+            return null;
+
+        } else if (searchBy == null) {
+            return null;
+
+        } else if (searchValue == null || searchValue == "") {
+            return null;
+
+        } else {
+
+			if (searchType == null) {
+				searchType = "ExactMatch";
+			}
+			def operator = " = ";
+			if (searchType == "StartsWith") {
+				operator = " LIKE "; 
+				searchValue = searchValue + "%";
+
+			} else if (searchType == "Contains") {
+				operator = " LIKE ";
+				searchValue = "%" + searchValue + "%";				
+			}
+
+			def sql = "";
+			sql = sql + "SELECT cu.* \n";
+			sql = sql + "FROM customer cu \n";
+			if (onlyActive) {
+				sql = sql + "JOIN contract ct \n";
+				sql = sql + "	ON ct.customerId = cu.customerId \n";
+				sql = sql + "	AND ct.agencyId = " + this.sanitize(agencyId) + " \n";
+				sql = sql + "    AND NOT IFNULL(ct.deletedRecord, FALSE) \n";
+				sql = sql + "LEFT OUTER JOIN product prd \n";
+				sql = sql + "    ON prd.productId = ct.productId \n";
+				sql = sql + "    AND NOT IFNULL(prd.deletedRecord, FALSE) \n";
+			}
+
+			if ((searchBy == "TinVat") && (searchType != "Contains")) {
+				// the following subquery added to exploit proper indexes
+				sql = sql + "JOIN \n";
+				sql = sql + "      (SELECT customerId FROM customer WHERE agencyId = " + this.sanitize(agencyId) + " AND       tin " + operator + " " + this.sanitize(searchValue) + " UNION \n";
+				sql = sql + "       SELECT customerId FROM customer WHERE agencyId = " + this.sanitize(agencyId) + " AND vatNumber " + operator + " " + this.sanitize(searchValue) + ") filter \n";
+				sql = sql + "	ON filter.customerId = cu.customerId \n";
+			}
+
+			sql = sql + "WHERE cu.deletedRecord = FALSE \n";
+
+			if (searchBy == "Fullname") {
+				sql = sql + "  AND cu.fullname" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "GroupCode") {
+				sql = sql + "  AND cu.groupCode" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "TinVat" && searchType == "Contains") {
+				sql = sql + "  AND (cu.tin" + operator + this.sanitize(searchValue) + " OR cu.vatNumber" + operator + this.sanitize(searchValue) + " )\n";
+				 
+			} else if (searchBy == "CustomerIdNumber") {
+				sql = sql + "  AND (cu.customerId" + operator + this.sanitize(searchValue) + ""
+							 + " OR cu.customerNumber" + operator + this.sanitize(searchValue) + ""
+							 + " OR cu.externalKey" + operator + this.sanitize(searchValue) + ") \n";
+				
+			} else if (searchBy == "CardNumber") {
+				sql = sql + "  AND cu.cardNumber" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "FolderNumber") {
+				sql = sql + "  AND cu.folderNumber" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "LegalRepresentative") {
+				sql = sql + "  AND cu.legalRepresentative" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "Email") {
+				sql = sql + "  AND cu.email" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "EmailExtra") {
+				sql = sql + "  AND (cu.email" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	 FROM customerContact cc";
+				sql = sql + "	 WHERE cc.customerId = cu.customerId \n";
+				sql = sql + "	   AND NOT IFNULL(cc.deletedRecord, FALSE) \n";
+				sql = sql + "	   AND cc.email" + operator + this.sanitize(searchValue) + " ) \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	 FROM customerEmail ce";
+				sql = sql + "	 WHERE ce.customerId = cu.customerId \n";
+				sql = sql + "	   AND NOT IFNULL(ce.deletedRecord, FALSE) \n";
+				sql = sql + "	   AND ce.email" + operator + this.sanitize(searchValue) + " ) \n";
+				sql = sql + "	) \n";
+				
+			} else if (searchBy == "PhoneNumber") {
+				sql = sql + "  AND (cu.phoneNumber"           + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "    OR cu.mobilePhoneNumber"     + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "    OR cu.officePhoneNumber"     + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "    OR cu.additionalPhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "    OR cu.faxNumber"             + operator + this.sanitize(searchValue) + ")";
+				
+			} else { // searchBy == "PhoneNumberExtra"
+				sql = sql + "  AND (cu.phoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR cu.faxNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR cu.mobilePhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR cu.additionalPhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR cu.officePhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	FROM customerContact cc";
+				sql = sql + "	WHERE cc.customerId = cu.customerId \n";
+				sql = sql + "	  AND NOT IFNULL(cc.deletedRecord, FALSE) \n";
+				sql = sql + "	  AND (cc.phoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "	    OR cc.mobilePhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "	    OR cc.faxNumber" + operator + this.sanitize(searchValue) + ") \n)";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	FROM customerPhone cp \n";
+				sql = sql + "	WHERE cp.customerId = cu.customerId \n";
+				sql = sql + "	  AND NOT IFNULL(cp.deletedRecord, FALSE) \n";
+				sql = sql + "	  AND cp.phoneNumber" + operator + this.sanitize(searchValue) + ") ) \n";
+			}
+
+			if (customerTypes != null) {
+				def filter = "1 = 0";
+				for (def t = 0; t < 10; t = t + 1) {
+					def entityType = customerTypes[t];
+					if (entityType != null) {
+						filter = filter + " OR cu.entityType = " + entityType + " \n";
+					}
+				}
+				sql = sql + "  AND (";
+				sql = sql + filter;
+				sql = sql + ") \n";
+			}
+			if (onlyActive) {
+				sql = sql + "GROUP BY cu.customerId \n";
+			}
+			if (searchBy == "Fullname" || searchBy == "Email" || searchBy == "PhoneNumber") {
+				sql = sql + "ORDER BY cu.fullname \n";
+				
+			} else if (searchBy == "GroupCode") {
+				sql = sql + "ORDER BY cu.groupCode, cu.fullname \n";
+				
+			} else if (searchBy == "TinVat") {
+				sql = sql + "ORDER BY cu.vatNumber, cu.fullname \n";
+				
+			} else if (searchBy == "CustomerIdNumber") {
+				sql = sql + "ORDER BY cu.creation \n";
+				
+			} else if (searchBy == "CardNumber") {
+				sql = sql + "ORDER BY cu.cardNumber \n";
+				
+			} else if (searchBy == "FolderNumber") {
+				sql = sql + "ORDER BY cu.folderNumber \n";
+				
+			} else if (searchBy == "LegalRepresentative") {
+				sql = sql + "ORDER BY cu.legalRepresentative \n";
+				
+			}
+			sql = sql + "LIMIT 100 \n";
+
+			def result = this.runQuery(sql);
+			return result;
+		}
+    }
+
+	runQuery(sql) {
+		return "the query result";
+		// launch the actual query ...
+	}
+
+	sanitize(value) {
+	
+		def sanitized = "'";
+		for (def c = 0; c < strlen(value); c = c + 1) {
+			def chr = strsub(value, c, c + 1);
+			if (chr == "'")
+				sanitized = sanitized + "'";  // double possible apostrophes
+			sanitized = sanitized + chr;
+		}
+		sanitized = sanitized + "'";
+	}
+
+	getFormField(fieldName) {
+		// read the input field provided by applicatio user and return its value
+		def value = "some input written by the user";
+		return value;
+	}
+
+}
+//  In order to let this source be correctly verified, please add the following setting on Lisa:
+
+//	String[] sources    = new String[] {"getFormField"};
+//	String[] sanitizers = new String[] {"sanitize"};
+//	String[] sinks      = new String[] {"runQuery"};
+
+class Params {
+	
+	count;
+	values;
+	
+	~Params() {
+		this.count = 0;
+		this.values = new string[100];
+	}
+	
+	add(newValue) {
+		def updated = this.values;
+		def idx = this.count;
+		updated[idx] = newValue;
+		this.values = updated;
+		this.count = this.count + 1;
+	}
+}
+
+class CustomerHandler2 {
+	
+	doSearch() {
+		def agencyId    = "1234";
+		def searchBy    = this.getFormField("searchBy");
+		def searchValue = this.getFormField("searchValue");
+		def searchType  = this.getFormField("searchType");
+		
+		def customerTypes = new string[10];
+		customerTypes[0] = "client";
+		customerTypes[1] = "prospect";
+		def onlyActive = true;
+		
+        if (agencyId == null) {
+            return null;
+
+        } else if (searchBy == null) {
+            return null;
+
+        } else if (searchValue == null || searchValue == "") {
+            return null;
+
+        } else {
+
+			if (searchType == null) {
+				searchType = "ExactMatch";
+			}
+			def operator = " = ";
+			if (searchType == "StartsWith") {
+				operator = " LIKE "; 
+				searchValue = searchValue + "%";
+
+			} else if (searchType == "Contains") {
+				operator = " LIKE ";
+				searchValue = "%" + searchValue + "%";				
+			}
+
+			def params = new Params();
+			def operatorCount = 0;
+
+			def sql = "";
+			sql = sql + "SELECT cu.* \n";
+			sql = sql + "FROM customer cu \n";
+			if (onlyActive) {
+				sql = sql + "JOIN contract ct \n";
+				sql = sql + "	ON ct.customerId = cu.customerId \n";
+				sql = sql + "	AND ct.agencyId = ? \n";
+				params.add(agencyId);
+				sql = sql + "    AND NOT IFNULL(ct.deletedRecord, FALSE) \n";
+				sql = sql + "LEFT OUTER JOIN product prd \n";
+				sql = sql + "    ON prd.productId = ct.productId \n";
+				sql = sql + "    AND NOT IFNULL(prd.deletedRecord, FALSE) \n";
+			}
+
+			if ((searchBy == "TinVat") && (searchType != "Contains")) {
+				// the following subquery added to exploit proper indexes
+				sql = sql + "JOIN \n";
+				sql = sql + "      (SELECT customerId FROM customer WHERE agencyId = ? AND       tin " + operator + " ? UNION \n";
+				sql = sql + "       SELECT customerId FROM customer WHERE agencyId = ? AND vatNumber " + operator + " ?) filter \n";
+				sql = sql + "	ON filter.customerId = cu.customerId \n";
+				params.add(agencyId);
+				params.add(searchValue);
+				params.add(agencyId);
+				params.add(searchValue);
+			}
+
+			sql = sql + "WHERE cu.deletedRecord = FALSE \n";
+
+			if (searchBy == "Fullname") {
+				sql = sql + "  AND cu.fullname" + operator + "? \n";
+				operatorCount = 1;
+				
+			} else if (searchBy == "GroupCode") {
+				sql = sql + "  AND cu.groupCode" + operator + "? \n";
+				operatorCount = 1;
+				
+			} else if (searchBy == "TinVat" && searchType == "Contains") {
+				sql = sql + "  AND (cu.tin" + operator + "? OR cu.vatNumber" + operator + "? )\n";
+				operatorCount = 2;
+				
+			} else if (searchBy == "CustomerIdNumber") {
+				sql = sql + "  AND (cu.customerId" + operator + "?"
+							 + " OR cu.customerNumber" + operator + "?"
+							 + " OR cu.externalKey" + operator + "?) \n";
+				operatorCount = 3;
+
+			} else if (searchBy == "CardNumber") {
+				sql = sql + "  AND cu.cardNumber" + operator + "? \n";
+				operatorCount = 1;
+				
+			} else if (searchBy == "FolderNumber") {
+				sql = sql + "  AND cu.folderNumber" + operator + "? \n";
+				operatorCount = 1;
+				
+			} else if (searchBy == "LegalRepresentative") {
+				sql = sql + "  AND cu.legalRepresentative" + operator + "? \n";
+				operatorCount = 1;
+				
+			} else if (searchBy == "Email") {
+				sql = sql + "  AND cu.email" + operator + "? \n";
+				operatorCount = 1;
+				
+			} else if (searchBy == "EmailExtra") {
+				sql = sql + "  AND (cu.email" + operator + "? \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	 FROM customerContact cc";
+				sql = sql + "	 WHERE cc.customerId = cu.customerId \n";
+				sql = sql + "	   AND NOT IFNULL(cc.deletedRecord, FALSE) \n";
+				sql = sql + "	   AND cc.email" + operator + "? ) \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	 FROM customerEmail ce";
+				sql = sql + "	 WHERE ce.customerId = cu.customerId \n";
+				sql = sql + "	   AND NOT IFNULL(ce.deletedRecord, FALSE) \n";
+				sql = sql + "	   AND ce.email" + operator + "? ) \n";
+				sql = sql + "	) \n";
+				operatorCount = 3;
+				
+			} else if (searchBy == "PhoneNumber") {
+				sql = sql + "  AND (cu.phoneNumber"           + operator + "? \n";
+				sql = sql + "    OR cu.mobilePhoneNumber"     + operator + "? \n";
+				sql = sql + "    OR cu.officePhoneNumber"     + operator + "? \n";
+				sql = sql + "    OR cu.additionalPhoneNumber" + operator + "? \n";
+				sql = sql + "    OR cu.faxNumber"             + operator + "?)";
+				operatorCount = 5;
+				
+			} else { // searchBy == "PhoneNumberExtra"
+				sql = sql + "  AND (cu.phoneNumber" + operator + "? \n";
+				sql = sql + "   OR cu.faxNumber" + operator + "? \n";
+				sql = sql + "   OR cu.mobilePhoneNumber" + operator + "? \n";
+				sql = sql + "   OR cu.additionalPhoneNumber" + operator + "? \n";
+				sql = sql + "   OR cu.officePhoneNumber" + operator + "? \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	FROM customerContact cc";
+				sql = sql + "	WHERE cc.customerId = cu.customerId \n";
+				sql = sql + "	  AND NOT IFNULL(cc.deletedRecord, FALSE) \n";
+				sql = sql + "	  AND (cc.phoneNumber" + operator + "? \n";
+				sql = sql + "	    OR cc.mobilePhoneNumber" + operator + "? \n";
+				sql = sql + "	    OR cc.faxNumber" + operator + "?) \n)";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	FROM customerPhone cp \n";
+				sql = sql + "	WHERE cp.customerId = cu.customerId \n";
+				sql = sql + "	  AND NOT IFNULL(cp.deletedRecord, FALSE) \n";
+				sql = sql + "	  AND cp.phoneNumber" + operator + "?) ) \n";
+				operatorCount = 9;
+			}
+
+			for (def i = 0; i < operatorCount; i = i + 1) {
+				params.add(searchValue);
+			}
+
+			if (customerTypes != null) {
+				def filter = "1 = 0";
+				for (def t = 0; t < 10; t = t + 1) {
+					def entityType = customerTypes[t];
+					if (entityType != null) {
+						filter = filter + " OR cu.entityType = ? \n";
+						params.add(entityType);
+					}
+				}
+				sql = sql + "  AND (";
+				sql = sql + filter;
+				sql = sql + ") \n";
+			}
+			if (onlyActive) {
+				sql = sql + "GROUP BY cu.customerId \n";
+			}
+			if (searchBy == "Fullname" || searchBy == "Email" || searchBy == "PhoneNumber") {
+				sql = sql + "ORDER BY cu.fullname \n";
+				
+			} else if (searchBy == "GroupCode") {
+				sql = sql + "ORDER BY cu.groupCode, cu.fullname \n";
+				
+			} else if (searchBy == "TinVat") {
+				sql = sql + "ORDER BY cu.vatNumber, cu.fullname \n";
+				
+			} else if (searchBy == "CustomerIdNumber") {
+				sql = sql + "ORDER BY cu.creation \n";
+				
+			} else if (searchBy == "CardNumber") {
+				sql = sql + "ORDER BY cu.cardNumber \n";
+					
+			} else if (searchBy == "FolderNumber") {
+				sql = sql + "ORDER BY cu.folderNumber \n";
+				
+			} else if (searchBy == "LegalRepresentative") {
+				sql = sql + "ORDER BY cu.legalRepresentative \n";
+				
+			}
+			sql = sql + "LIMIT 100 \n";
+
+			def result = this.prepareQueryAndRun(sql, params);
+			return result;
+		}
+    }
+
+	prepareQueryAndRun(sql, params) {
+		// do something to parameter and
+		return this.runQuery(sql);
+	}
+
+	runQuery(sql) {
+		// send params to db and then
+		return "the query result";
+	}
+
+	getFormField(fieldName) {
+		// read the input field provided by applicatio user and return its value
+		def value = "some input written by the user";
+		return value;
+	}
+
+}
+//  In order to let this source be correctly verified, please add the following setting on Lisa:
+
+//	String[] sources    = new String[] {"getFormField"};
+//	String[] sanitizers = new String[] {"sanitize"};
+//	String[] sinks      = new String[] {"runQuery"};
+
+//  In this experiment the pseude code of a search function is presented
+//  The user specifies which information he /she wants to search for along with the value of the parameter
+//  Example : search all customers where "fullname" contains "Rossi"
+//  The checker should highlight a *SECURE TAINT* since the user input always flows into the sql query
+
+class CustomerHandler3 {	
+
+	doSearch() {
+		def agencyId    = "1234";
+		def searchBy    = this.getFormField("searchBy");
+		def searchValue = this.getFormField("searchValue");
+		def searchType  = this.getFormField("searchType");
+		
+		def customerTypes = new string[10];
+		customerTypes[0] = "client";
+		customerTypes[1] = "prospect";
+		def onlyActive = true;
+
+        if (agencyId == null) {
+            return null;
+
+        } else if (searchBy == null) {
+            return null;
+
+        } else if (searchValue == null || searchValue == "") {
+            return null;
+
+        } else {
+
+			if (searchType == null) {
+				searchType = "ExactMatch";
+			}
+			def operator = " = ";
+			if (searchType == "StartsWith") {
+				operator = " LIKE "; 
+				searchValue = searchValue + "%";
+
+			} else if (searchType == "Contains") {
+				operator = " LIKE ";
+				searchValue = "%" + searchValue + "%";				
+			}
+
+			def sql = "";
+			sql = sql + "SELECT cu.* \n";
+			sql = sql + "FROM customer cu \n";
+			if (onlyActive) {
+				sql = sql + "JOIN contract ct \n";
+				sql = sql + "	ON ct.customerId = cu.customerId \n";
+				sql = sql + "	AND ct.agencyId = " + agencyId + " \n";
+				sql = sql + "    AND NOT IFNULL(ct.deletedRecord, FALSE) \n";
+				sql = sql + "LEFT OUTER JOIN product prd \n";
+				sql = sql + "    ON prd.productId = ct.productId \n";
+				sql = sql + "    AND NOT IFNULL(prd.deletedRecord, FALSE) \n";
+			}
+
+			if ((searchBy == "TinVat") && (searchType != "Contains")) {
+				// the following subquery added to exploit proper indexes
+				sql = sql + "JOIN \n";
+				sql = sql + "      (SELECT customerId FROM customer WHERE agencyId = " + agencyId + " AND       tin " + operator + " " + searchValue + " UNION \n";
+				sql = sql + "       SELECT customerId FROM customer WHERE agencyId = " + agencyId + " AND vatNumber " + operator + " " + searchValue + ") filter \n";
+				sql = sql + "	ON filter.customerId = cu.customerId \n";
+			}
+
+			sql = sql + "WHERE cu.deletedRecord = FALSE \n";
+
+			if (searchBy == "Fullname") {
+				sql = sql + "  AND cu.fullname" + operator + searchValue + " \n";
+				
+			} else if (searchBy == "GroupCode") {
+				sql = sql + "  AND cu.groupCode" + operator + searchValue + " \n";
+				
+			} else if (searchBy == "TinVat" && searchType == "Contains") {
+				sql = sql + "  AND (cu.tin" + operator + searchValue + " OR cu.vatNumber" + operator + searchValue + " )\n";
+				
+			} else if (searchBy == "CustomerIdNumber") {
+				sql = sql + "  AND (cu.customerId" + operator + searchValue + ""
+							 + " OR cu.customerNumber" + operator + searchValue + ""
+							 + " OR cu.externalKey" + operator + searchValue + ") \n";
+				
+			} else if (searchBy == "CardNumber") {
+				sql = sql + "  AND cu.cardNumber" + operator + searchValue + " \n";
+				
+			} else if (searchBy == "FolderNumber") {
+				sql = sql + "  AND cu.folderNumber" + operator + searchValue + " \n";
+				
+			} else if (searchBy == "LegalRepresentative") {
+				sql = sql + "  AND cu.legalRepresentative" + operator + searchValue + " \n";
+				
+			} else if (searchBy == "Email") {
+				sql = sql + "  AND cu.email" + operator + searchValue + " \n";
+				
+			} else if (searchBy == "EmailExtra") {
+				sql = sql + "  AND (cu.email" + operator + searchValue + " \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	 FROM customerContact cc";
+				sql = sql + "	 WHERE cc.customerId = cu.customerId \n";
+				sql = sql + "	   AND NOT IFNULL(cc.deletedRecord, FALSE) \n";
+				sql = sql + "	   AND cc.email" + operator + searchValue + " ) \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	 FROM customerEmail ce";
+				sql = sql + "	 WHERE ce.customerId = cu.customerId \n";
+				sql = sql + "	   AND NOT IFNULL(ce.deletedRecord, FALSE) \n";
+				sql = sql + "	   AND ce.email" + operator + searchValue + " ) \n";
+				sql = sql + "	) \n";
+				
+			} else if (searchBy == "PhoneNumber") {
+				sql = sql + "  AND (cu.phoneNumber"           + operator + searchValue + " \n";
+				sql = sql + "    OR cu.mobilePhoneNumber"     + operator + searchValue + " \n";
+				sql = sql + "    OR cu.officePhoneNumber"     + operator + searchValue + " \n";
+				sql = sql + "    OR cu.additionalPhoneNumber" + operator + searchValue + " \n";
+				sql = sql + "    OR cu.faxNumber"             + operator + searchValue + ")";
+				
+			} else { // searchBy == "PhoneNumberExtra"
+				sql = sql + "  AND (cu.phoneNumber" + operator + searchValue + " \n";
+				sql = sql + "   OR cu.faxNumber" + operator + searchValue + " \n";
+				sql = sql + "   OR cu.mobilePhoneNumber" + operator + searchValue + " \n";
+				sql = sql + "   OR cu.additionalPhoneNumber" + operator + searchValue + " \n";
+				sql = sql + "   OR cu.officePhoneNumber" + operator + searchValue + " \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	FROM customerContact cc";
+				sql = sql + "	WHERE cc.customerId = cu.customerId \n";
+				sql = sql + "	  AND NOT IFNULL(cc.deletedRecord, FALSE) \n";
+				sql = sql + "	  AND (cc.phoneNumber" + operator + searchValue + " \n";
+				sql = sql + "	    OR cc.mobilePhoneNumber" + operator + searchValue + " \n";
+				sql = sql + "	    OR cc.faxNumber" + operator + searchValue + ") \n)";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	FROM customerPhone cp \n";
+				sql = sql + "	WHERE cp.customerId = cu.customerId \n";
+				sql = sql + "	  AND NOT IFNULL(cp.deletedRecord, FALSE) \n";
+				sql = sql + "	  AND cp.phoneNumber" + operator + searchValue + ") ) \n";
+			}
+
+			if (customerTypes != null) {
+				def filter = "1 = 0";
+				for (def t = 0; t < 10; t = t + 1) {
+					def entityType = customerTypes[t];
+					if (entityType != null) {
+						filter = filter + " OR cu.entityType = " + entityType + " \n";
+					}
+				}
+				sql = sql + "  AND (";
+				sql = sql + filter;
+				sql = sql + ") \n";
+			}
+			if (onlyActive) {
+				sql = sql + "GROUP BY cu.customerId \n";
+			}
+			if (searchBy == "Fullname" || searchBy == "Email" || searchBy == "PhoneNumber") {
+				sql = sql + "ORDER BY cu.fullname \n";
+				
+			} else if (searchBy == "GroupCode") {
+				sql = sql + "ORDER BY cu.groupCode, cu.fullname \n";
+				
+			} else if (searchBy == "TinVat") {
+				sql = sql + "ORDER BY cu.vatNumber, cu.fullname \n";
+				
+			} else if (searchBy == "CustomerIdNumber") {
+				sql = sql + "ORDER BY cu.creation \n";
+				
+			} else if (searchBy == "CardNumber") {
+				sql = sql + "ORDER BY cu.cardNumber \n";
+				
+			} else if (searchBy == "FolderNumber") {
+				sql = sql + "ORDER BY cu.folderNumber \n";
+				
+			} else if (searchBy == "LegalRepresentative") {
+				sql = sql + "ORDER BY cu.legalRepresentative \n";
+				
+			}
+			sql = sql + "LIMIT 100 \n";
+
+			def result = this.runQuery(sql);
+			return result;
+		}
+    }
+
+	runQuery(sql) {
+		return "the query result";
+		// launch the actual query ...
+	}
+
+	getFormField(fieldName) {
+		// read the input field provided by applicatio user and return its value
+		def value = "some input written by the user";
+		return value;
+	}
+
+}
+class taint3lvs {
+
+    // ############### CONFIG for sources, sanitizers and sinks
+
+    // Could be a legitimate comment on a blog, or contain a XSS payload, or a query for a SQL injection
+	source_user(){
+		return "<script>alert(1)</script>";
+	}
+
+    // Sanitizes an html string before inserting it into the web page
+	sanitizer_html(html_string){
+		return "<p>This surely has no XSS</p>";
+	}
+
+    // Renders an html page
+	sink_html_page(html_content){
+	    return "<body>" + html_content + "</body>";
+	}
+
+	// Creates a SQL query with prepared statements so to prevent SQL injections
+	sanitizer_sql(query_string, query_params){
+	    return "SELECT * from products";
+	}
+
+	// Executes a query and returns the result
+	sink_query(query){
+	    return "Product #1";
+	}
+
+
+    // ############### TEST CASES
+
+
+    // Testing for XSS
+	post_user_comment_unsanitized() {
+		def comment = this.source_user();
+        def html_element = "<p>User has commented: " + comment + "</p>";
+		this.sink_html_page(html_element);
+	}
+
+    post_user_comment_sanitized() {
+    		def comment = this.source_user();
+            def html_element = "<p>User has commented: " + this.sanitizer_html(comment) + "</p>";
+    		this.sink_html_page(html_element);
+    }
+
+    // Both XSS and SQL injection
+    search_product_unsanitized(){
+        def product_name = this.source_user();
+        def query = "SELECT * FROM products WHERE productName = " + product_name + ";";
+        def product = this.sink_query(query);
+
+        def html = "<p>You searched for " + product_name + ": " + product + "</p>";
+        this.sink_html_page(html);
+    }
+
+    search_product_sanitized(){
+            def product_name = this.source_user();
+            def query = this.sanitizer_sql("SELECT * FROM products WHERE productName = $0", product_name);
+            def product = this.sink_query(query);
+
+            def html = "<p>You searched for " + this.sanitizer_html(product_name) + ": " + product + "</p>";
+            this.sink_html_page(html);
+    }
+
+    conditional_taint(a){
+        def possibly_tainted = "NOT_TAINTED";
+
+        if(a){
+            possibly_tainted = this.source_user();
+        }
+
+        this.sink_html_page(possibly_tainted);
+    }
+
+    conditional_taint_sanitized(a){
+        def possibly_tainted = "NOT_TAINTED";
+
+        if(a){
+            possibly_tainted = this.source_user();
+            possibly_tainted = this.sanitizer_html(possibly_tainted);
+        }
+
+        this.sink_html_page(possibly_tainted);
+    }
+
+    taint_expression(){
+        def not_tainted = "NOT_TAINTED";
+        not_tainted = not_tainted + this.source_user();
+
+        this.sink_html_page(not_tainted);
+    }
+
+}
+/*
+    Script designed to test the taint analysis.
+    Configuration:
+    -sources: sourceLogin,getUsernameInInput,getPasswordInInput
+    -sinks: queryDB
+    -sanitizers: sanitizeString, calculateHash
+
+    Author: Andrea Da Lio - 884046
+    Version: 1.0
+*/
+
+/*
+    Class to store the user information
+*/
+class User {
+    username;
+    password;
+
+    ~User(username, password) {
+        this.username = username;
+        this.password = password;
+    }
+}
+
+class LoginTaint {
+
+    /******** Source Functions ********/
+    getUsernameInInput(){
+        return "admin";
+    }
+
+    getPasswordInInput(){
+        return "password";
+    }
+
+	sourceLogin(){
+	    def username = this.getUsernameInInput();
+	    def password = this.getPasswordInInput();
+	    return new User(username, password);
+	}
+    /******** End source Functions ********/
+
+    /******** Sanitize Functions **********/
+	sanitizeString(data){
+	    //Simulate a sanitization function
+	    def cleanedData = "";
+		return cleanedData;
+	}
+
+    calculateHash(password, salt){
+        //Hash the password with the salt
+        def hash = password + salt;
+        return hash;
+    }
+
+    /******** End sanitize Functions ********/
+    /******** Sink Functions **********/
+    queryDB(query){
+        //Simulate a database query
+    }
+
+    /******** End sink Functions **********/
+
+	getUserFromDB(username,password){
+	    def sanitizedUser = this.sanitizeString(username);
+	    def sanitizedPass = this.sanitizeString(password);
+	    def query = "SELECT * FROM users WHERE username = '" + sanitizedUser + "' AND password = '" + sanitizedPass + "'";
+        this.queryDB(query);
+        return new User("admin", "c38df5707a7c1785d1e8759c6315252d0796f44a");
+    }
+
+	retrieveSalt(username){
+	    def query = "SELECT salt FROM users_salts WHERE username = '" + username + "'";
+	    //Taint value passed to the sink function
+        this.queryDB(query);
+        return "0ead0c0f0b0e0d0c0";
+    }
+
+    //Function to log messages
+	logMessage(logLevel, data){
+	   //Save information into the log
+	}
+
+    //Main function of the test
+    //Return true if the login is successful, false otherwise
+    login(){
+        //Get the user from the source
+        def info = this.sourceLogin();
+        //Extract the username and password
+        def user = info.getUsername();
+        def pass = info.getPassword();
+        if(strlen(user) == 0 || strlen(pass) == 0){
+            this.logMessage("ERROR", "Username or password not given");
+            return false;
+        }else{
+                def userFromDB = this.getUserFromDB(user, pass);
+                if(userFromDB == null){
+                    this.logMessage("ERROR", "User not found");
+                    return false;
+                }else{
+                    //A tainted value is used in function
+                    def salt = this.retrieveSalt(user);
+
+                    def hash = this.calculateHash(pass, salt);
+                    //Check if the password (encrypted) matches the one given by the user
+                    if(hash == userFromDB.password){
+                        this.logMessage("INFO", "User logged in");
+                        return true;
+                    }else{
+                        this.logMessage("ERROR", "Password is incorrect");
+                        return false;
+                    }
+                }
+        }
+    }
+}
+// 	sources = {"source1", "source2"};
+// 	sanitizers = {"sanitizer1", "sanitizer2"};
+// 	sinks = {"sink1"};
+class taint2 {
+
+	source1(){
+		return "/n";
+	}
+
+	source2(){
+	    return "ls -al; rm -rf";
+	}
+
+    // remove the substr
+	sanitizer1(stringline){
+	    def dangerous = "/n";
+	    def cleaned = stringline;
+
+	    if ( strcon(stringline, dangerous) ){
+           cleaned = strrep(stringline, dangerous, " "); // replace the dangerous one with " "
+	    }
+
+	    return cleaned;
+	}
+
+    // remove shell commands like dangerous ";"
+    sanitizer2(stringline) {
+        def dangerous = ";rm -rf /";
+        def cleaned = stringline;
+
+        if (strcon(stringline, dangerous)) {
+            cleaned = strrep(stringline, dangerous, " "); // replace the dangerous one with " "
+        }
+
+        return cleaned;
+    }
+
+
+	sink1(shell_command){
+	    // shell execution
+	}
+
+
+	test_shell1() {
+		def command = "ls -al";
+		this.sink(command); // ok
+	}
+
+	test_shell2() {
+		def t = this.source1();
+		this.sink1(t); // a tainted value flows in a sink!
+	}
+
+	test_sanitization1() {
+		def command = this.source1();
+		def safe = this.sanitizer1(command);
+		this.sink1(safe);  // the value is clean due to sanitization
+	}
+	test_sanitization2() {
+		def command = this.source2();
+		def safe = this.sanitizer2(command);
+		this.sink1(safe);
+	}
+
+    test_combined() {
+        def raw = this.source1() + this.source2();
+        def step1 = this.sanitizer1(raw);
+        def safe = this.sanitizer2(step1);
+        this.sink1(safe);
+    }
+}
+class taint3 {
+
+	source1() {
+		return -99;
+	}
+
+	sanitizer1(v) {
+		return 0;
+	}
+
+	sink1(v) {
+	}
+
+	// Example 1
+	config_setup() {
+		def userInput = this.source1();         // tainted
+		def configVal = userInput;
+		configVal = 42;                         // overwrite
+		this.sink1(configVal);                  // clean, because it was overwritten
+	}
+
+	// Example 2
+	multi_input_flow() {
+		def srcA = this.source1();              // tainted
+		def srcB = this.source1();              // tainted
+		def combined = srcA + srcB;             // tainted
+		def safeVal = this.sanitizer1(combined); // sanitized
+		this.sink1(safeVal);                    // clean, because it was sanitized
+	}
+
+	// Example 3
+	conditional_flow() {
+		def result = 0;
+		def input = this.source1();             // tainted
+
+		if (input < 0) {
+			result = input;                     // taint propagated
+		} else {
+			result = this.sanitizer1(input);    // sanitized
+		}
+
+		this.sink1(result);                     // may be tainted
+	}
+}
+class taintthreelevels {
+    source1() {
+        return -99;
+    }
+
+    sanitizer1(v) {
+        return 0;
+    }
+
+    sink1(v) {
+    }
+
+    direct_taint() {
+        def a = this.source1();
+        this.sink1(a);              // TAINTED
+    }
+
+    overwrite_tainted_value() {
+        def a = this.source1();
+        a = 100;                   // OVERWRITE
+        this.sink1(a);              // CLEAN
+    }
+
+    sanitized_value() {
+        def a = this.source1();
+        def b = this.sanitizer1(a);  //SANITIZED
+        this.sink1(b);               // CLEAN
+    }
+
+    conditional_branch() {
+        def input = this.source1();
+        def result = 0;
+
+        if (input > 0) {
+            result = this.sanitizer1(input);
+        } else {
+            result = input;
+        }
+
+        this.sink1(result);          // POSSIBLE TAINTED
+    }
+
+    arithmetic_flow() {
+        def x = this.source1();
+        def y = x + 1;
+        def z = y * 2;
+        this.sink1(z);              // TAINTED
+    }
+
+}
+
+/*
+    IMP file for Taint Three Levels Checker
+    Author: 892631
+*/
+
+class TaintThreeLevelsTest {
+
+	source() {
+		return -99;
+	}
+
+	sanitizer(v) {
+		return 0;
+	}
+
+	sink(v) {
+	}
+
+	taint1() {
+		def a = this.source();
+		def b = a;
+		def c = b * 2;
+		this.sink(c);               // tainted
+	}
+
+	taint2() {
+		def x = this.source();
+		def y = 10;
+		def z = x + y;
+		def clean = this.sanitizer(z);
+		this.sink(clean);           // clean
+	}
+
+	taint3(flag) {
+		def val = this.source();
+		if (flag) {
+			val = 100;
+		}
+		this.sink(val);             // may be tainted, expecting TOP
+	}
+
+	taint4(limit) {
+		def t = 0;
+		for (def i = 0; i < limit; i = i + 1) {
+			t = t + this.source();
+		}
+		this.sink(t);               // TOP
+	}
+
+	taint5(idx) {
+        def data = new int[4];
+        data[0] = 1;
+        data[1] = this.source();
+        data[2] = 3;
+        data[3] = 4;
+
+        def v = data[idx];
+        def y = data[1];
+        def z = data[3];
+        this.sink(v);               // should be TOP
+        this.sink(y);               // should be TAINTED
+        this.sink(z);               // should be CLEAN
+    }
+
+	taint6() {
+		def x = this.source();
+		x = this.sanitizer(x);
+		def y = x + 1;
+		this.sink(y);               // clean
+	}
+
+	taint7(c) {
+		def x = this.source();
+		def y = 0;
+
+		if (c > 10) {
+			x = this.sanitizer(x);
+		}
+
+		y = x + 5;
+		this.sink(y);               // should be TOP
+	}
+
+	taint8() {
+        def t = 0;
+        def flag = this.source();
+
+        for (def i = 0; i < 3; i = i + 1) {
+            if (flag < 0) {
+                t = t + this.source();
+            } else {
+                t = t + 1;
+            }
+        }
+
+        this.sink(t);               // TOP
+    }
+
+    taint9() {
+        def data = new int[3];
+        data[0] = 1;
+        data[1] = 2;
+        data[2] = this.source();
+
+        def idx = 2;
+        def extracted = data[idx];
+
+        def result = extracted * 3;
+
+        this.sink(result);          // TOP
+    }
+}

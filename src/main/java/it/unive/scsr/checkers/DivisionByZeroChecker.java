@@ -111,7 +111,7 @@ SemanticCheck<
 								finalInterval = reduced;
 							}
 
-							if (finalInterval != null) {
+							if (finalInterval != null && finalInterval.interval != null) {
 								if (finalInterval.isNonBottomSingletonWithValue(0)) {
 									tool.warnOn(div, "[DEFINITE] Division by zero detected: divisor " + s + " is exactly 0");
 									return;

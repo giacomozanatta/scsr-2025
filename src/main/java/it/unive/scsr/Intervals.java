@@ -309,10 +309,12 @@ public class Intervals
 	
 	public boolean isNonBottomSingletonWithValue(
 			float number) {
+		if (interval == null)
+			return false;
 		try {
-			return interval.isSingleton() && (interval.getLow().toFloat() == number) && !isBottom();
+			return !isBottom() && interval.isSingleton() && (interval.getLow().toFloat() == number);
 		} catch (MathNumberConversionException e) {
-			return interval.isSingleton() && interval.getLow().equals(new MathNumber(number)) && !isBottom();
+			return !isBottom() && interval.isSingleton() && interval.getLow().equals(new MathNumber(number));
 		}
 	}
 

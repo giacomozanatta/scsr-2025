@@ -1,0 +1,646 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating division by zero.
+
+class Test {
+
+    benchmark() {
+        def zero = 0;       // Represents the integer value zero.
+        def zero_fp = 0.0;  // Represents the floating-point value zero.
+        def one = 1;        // Represents the integer value one.
+        def one_fp = 1.0;   // Represents the floating-point value one.
+        def two = 2;        // Represents the integer value two.
+        def two_fp = 2.0;   // Represents the floating-point value two.
+        def three = 3;      // Represents the integer value three.
+        def three_fp = 3.0; // Represents the floating-point value three.
+        def five = 5;       // Represents the integer value five.
+        def five_fp = 5.0;  // Represents the floating-point value five.
+
+        def _1 = one / zero;                                        // Division by zero for integers, likely results in an exception.
+        def _2 = one / one;                                         // Division of one by one, resulting in one.
+        def _3 = one / ((two * three) / (three * five));            // Division of 1 by the result of (6 / 15), which simplifies to (1 / 0) for integer divisions.
+        def _4 = one / ((two * three) / five);                      // Division of 1 by the result of (6 / 5), which is (1 / 1) for integer divisions.
+        def _5 = one / ((two_fp * three_fp) - (five_fp + one_fp));  // Division of 1 by the result of (6.0 - 6.0), which is division by 0.0 for floating-point numbers.
+        def _6 = one / (one_fp / two_fp);                           // Division of 1 by the result of (1.0 / 2.0), which is (1 / 0.5).
+        def _7 = one / (one_fp / two);                              // Division of 1 by the result of (1.0 / 2), which is (1 / 0.5).
+
+        // This is the result of (39.7 / 0.0).
+        def _8 =
+            ((7.5 * (2 + 3) - (4.0 / 2)) + (6 * 1.2 - 3)) /
+            (((8 / 2.0) + (3.5 - 1.5)) - (5 + (1.0 * 1)));
+
+        // This is the result of (8.0 / 0.0).
+        def _9 =
+        ((((2.5 + 1.5) * (4 - 2)) + ((3 * 2) - (9.0 / 3))) - ((1.2 * 5) - (6 / 2))) /
+        (((((10 / 2.0 - 2.0) + (3.0 + 1.0)) - 5) * 1) - ((2.5 * 2 - 1.0) + 1.0) + 3);
+    }
+}// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating division by zero.
+
+class Test1 {
+
+    benchmark() {
+        def iterations = 10;    // Initialize 'iterations' to 10. This variable will serve as a countdown for the loop.
+        def sum = 45;           // Initialize 'sum' to 45. This variable will be modified within the loop.
+
+        // Start a while loop that continues as long as 'iterations' is greater than 0.
+        while (iterations > 0) {
+            iterations = iterations - 1;
+            sum = sum - iterations;
+        }
+
+        // After the loop, 'sum' will be 0. This line attempts to perform a division by zero, which will result in a
+        // runtime error. Depending on the accuracy of the analysis, this will be marked as a warning or not.
+        def division_by_zero = 1 / sum;
+    }
+}// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating division by zero.
+
+class Test2 {
+
+    benchmark() {
+
+        def just_one = 23 * 3 + 12 - 7 + (1 + 25 / 7 * 2) - 80;  // Simple expression that resolves to one.
+
+        // A simple while loop that will execute only once.
+        while (just_one > 0) {
+            just_one = just_one - 1;
+        }
+
+        // Simulation of an error where branches should be reversed. If the analysis is accurate enough, a warning
+        // should be displayed.
+        if (just_one != 0) {
+            def just_one_is_zero = 1 / 5.0;
+        } else {
+            def just_one_is_not_zero = 1 / just_one;
+        }
+    }
+}
+
+class parity {
+	
+	some_integer_numeric_function(unknown) {
+		def some = 10;
+		if (unknown == 123) {
+			some = some + 2;                     
+		}
+		return some;                                                     // some         = [10, 12]
+	}
+	
+	some_decimal_numeric_function(unknown) {
+		def some = 10.5;
+		if (unknown == 456) {
+			some = some + 2.3;                     
+		}
+		return some;                                                     // some         = [10.5, 12.8]
+	}
+	
+	testDivBy0(unknown) {
+	
+		// FIRST PASS
+		// sliding integer interval
+		
+		def i_certain           = 10;                                          // i_certain      = [10, 10]
+		def i_uncertain         = this.some_integer_numeric_function(unknown); // i_uncertain    = [10, 12]
+
+		def i_sure_div_by0_1    = 100 / (1 - (7 / (9 - 2)));
+		def i_NO_div_by0_2      = 100 / (1 + 1);
+
+		def i_NO_div_by0_3      = 100 / i_certain;
+		def i_NO_div_by0_4      = 100 / i_uncertain;
+
+		def i_sure_div_by0_5    = 100 / (i_certain - 10);
+		def i_maybe_div_by0_6   = 100 / (i_uncertain - 10);
+		
+		def i_NO_div_by0_7      = 100 / (i_certain - 11);
+		def i_maybe_div_by0_8   = 100 / (i_uncertain - 11);
+
+		def i_NO_div_by0_9      = 100 / (i_certain - 12);
+		def i_maybe_div_by0_10  = 100 / (i_uncertain - 12);
+		
+		def i_NO_div_by0_11     = 100 / (i_certain - 13);
+		def i_NO_div_by0_12     = 100 / (i_uncertain - 13);
+
+		// SEONC PASS
+		// sliding float interval
+		
+		def f_certain           = 10.5;                                        // f_certain      = [10.5, 10.5]
+		def f_uncertain         = this.some_decimal_numeric_function(unknown); // f_uncertain    = [10.5, 12.8]
+
+		def f_sure_div_by0_1    = 100.1 / (1.2 - (8.52 / (9.2 - 2.1)));
+		def f_NO_div_by0_2      = 100.1 / (1.2 + 1.3);
+
+		def f_NO_div_by0_3      = 100.1 / f_certain;
+		def f_NO_div_by0_4      = 100.1 / f_uncertain;
+
+		def f_sure_div_by0_5    = 100.1 / (f_certain - 10.5);
+		def f_maybe_div_by0_6   = 100.1 / (f_uncertain - 10.5);
+		
+		def f_NO_div_by0_7      = 100.1 / (f_certain - 11.5);
+		def f_maybe_div_by0_8   = 100.1 / (f_uncertain - 11.5);
+
+		def f_NO_div_by0_9      = 100.1 / (f_certain - 12.5);
+		def f_maybe_div_by0_10  = 100.1 / (f_uncertain - 12.5);
+		
+		def f_NO_div_by0_11     = 100.1 / (f_certain - 13.5);
+		def f_NO_div_by0_12     = 100.1 / (f_uncertain - 13.5);
+
+	}
+    
+}
+
+class DivisionByZero {
+    divByZero() {
+        def a = 3 / 0;
+        return;
+    }
+
+    divByVariable() {
+        def a = 0;
+        def b = 3 / a;
+        return;
+    }
+
+    divByOperation() {
+        def a = -1;
+        def c = 3;
+        a = a + 1;
+        def b = c / a;
+        return;
+    }
+
+    conditionalZero(a){
+        def b = -1;
+        if(a > 0)
+            b = 10;
+        else
+            b = b + 1;
+
+        def c = 10 / b;
+        return;
+    }
+
+    divByInput(a){
+        def b = 3 / a;
+        return;
+    }
+
+    loop(a){
+        def b = 10;
+        def c = 3;
+        def d = 100;
+        while(b > 0){
+            d = d / c;                              // Surely division by zero
+            b = b - 1;
+            c = c - 1;
+        }
+
+        def e = 3 / c;                              // Safe
+
+        if(c > 0)
+            e = 3 / c;                              // Safe
+        return;
+    }
+
+    helperSum(arr, length) {
+        def sum = 0;
+        for (def i = 0; i < length; i = i + 1){
+            sum = sum + arr[i];
+        }
+
+        return sum;
+    }
+
+    calcMean(arr, length){
+        def sum = this.helperSum(arr, length);
+
+        def mean = sum / length;                    // length possibly zero
+        return mean;
+    }
+
+    arrayAccess(index){
+        def arr = new int[3];
+        arr[0] = 42;
+        arr[1] = 0;
+        arr[2] = -1;
+
+        def el = arr[index];
+        return 10 / el;                             // el possibly zero
+    }
+
+    arrayNormalization(arr, length){
+        def sum = this.helperSum(arr, length);
+
+        for (def j = 0; j < length; j = j + 1){
+            arr[j] = arr[j] / sum;                  // Requires NumericalSize.FLOAT32
+        }
+    }
+
+    linearInterpolation(x1, y1, x2, y2, ratio){     // Returns y value from interpolation between x and y
+        def slope = (y2 - y1) / (x2 - x1);          // Requires NumericalSize.FLOAT32
+        return y1 + slope * (ratio - x1);
+    }
+
+    invertMatrix2x2(a, b, c, d) {
+      def det = a * d - b * c;                      // Requires NumericalSize.FLOAT32
+
+      def invDet = 1 / det;
+
+      def result = new int[4];
+
+      result[0] = d * invDet;
+      result[1] = -b * invDet;
+      result[2] = -c * invDet;
+      result[3] = a * invDet;
+
+      return result;
+    }
+
+    minValueDiv(arr, length) {
+        def min = arr[0];
+        for (def i = 1; i < length; i = i + 1) {
+            if (arr[i] < min)
+                min = arr[i];
+        }
+        def res = 10 / min;                         // Possible div by zero
+        return res;
+    }
+
+    functionDiv(x) {
+        def f = x * x - x;
+        def res = 1 / f;                        // div by zero for x = 0 or 1
+        return res;
+    }
+}/*
+    Script designed to test the Division By Zero analysis.
+    Description: The algorithm proposed is the calculation of the Euler's number (e).
+
+    Author: Andrea Da Lio - 884046
+    Version: 1.0
+*/
+class DivByZeroTest{
+
+    print(s){
+        //Print a text on the screen
+    }
+
+
+    calculate_e() {
+        def e = 0;
+        def factorial = 1;
+        def max_terms = 10000;
+        for (def i = 0; i < max_terms; i = i + 1) {
+            if (i > 0) {
+                factorial = factorial * i;
+            }
+            def tmp = 1 / factorial;
+            e = e + tmp;
+        }
+        this.print(e);
+    }
+
+}class divbyzero{
+
+    uncertain(x){
+		def y = 0;
+        if (x)
+            y = y + x;
+        return y;
+    }
+
+    test_definite(){
+        def definite1 = 10 / 0;
+    }
+
+    test_possibile(){
+        def possible1 = 10 / this.uncertain(-3);
+        def possible2 = 10 / this.uncertain(-1);
+        def possible3 = 10 / this.uncertain(3.14);
+        def sure = 10 / this.uncertain(0);
+    }
+}
+
+class Matrix {
+    data;
+    size;
+    rows; //rows
+    cols; //cols
+
+    ~Matrix(rows, cols, value) {
+        def size = rows * cols;
+        this.size = size;
+	    this.data = new float[size];
+
+	    def dat = this.data;
+        for (def i = 0; i < this.size; i = i + 1) {
+            dat[i] = value;
+        }
+        this.data = dat;
+    }
+
+    index(i, j) {
+        return i * this.cols + j;
+    }
+
+    get(i, j) {
+        def index = this.index(i, j);
+        def dat = this.data;
+        def ret = dat[index];
+        return ret;
+    }
+
+    set(i, j, value) {
+        def index = this.index(i, j);
+        def dat = this.data;
+        dat[index] = value;
+        this.data = dat;
+    }
+
+    erase(){
+        def dat = this.data;
+
+        for ( def i = 0; i < this.rows; i = i + 1){
+            for ( def j = 0; j < this.cols; j = j + 1){
+                def index = this.index(i, j);
+                dat[index] = 0.0;
+            }
+        }
+
+        this.data = dat;
+    }
+
+    is_squared(){
+        def result = 0;
+        if ( this.rows == this.cols )
+            result = 1;
+        else
+            result = 0;
+        return result;
+    }
+
+    det(){
+        def res = 1;
+        def dat = this.data;
+        def stop_flag = 0;
+
+        for (def i = 0; i < this.rows; i = i+1){
+            def index_ii = this.index(i, i);
+            def pivot = dat[index_ii];
+
+            if (pivot != 0){
+                for (def j = i+1; j < this.rows; j = j+1){
+                    def index_ji = this.index(j, i);
+                    def factor = dat[index_ji] / pivot;
+
+                    for (def k = i; k < this.rows; k = k+1){
+                        def index_jk  = this.index(j, k);
+                        def index_ik   = this.index(i, k);
+                        dat[index_jk] = dat[index_jk] - factor * dat[index_ik];
+                    }
+                }
+            }else{
+                stop_flag = 1;
+            }
+
+            if( stop_flag == 1 )
+                res = 0;
+            else
+                res = res * pivot;
+        }
+
+        this.data = dat;
+        return res;
+    }
+
+    test_det(){
+        def res = -1; //emtpy
+        def a = new Matrix(2,2,3);
+        if ( a.is_squared() )
+            res = a.det();
+        return res;
+    }
+
+}
+
+class DivisionDiagnostics {
+
+	average_consumption() {
+		def energy_mWh = 5000;
+		def time_h     = 0;
+
+		def avg_power = energy_mWh / time_h;    // avg_power = verified division by 0
+		return avg_power;
+	}
+
+	efficiency_estimation() {
+		def output_energy = 3000;
+		def input_energy  = 0;
+
+		if (output_energy > 1000) {
+			input_energy = 500;
+		}
+
+		def efficiency = output_energy / input_energy;  // efficiency = [division by 0 se input_energy remain 0]
+		return efficiency;
+	}
+
+	voltage_normalization() {
+		def voltage_raw = 3700;
+		def scale       = 0;
+
+		if (voltage_raw > 3500) {
+			scale = scale + 1000;               // scale = [0, 1000]
+		}
+
+		def voltage_norm = voltage_raw / scale; // voltage_norm = [TOP] if scale = 0 possible division by zero
+		return voltage_norm;
+	}
+
+}
+
+class divbyzero2 {
+    testBasic() {
+        def flag = 1;
+        def a = 10;
+        if (flag == 2) {
+          a = a - 10;
+        }
+        def res = 100 / a;       // Expected ERROR
+
+        def b = 3;
+        def i = 0;
+        while (i < 3) {
+          b = b - 1;
+          i = i + 1;
+        }
+        res = 50 / b;           // Expected ERROR
+    }
+
+    testArray() {
+        def arr = new int[3];
+        arr[0] = 1;
+        arr[1] = 0;
+        arr[2] = 2;
+
+        def idx = 1;
+        def val = arr[idx];
+        def res = 100 / val;     // Expected ERROR
+
+        idx = 2;
+        val = arr[idx];
+        res = 100 / val;         // Expected ERROR
+    }
+
+    testExpressionandParameter(x) {
+        def a = 100;
+        def res = a / x;         // Expected ERROR
+
+        def y = 6;
+        def z = (3 * 2) - y;
+        res = 60 / z;            // Expected ERROR
+    }
+
+    callFunction() {
+        def x = this.extFunc(4);
+        def res = 100 / x;       // Expected ERROR
+    }
+
+    extFunc(p) {
+        def res = 0;
+        if (p == 10) {
+          res = 5;
+        }
+        return res;       
+    }
+
+    nonNumericalError() {
+        def a = 100;
+        def b = 10;
+        def c = a / b;
+
+        a = 10;
+        b = "err";
+        c = a / b;            // Expected ERROR
+    }
+}/*
+    IMP file for Division By Zero Checker
+    Author: 892631
+    Description: Short program to estimate fuel consumption and efficiency, remaining driving range
+*/
+
+class DivByZeroTest1 {
+
+    // function to calibrate raw sensor read value
+    getFuelLevel(sensor_value) {
+        def calibrated_value = sensor_value - 5;
+
+        if (calibrated_value < 0) {
+            calibrated_value = 0;
+        }
+
+        return calibrated_value;
+    }
+
+    // function to compute the kilometer per liter ratio given a distance and a sensor_value
+    estimateKilomPerLiter(distance, sensor_value) {
+        def fuel_used = this.getFuelLevel(sensor_value); // could be 0
+
+        if (fuel_used > 0 && distance > 0) {
+            fuel_used = fuel_used + 2;
+        }
+
+        def kpl = distance / fuel_used; // potential division by zero
+        return kpl;
+    }
+
+    // function to compute the average consumption
+    computeEfficiency(distance, fuel_array) {
+        def total_fuel = 0;
+
+        for (def i = 0; i < 5; i = i + 1) {
+            total_fuel = total_fuel + fuel_array[i];
+        }
+
+        def avg_kpl = this.estimateKilomPerLiter(distance, total_fuel);
+        return avg_kpl;
+    }
+
+    // function to compute the remaining range based on reserve fuel and driving mode
+    estimateEmergencyRange(sensor_value, mode) {
+        def consumption_rate = 0;
+
+        if (mode == 1) {               // ECO
+            consumption_rate = 10;
+        } else if (mode == 2) {        // NORMAL
+            consumption_rate = 15;
+        } else if (mode == 3) {        // SPORT
+            consumption_rate = 20;
+        }
+
+        def reserve_fuel = 5;
+        def fuel_available = this.getFuelLevel(sensor_value) + reserve_fuel;
+
+        def range = fuel_available / consumption_rate * 100; // range in kilometers
+        return range;
+    }
+
+    diagnostics() {
+        def fuel_samples = new int[5];
+        fuel_samples[0] = 1;
+        fuel_samples[1] = 0;
+        fuel_samples[2] = 0;
+        fuel_samples[3] = 2;
+        fuel_samples[4] = 1;
+
+        def efficiency = this.computeEfficiency(300, fuel_samples);
+        def emergency1 = this.estimateEmergencyRange(3, 1);     // ECO mode, low sensor value
+        def emergency3 = this.estimateEmergencyRange(10, 3);    // SPORT mode
+        def emergency4 = this.estimateEmergencyRange(5, 4);     // This mode doesn't exist, consumption_rate = 0
+
+        return efficiency + emergency1;
+    }
+}
+// Author: Liberalato Alessandro - 908093
+// Try this file with both overflow and divbyzero checkers
+class electronics {
+
+    resistorSeries() {
+    // Computes the series between two resistors
+    def R1 = 10000;
+    def R2 = 70000;
+    def Rs = R1 + R2;   // will trigger some overflows
+    }
+    
+    resistorParallel() {
+    // Computes the parallel between three resistors
+    def R3 = 10000;
+    def R4 = 20000;
+    def R5 = 0;
+    def a = 1 / R3;
+    def b = 1 / R4;
+    def c = 1 / R5;    // division by zero
+    def Rp = (1 / (a + b + c));
+    }
+    applyOhm() {
+    // Ohm's law to computer R as V/I
+    def current = 0.0000000000000000000000000000000000001;  //low magnitude
+    def voltage = 10.000000000000000000000000000000000001;
+    def resistance = voltage / current;  // will trigger overflows
+    }
+    capacitorsCircuit() {
+    // Computes the equivalent between to capacitors in parallel (C1 + C2)
+    def C1 = 0.000047;
+    def C2 = 0.000068;
+    def Cp = C1 + C2;
+    // Computes the series between the previously obtained capacitor Cp and C3 as 1/((1/Cp)+(1/C3))
+    def C3 = 0.000033;
+    def a = 1 / C3;
+    def b = 1 / Cp;
+    def Ceq = (1 / (a + b));     // all operations should be safe, no div. by 0
+    }
+    computePowers(Rb) {
+    def V = 1000;
+    def Ra = 100;
+    def P1 = (V*V)/Ra;	 // overflow for some types
+    def P2 = (V*V)/Rb;	 // potential div. by 0
+    }
+}

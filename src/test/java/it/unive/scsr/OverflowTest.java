@@ -26,28 +26,88 @@ public class OverflowTest {
 	}
 	
 	@Test
+	public void testOverflowIntervalsINT8() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT8, "intervals-int8");
+	}
+
+	@Test
 	public void testOverflowIntervalsINT16() throws ParsingException, AnalysisException {
 		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "intervals-int16");
 	}
 	
 	@Test
+	public void testOverflowIntervalsUINT16() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT16, "intervals-uint16");
+	}
+
+	@Test
+	public void testOverflowIntervalsINT32() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT32, "intervals-int32");
+	}
+
+	@Test
+	public void testOverflowIntervalsUINT32() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT32, "intervals-uint32");
+	}
+
+	@Test
 	public void testOverflowIntervalsFLOAT8() throws ParsingException, AnalysisException {
 		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT8, "intervals-float8");
 	}
-	
+
 	@Test
+	public void testOverflowIntervalsFLOAT16() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT16, "intervals-float16");
+	}
+
+	@Test
+	public void testOverflowIntervalsFLOAT32() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT32, "intervals-float32");
+	}
+
+		@Test
 	public void testOverflowPentagonsUINT8() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.UINT8, "pentagons-uint8");
+		runAnalysis(new Pentagons(), NumericalSize.UINT8, "Pentagons-uint8");
 	}
 	
+	@Test
+	public void testOverflowPentagonsINT8() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.INT8, "Pentagons-int8");
+	}
+
 	@Test
 	public void testOverflowPentagonsINT16() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.INT16, "pentagons-int16");
+		runAnalysis(new Pentagons(), NumericalSize.INT16, "Pentagons-int16");
 	}
 	
 	@Test
+	public void testOverflowPentagonsUINT16() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.UINT16, "Pentagons-uint16");
+	}
+
+	@Test
+	public void testOverflowPentagonsINT32() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.INT32, "Pentagons-int32");
+	}
+
+	@Test
+	public void testOverflowPentagonsUINT32() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.UINT32, "Pentagons-uint32");
+	}
+
+	@Test
 	public void testOverflowPentagonsFLOAT8() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.FLOAT8, "pentagons-float8");
+		runAnalysis(new Pentagons(), NumericalSize.FLOAT8, "Pentagons-float8");
+	}
+
+	@Test
+	public void testOverflowPentagonsFLOAT16() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.FLOAT16, "Pentagons-float16");
+	}
+
+	@Test
+	public void testOverflowPentagonsFLOAT32() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.FLOAT32, "Pentagons-float32");
 	}
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{

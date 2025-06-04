@@ -94,21 +94,21 @@ SemanticCheck<
 						
 							else if (vs instanceof Pentagons) {
 								Pentagons p = (Pentagons) vs;
-								if (!(s instanceof Identifier)) 
-									return;
-								Identifier sid = (Identifier) s;
+								
 								ValueEnvironment<Intervals> ie = p.getInterval();
-								Intervals raw = ie.getState(sid);
+								Intervals raw = finalInterval = ie.eval((ValueExpression) s, div, state.getState());
 								if (raw == null || raw.isBottom())
 									return;
-								Intervals reduced = raw;
-								for (Identifier b : p.getUpperBounds().getState(sid)) {
-									Intervals ib = ie.getState(b);
-									if (ib != null && !ib.isBottom()) {
-										reduced = reduced.glb(new Intervals(MathNumber.MINUS_INFINITY, ib.interval.getHigh()));
-									}
+								if ((s instanceof Identifier)) {
+									Identifier sid = (Identifier) s;
+									Intervals reduced = raw;
+									for (Identifier b : p.getUpperBounds().getState(sid)) {
+										Intervals ib = ie.getState(b);
+										if (ib != null && !ib.isBottom()) {
+											reduced = reduced.glb(new Intervals(MathNumber.MINUS_INFINITY, ib.interval.getHigh()));
+										}
 								}
-								finalInterval = reduced;
+								finalInterval = reduced;}
 							}
 
 							if (finalInterval != null && finalInterval.interval != null) {

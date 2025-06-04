@@ -1,0 +1,30 @@
+class cp {
+	f0() {
+		def x = 0;
+		def y = 0;
+		def z = x * y;
+		def d = 5 + 7;
+		def w = x + y;
+
+		return;
+	}
+
+	f1(b) {
+		def xy = 0;
+		def c = -1;
+		def y = 3 / 0;
+		def z = c / xy;
+		def jk = 0 / 5;
+        def x = 0;
+        if (b)
+            x =  7;
+        else
+            x =  -7;
+        def sss = c / x;
+		return;
+	}
+
+	f4(k){
+	    def xbn=4;
+	}
+}

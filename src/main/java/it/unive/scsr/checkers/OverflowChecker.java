@@ -38,6 +38,8 @@ SemanticCheck<
 		FLOAT16, // signed float 16-bit
 		FLOAT32, // signed float 32-bit
 	}
+
+
 	
 	private NumericalSize size;
 	
@@ -76,8 +78,17 @@ SemanticCheck<
 		
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
-				
+
 		// TODO: implement type checks, it is required a numerical type
+		if(!staticType.isNumericType() && !staticType.isUntyped()){
+			tool.warnOn(node, "required numerical type for overflow check of "+id+", instead got "+staticType);
+			return;
+		}
+		System.out.println(dynamicTypes.toString()+id);
+		if(staticType.isUntyped() && dynamicTypes.stream().noneMatch(Type::isNumericType)){
+			tool.warnOn(node, "required numerical type for overflow check of "+node.getLocation()+", instead got "+dynamicTypes+ id.getStaticType());
+			return;
+		}
 		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
 		
 
@@ -85,7 +96,7 @@ SemanticCheck<
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
 				Intervals intervalAbstractValue = state.getValueState().getState(id);	
-				
+				System.out.println(staticType);
 				// TODO: implement logic for overflow/underflow checks
 				// hint: it depends to the NumericalSize size
 		}

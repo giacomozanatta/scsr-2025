@@ -22,6 +22,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.StringUtilities;
+import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
@@ -58,7 +60,7 @@ SemanticCheck<
 			AnalysisState<
 			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 					TypeEnvironment<InferredTypes>>> state = result.getAnalysisStateAfter(div.getRight());
-			
+
 			Set<SymbolicExpression> reachableIds = new HashSet<>();
 			Iterator<SymbolicExpression> comExprIterator = state.getComputedExpressions().iterator();
 			if(comExprIterator.hasNext()) {
@@ -66,28 +68,35 @@ SemanticCheck<
 					try {
 						reachableIds
 								.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
-						
-						for (SymbolicExpression s : reachableIds) {
-							
-							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
 
-			
-							// TODO: implement type checks, it is required a numerical type
-			
+						for (SymbolicExpression s : reachableIds) {
+
+							// type checks, it is required a numerical type
+							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
+							if(types.stream().noneMatch(Type::isNumericType)){
+								tool.warnOn(div, "required numerical type for division by 0 check at "+div.getLocation()+", instead got "+types+ div.getStaticType());
+								continue;
+							}
+
+
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
-							
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
-							
+							if(intervalAbstractValue.isBottom())
+								tool.warnOn(div, "division denominator interval is bottom, no check possible");
+							else if(intervalAbstractValue.interval.equals(new IntInterval(0,0)))
+								tool.warnOn(div, "division by 0, "+div.getRight().toString()+" has always value 0");
+							else if(intervalAbstractValue.interval.includes(new IntInterval(0,0)))
+								tool.warnOn(div, "possible division by 0, "+div.getRight().toString()+"might assume value 0");
 							// TODO: add checks for division by zero
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();
 					}
-	
+
 
 			}
 		}
-		
+
 	}
 
 	// compute possible dynamic types / runtime types

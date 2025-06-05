@@ -207,7 +207,11 @@ SemanticCheck<
 					Pentagons p = (Pentagons) vs;
 					ValueEnvironment<Intervals> ie = p.getInterval();
 					Intervals raw = ie.getState(id);
-					if (raw == null || raw.isBottom()) return;
+					if (raw == null || raw.isBottom()) {
+						tool.warnOn(target, "Variable " + id.getName() + " is bottom");
+						break;
+					}
+
 
 					// reduce by relational bounds
 					intervalAbstractValue = raw;

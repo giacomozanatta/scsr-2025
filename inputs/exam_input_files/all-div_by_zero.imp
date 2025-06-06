@@ -47,12 +47,27 @@ class Test1 {
             iterations = iterations - 1;
             sum = sum - iterations;
         }
+    
 
         // After the loop, 'sum' will be 0. This line attempts to perform a division by zero, which will result in a
         // runtime error. Depending on the accuracy of the analysis, this will be marked as a warning or not.
         def division_by_zero = 1 / sum;
     }
-}// Academic year 2024/2025
+
+
+
+    run(n) {
+        //def n = 8;
+        def acc = 28;
+        while (n > 0) {
+            n = n - 1;
+            acc = acc - n;
+        }
+        // Here acc is exactly zero (28 - (7+6+...+1+0) == 0)
+        def res = 1 / acc; // Division by zero: Pentagons detect definitely, Intervals only possibly
+    }
+}
+// Academic year 2024/2025
 // 879899 - basic benchmark for evaluating division by zero.
 
 class Test2 {

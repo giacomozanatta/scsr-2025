@@ -96,19 +96,22 @@ SemanticCheck<
 								Pentagons p = (Pentagons) vs;
 								
 								ValueEnvironment<Intervals> ie = p.getInterval();
-								Intervals raw = finalInterval = ie.eval((ValueExpression) s, div, state.getState());
+								Intervals raw = ie.eval((ValueExpression) s, div, state.getState());
 								if (raw == null || raw.isBottom())
 									return;
 								if ((s instanceof Identifier)) {
-									Identifier sid = (Identifier) s;
 									Intervals reduced = raw;
-									for (Identifier b : p.getUpperBounds().getState(sid)) {
+									for (Identifier b : p.getUpperBounds().getState((Identifier) s)) {
 										Intervals ib = ie.getState(b);
-										if (ib != null && !ib.isBottom()) {
+										//if (ib != null && !ib.isBottom()) 
 											reduced = reduced.glb(new Intervals(MathNumber.MINUS_INFINITY, ib.interval.getHigh()));
-										}
+										tool.warnOn(div, "Reduced bounds are now: " + reduced.interval.getLow() + " to " + reduced.interval.getHigh());
+									}
+									finalInterval = reduced;
 								}
-								finalInterval = reduced;}
+								else { 
+									finalInterval = raw;
+								}
 							}
 
 							if (finalInterval != null && finalInterval.interval != null) {

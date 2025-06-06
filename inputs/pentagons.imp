@@ -21,4 +21,15 @@ class pentagons {
 			i = i + 1;
 		}
 	}
+
+	run() {
+        def n = 8;
+        def acc = 28;
+        while (n > 0) {
+            n = n - 1;
+            acc = acc - n;
+        }
+        // Here acc is exactly zero (28 - (7+6+...+1+0) == 0)
+        def res = 1 / acc; // Division by zero: Pentagons detect definitely, Intervals only possibly
+    }
 }

@@ -179,7 +179,7 @@ public class Pentagons
 						Identifier y = (Identifier) be.getRight();
 						if(newBounds.getState(y).contains(x)) {
 							newIntervals = newIntervals.putState(id, newIntervals.getState(id)
-									.glb(new Intervals(MathNumber.ONE, MathNumber.PLUS_INFINITY)));
+									.glb(new Intervals(MathNumber.ZERO, MathNumber.PLUS_INFINITY)));
 						}
 					} else if (be.getRight() instanceof Constant)
 						// r = x + 2 (where 2 is the constant)

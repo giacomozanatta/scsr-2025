@@ -56,9 +56,9 @@ class Test1 {
 
 
 
-    run(n) {
-        //def n = 8;
-        def acc = 28;
+    run() {
+        def n = 8;
+        def acc = 29;
         while (n > 0) {
             n = n - 1;
             acc = acc - n;

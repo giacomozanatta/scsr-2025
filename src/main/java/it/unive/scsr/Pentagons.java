@@ -29,7 +29,7 @@ import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.MapRepresentation;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
-
+;
 public class Pentagons 
 		implements ValueDomain<Pentagons>, BaseLattice<Pentagons>  
 {

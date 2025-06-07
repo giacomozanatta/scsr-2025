@@ -103,9 +103,7 @@ SemanticCheck<
 									Intervals reduced = raw;
 									for (Identifier b : p.getUpperBounds().getState((Identifier) s)) {
 										Intervals ib = ie.getState(b);
-										//if (ib != null && !ib.isBottom()) 
-											reduced = reduced.glb(new Intervals(MathNumber.MINUS_INFINITY, ib.interval.getHigh()));
-										tool.warnOn(div, "Reduced bounds are now: " + reduced.interval.getLow() + " to " + reduced.interval.getHigh());
+										reduced = reduced.glb(new Intervals(MathNumber.MINUS_INFINITY, ib.interval.getHigh()));
 									}
 									finalInterval = reduced;
 								}

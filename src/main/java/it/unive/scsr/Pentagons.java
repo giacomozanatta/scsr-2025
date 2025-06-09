@@ -177,7 +177,7 @@ public class Pentagons
 					if(be.getRight() instanceof Identifier) {
 						// r = x - y
 						Identifier y = (Identifier) be.getRight();
-						if(newBounds.getState(y).contains(x)) {
+						if(!(id.equals(x)) && newBounds.getState(y).contains(x)) {
 							newIntervals = newIntervals.putState(id, newIntervals.getState(id)
 									.glb(new Intervals(MathNumber.ZERO, MathNumber.PLUS_INFINITY)));
 						}

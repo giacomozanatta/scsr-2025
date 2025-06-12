@@ -5,17 +5,15 @@ import java.util.Objects;
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
+import it.unive.lisa.analysis.lattices.Satisfiability;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.NumericNegation;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
-import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.*;
+import it.unive.lisa.symbolic.value.operator.binary.*;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -101,32 +99,41 @@ public class Intervals
 		// TODO: The semantics of negation should be implemented here! 
 		
 		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
+			if(arg.isTop())
+				return top();
+			else {
+				IntInterval a = arg.interval;
+				MathNumber lA = a.getLow();
+				MathNumber ua = a.getHigh();
+
+				return new Intervals(ua.multiply(MathNumber.MINUS_ONE), lA.multiply(MathNumber.MINUS_ONE));
+			}
 			
 		}
 		
 		return top();
 	}
-	
+
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
-		
+
 		IntInterval a = this.interval;
 		IntInterval b = other.interval;
-		
+
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
-		
+
 		MathNumber uA = a.getHigh();
 		MathNumber uB = b.getHigh();
-		
+
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
-		
+
 		MathNumber newLower = lA.max(lB);
 		MathNumber newUpper = uA.min(uB);
-		
+
 		Intervals newInterval = new Intervals(newLower, newUpper);
-		
+
 		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : newInterval;
 	}
 
@@ -238,18 +245,54 @@ public class Intervals
 			
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
+
+			MathNumber newlower = lA.add(lB);
+			MathNumber newUpper = uA.add(uB);
 			
-			return new Intervals(lA.add(lB), uA.add(uB));
+			return new Intervals(newlower.min(newUpper), newlower.max(newUpper));
 			
 		} else 
 			
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
 			
 		if( operator instanceof SubtractionOperator) {
+			// [a,b] - [c,d] = [a-d, b-c]
+			MathNumber newLow = a.getLow().subtract(b.getHigh());
+			MathNumber newHigh = a.getHigh().subtract(b.getLow());
+			return new Intervals(newLow, newHigh);
 			
 		} else if( operator instanceof MultiplicationOperator) {
-			
-			
+			MathNumber ac = a.getLow().multiply(b.getLow());
+			MathNumber ad = a.getLow().multiply(b.getHigh());
+			MathNumber bc = a.getHigh().multiply(b.getLow());
+			MathNumber bd = a.getHigh().multiply(b.getHigh());
+
+			MathNumber min = ac.min(ad).min(bc).min(bd);
+			MathNumber max = ac.max(ad).max(bc).max(bd);
+			return  new Intervals(min, max);
+		}
+		else if(operator instanceof DivisionOperator){
+			MathNumber zero = MathNumber.ZERO;
+			if (b.getLow().compareTo(zero) <= 0 && b.getHigh().compareTo(zero) >= 0) {
+				//division by zero
+				return bottom();
+			}
+
+			MathNumber aLow = a.getLow();
+			MathNumber aHigh = a.getHigh();
+			MathNumber bLow = b.getLow();
+			MathNumber bHigh = b.getHigh();
+
+			MathNumber div1 = aLow.divide(bLow);
+			MathNumber div2 = aLow.divide(bHigh);
+			MathNumber div3 = aHigh.divide(bLow);
+			MathNumber div4 = aHigh.divide(bHigh);
+
+			MathNumber mindiv = div1.min(div2).min(div3).min(div4);
+			MathNumber maxdiv = div1.max(div2).max(div3).max(div4);
+
+			return new Intervals(mindiv,maxdiv);
+
 		}
 			
 		return top();
@@ -316,7 +359,73 @@ public class Intervals
 		
 		return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest, oracle);
 	}
-	
+
+	@Override
+	public Satisfiability satisfiesBinaryExpression(
+			BinaryOperator operator,
+			Intervals left,
+			Intervals right,
+			ProgramPoint pp,
+			SemanticOracle oracle) {
+		if (left.isTop() || right.isTop())
+			return Satisfiability.UNKNOWN;
+
+		if (operator == ComparisonEq.INSTANCE) {
+			Intervals glb = null;
+			try {
+				glb = left.glb(right);
+			} catch (SemanticException e) {
+				return Satisfiability.UNKNOWN;
+			}
+
+			if (glb.isBottom())
+				return Satisfiability.NOT_SATISFIED;
+			else if (left.interval.isSingleton() && left.equals(right))
+				return Satisfiability.SATISFIED;
+			return Satisfiability.UNKNOWN;
+		} else if (operator == ComparisonGe.INSTANCE)
+			return satisfiesBinaryExpression(ComparisonLe.INSTANCE, right, left, pp, oracle);
+		else if (operator == ComparisonGt.INSTANCE)
+			return satisfiesBinaryExpression(ComparisonLt.INSTANCE, right, left, pp, oracle);
+		else if (operator == ComparisonLe.INSTANCE) {
+			Intervals glb = null;
+			try {
+				glb = left.glb(right);
+			} catch (SemanticException e) {
+				return Satisfiability.UNKNOWN;
+			}
+
+			if (glb.isBottom())
+				return Satisfiability.fromBoolean(left.interval.getHigh().compareTo(right.interval.getLow()) <= 0);
+// we might have a singleton as glb if the two intervals share a
+// bound
+			if (glb.interval.isSingleton() && left.interval.getHigh().compareTo(right.interval.getLow()) == 0)
+				return Satisfiability.SATISFIED;
+			return Satisfiability.UNKNOWN;
+		} else if (operator == ComparisonLt.INSTANCE) {
+			Intervals glb = null;
+			try {
+				glb = left.glb(right);
+			} catch (SemanticException e) {
+				return Satisfiability.UNKNOWN;
+			}
+
+			if (glb.isBottom())
+				return Satisfiability.fromBoolean(left.interval.getHigh().compareTo(right.interval.getLow()) < 0);
+			return Satisfiability.UNKNOWN;
+		} else if (operator == ComparisonNe.INSTANCE) {
+			Intervals glb = null;
+			try {
+				glb = left.glb(right);
+			} catch (SemanticException e) {
+				return Satisfiability.UNKNOWN;
+			}
+			if (glb.isBottom())
+				return Satisfiability.SATISFIED;
+			return Satisfiability.UNKNOWN;
+		}
+		return Satisfiability.UNKNOWN;
+	}
 
 	
 }

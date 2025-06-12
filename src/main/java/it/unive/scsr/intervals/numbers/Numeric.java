@@ -92,7 +92,7 @@ public abstract sealed class Numeric<T> implements SigNum permits IntegerNumber,
 
   @Override
   public boolean equals(Object obj) {
-    return obj instanceof Numeric<?> that && Objects.equals(toDecimal(), that.toDecimal());
+    return obj instanceof Numeric<?> that && toDecimal().compareTo(that.toDecimal()) == 0;
   }
 
   @Override

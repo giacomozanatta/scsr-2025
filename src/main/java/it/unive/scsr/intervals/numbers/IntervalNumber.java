@@ -145,8 +145,7 @@ public sealed interface IntervalNumber extends Comparable<IntervalNumber> permit
     var allowedTypes = Sets.from(continuousTypes, discreteTypes);
 
     // If the specified number is not assigned, an optional empty value is returned, otherwise the
-    // best
-    // over-approximation for a discrete or continuous number is returned.
+    // best over-approximation for a discrete or continuous number is returned.
     if (!allowedTypes.contains(constant.getClass())) return Optional.empty();
     return continuousTypes.contains(constant.getClass())
         ? Optional.of(new DecimalNumber(BigDecimal.valueOf(constant.doubleValue())))

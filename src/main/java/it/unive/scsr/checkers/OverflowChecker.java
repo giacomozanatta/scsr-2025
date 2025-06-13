@@ -21,7 +21,9 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.overflowhelp.FloatInterval;
 
 public class OverflowChecker implements
 SemanticCheck<
@@ -40,9 +42,41 @@ SemanticCheck<
 	}
 	
 	private NumericalSize size;
-	
+	private FloatInterval boundary;
+	private String typename;
 	public OverflowChecker(NumericalSize size) {
 		this.size = size;
+
+		if (size == NumericalSize.INT8) {
+			boundary=new FloatInterval(Byte.MIN_VALUE,Byte.MAX_VALUE);
+			typename="int8";
+		} else if (size == NumericalSize.INT16) {
+			boundary=new FloatInterval(Short.MIN_VALUE,Short.MAX_VALUE);
+			typename="int16";
+		}else if (size == NumericalSize.INT32) {
+			boundary=new FloatInterval(Integer.MIN_VALUE,Integer.MAX_VALUE);
+			typename="int32";
+		}else if (size == NumericalSize.UINT8) {
+			boundary=new FloatInterval(MathNumber.ZERO,new MathNumber(255));
+			typename="uint8";
+		} else if (size == NumericalSize.UINT16) {
+			boundary=new FloatInterval(MathNumber.ZERO,new MathNumber(65535));
+			typename="uint16";
+		} else if (size == NumericalSize.UINT32) {
+			boundary=new FloatInterval(MathNumber.ZERO,new MathNumber(4294967295L));
+			typename="uint32";
+		} else if (size == NumericalSize.FLOAT8) {
+			//15.5 (1.1111 x 2^3)
+			//https://people.cs.umass.edu/~verts/cmpsci145/8-Bit_Floating_Point.pdf
+			boundary=new FloatInterval(-15.5f,15.5f);
+			typename="float8";
+		} else if (size == NumericalSize.FLOAT16) {
+			boundary=new FloatInterval(-65504.0f,65504.0f);
+			typename="float16";
+		} else if (size == NumericalSize.FLOAT32) {
+			boundary=new FloatInterval(-Float.MAX_VALUE,Float.MAX_VALUE);
+			typename="float32";
+		}
 	}
 
 	@Override
@@ -82,6 +116,8 @@ SemanticCheck<
 		// TODO: implement type checks, it is required a numerical type
 		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
 
+		// System.out.println(staticType+" "+dynamicTypes+" "+node);
+
 		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
 			target = varRef.getParentStatement();
 		}
@@ -90,10 +126,31 @@ SemanticCheck<
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(target).getState();
-				Intervals intervalAbstractValue = state.getValueState().getState(id);	
-				
+				Intervals intervalAbstractValue = state.getValueState().getState(id);
+				// System.out.println(intervalAbstractValue.interval);
 				// TODO: implement logic for overflow/underflow checks
 				// hint: it depends to the NumericalSize size
+
+				if(boundary!=null){
+					if(intervalAbstractValue.interval.getHigh().gt(boundary.getHigh())) {
+						if (intervalAbstractValue.interval.getLow().gt(boundary.getHigh()))
+							tool.warnOn(node, "certain overflow, for type " + typename+" possible value:"+intervalAbstractValue.interval+" type boundary:"+boundary);
+						else
+							tool.warnOn(node, "possible overflow, for type " + typename+" possible value:"+intervalAbstractValue.interval+" type boundary:"+boundary);
+					}if(intervalAbstractValue.interval.getLow().lt(boundary.getLow())){
+						if (intervalAbstractValue.interval.getHigh().gt(boundary.getLow()))
+							tool.warnOn(node, "certain underflow, for type " +typename+" possible value:"+intervalAbstractValue.interval+" type boundary:"+boundary);
+						else
+							tool.warnOn(node, "possible underflow, for type " + typename+" possible value:"+intervalAbstractValue.interval+" type boundary:"+boundary);
+					}
+
+				}
+
+
+
+
+
+
 		}
 		
 		

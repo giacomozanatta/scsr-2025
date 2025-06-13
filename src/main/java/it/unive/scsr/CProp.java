@@ -9,7 +9,9 @@ import it.unive.lisa.symbolic.value.*;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.operator.*;
 
+import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
+import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.representation.ListRepresentation;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
@@ -20,6 +22,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+
 
 public class CProp implements
         DataflowElement<
@@ -48,28 +52,62 @@ public class CProp implements
     public Collection<Identifier> getInvolvedIdentifiers() {
         return List.of(id);
     }
+    private static Integer getValueOf(
+            Identifier id,
+            DefiniteDataflowDomain<CProp> domain) {
+        for (CProp cp : domain.getDataflowElements())
+            if (cp.id.equals(id))
+                return cp.constant;
+        return null;
+    }
 
-    private static Integer eval(SymbolicExpression ve, DefiniteDataflowDomain<CProp> domain){
-        if(ve instanceof Constant c) return (c.getValue() instanceof Integer)?(Integer)c.getValue() :null;
-        if(ve instanceof Identifier i){
-            for (CProp cp : domain.getDataflowElements()){
-                if(cp.id.equals(i)){
-                    return cp.getConstant();
-                }
-            }
+    private static Integer eval(
+            ValueExpression expression,
+            DefiniteDataflowDomain<CProp> domain) {
+        if (expression == null)
+            return null;
+
+        if (expression instanceof Constant) {
+            Object value = ((Constant) expression).getValue();
+            if (value instanceof Integer)
+                return (Integer) value;
         }
-        if(ve instanceof UnaryExpression u){
-            Integer i= eval(u.getExpression(),domain);
-            return u.getOperator() instanceof NumericNegation ? -i:i;
+
+        if (expression instanceof Identifier)
+            return getValueOf((Identifier) expression, domain);
+
+        if (expression instanceof UnaryExpression) {
+            UnaryExpression unary = (UnaryExpression) expression;
+            UnaryOperator operator = unary.getOperator();
+            ValueExpression arg = (ValueExpression) unary.getExpression();
+
+            Integer value = eval(arg, domain);
+            if (value == null)
+                return null;
+            if (operator instanceof NumericNegation)
+                return -value;
         }
-        if(ve instanceof BinaryExpression b){
-            Integer left= eval(b.getLeft(),domain);
-            Integer right= eval(b.getRight(),domain);
-            if(b.getOperator() instanceof AdditionOperator) return left+right;
-            if(b.getOperator() instanceof SubtractionOperator) return left-right;
-            if(b.getOperator() instanceof MultiplicationOperator) return left*right;
-            if(b.getOperator() instanceof DivisionOperator) return left/right;
+
+        if (expression instanceof BinaryExpression) {
+            BinaryExpression binary = (BinaryExpression) expression;
+            BinaryOperator operator = binary.getOperator();
+            ValueExpression left = (ValueExpression) binary.getLeft();
+            ValueExpression right = (ValueExpression) binary.getRight();
+
+            Integer lvalue = eval(left, domain);
+            Integer rvalue = eval(right, domain);
+            if (lvalue == null || rvalue == null)
+                return null;
+            if (operator instanceof AdditionOperator)
+                return lvalue + rvalue;
+            if (operator instanceof SubtractionOperator)
+                return lvalue - rvalue;
+            if (operator instanceof MultiplicationOperator)
+                return lvalue * rvalue;
+            if (operator instanceof DivisionOperator)
+                return lvalue / rvalue;
         }
+
         return null;
     }
 

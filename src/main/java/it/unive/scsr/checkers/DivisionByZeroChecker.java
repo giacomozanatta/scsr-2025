@@ -26,6 +26,7 @@ import it.unive.lisa.util.StringUtilities;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
+import it.unive.scsr.overflowhelp.FloatInterval;
 
 public class DivisionByZeroChecker implements
 SemanticCheck<
@@ -83,9 +84,9 @@ SemanticCheck<
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 							if(intervalAbstractValue.isBottom())
 								tool.warnOn(div, "division denominator interval is bottom, no check possible");
-							else if(intervalAbstractValue.interval.equals(new IntInterval(0,0)))
+							else if(intervalAbstractValue.interval.equals(new FloatInterval(0,0)))
 								tool.warnOn(div, "division by 0, "+div.getRight().toString()+" has always value 0");
-							else if(intervalAbstractValue.interval.includes(new IntInterval(0,0)))
+							else if(intervalAbstractValue.interval.includes(new FloatInterval(0,0)))
 								tool.warnOn(div, "possible division by 0, "+div.getRight().toString()+"might assume value 0");
 							// TODO: add checks for division by zero
 						}

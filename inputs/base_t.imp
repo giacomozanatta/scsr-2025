@@ -1,0 +1,9 @@
+class overflow{
+    f0() {
+        def a=1.8;
+        def b=1;
+        def c=a+b;
+        def g=10000000;
+        return;
+    }
+}

@@ -1,6 +1,5 @@
 package it.unive.scsr;
 
-import java.util.ArrayList;
 import java.util.Objects;
 
 import it.unive.lisa.analysis.Lattice;
@@ -11,7 +10,11 @@ import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.*;
+import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
+import it.unive.lisa.symbolic.value.operator.NegatableOperator;
+import it.unive.lisa.symbolic.value.operator.NumericNegation;
+import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
@@ -97,8 +100,8 @@ public class Intervals
 		
 		// TODO: The semantics of negation should be implemented here! 
 		
-		if(operator instanceof NegatableOperator) {
-			return new Intervals(new MathNumber(0).subtract(arg.interval.getHigh()),new MathNumber(0).subtract(arg.interval.getLow()));
+		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
+			
 		}
 		
 		return top();
@@ -222,8 +225,8 @@ public class Intervals
 			SemanticOracle oracle) throws SemanticException {
 		
 		
-		if((left.isTop() || isTop())&& !(operator instanceof DivisionOperator))
-			return top();
+		if(left.isBottom() || right.isBottom())
+			return bottom();
 		
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
@@ -238,47 +241,18 @@ public class Intervals
 			
 			return new Intervals(lA.add(lB), uA.add(uB));
 			
-		} else
-
+		} else 
+			
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
+			
 		if( operator instanceof SubtractionOperator) {
-
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			return new Intervals(lA.subtract(uB), uA.subtract(lB));
+			
 		} else if( operator instanceof MultiplicationOperator) {
-
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			MathNumber [] x= {lA.multiply(lB),lA.multiply(uB),uA.multiply(lB),uA.multiply(uB)};
-			return getIntervals(x);
-		}else if( operator instanceof DivisionOperator) {
-			if(right.equals(ZERO))return BOTTOM;
-			if(left.equals(ZERO))return ZERO;
-			if((left.isTop() || isTop()))return TOP;
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			MathNumber [] x= {lA.divide(lB),lA.divide(uB),uA.divide(lB),uA.divide(uB)};
-			return getIntervals(x);
+			
+			
 		}
+			
 		return top();
-	}
-
-	private Intervals getIntervals(MathNumber[] x) {
-		MathNumber min= x[0];
-		MathNumber max= x[0];
-		for(MathNumber i : x){
-			if(i.lt(min)) min = i;
-			else if(i.gt(max)) max = i;
-		}
-		return new Intervals(min, max);
 	}
 
 	@Override

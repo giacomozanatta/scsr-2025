@@ -10,6 +10,7 @@ import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.*;
@@ -35,7 +36,7 @@ public class Intervals
 	 * The interval represented by this domain element.
 	 */
 	public final IntInterval interval;
-	
+
 	/**
 	 * The abstract zero ({@code [0, 0]}) element.
 	 */
@@ -53,7 +54,7 @@ public class Intervals
 
 	/**
 	 * Builds the interval.
-	 * 
+	 *
 	 * @param interval the underlying {@link IntInterval}
 	 */
 	public Intervals(
@@ -63,7 +64,7 @@ public class Intervals
 
 	/**
 	 * Builds the interval.
-	 * 
+	 *
 	 * @param lower  the lower bound
 	 * @param upper the higher bound
 	 */
@@ -75,7 +76,7 @@ public class Intervals
 
 	/**
 	 * Builds the interval.
-	 * 
+	 *
 	 * @param low  the lower bound
 	 * @param high the higher bound
 	 */
@@ -91,13 +92,13 @@ public class Intervals
 	public Intervals() {
 		this(IntInterval.INFINITY);
 	}
-	
+
 	@Override
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		
-		// TODO: The semantics of negation should be implemented here! 
-		
+
+		// TODO: The semantics of negation should be implemented here!
+
 		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
 			if(arg.isTop())
 				return top();
@@ -108,9 +109,9 @@ public class Intervals
 
 				return new Intervals(ua.multiply(MathNumber.MINUS_ONE), lA.multiply(MathNumber.MINUS_ONE));
 			}
-			
+
 		}
-		
+
 		return top();
 	}
 
@@ -139,30 +140,30 @@ public class Intervals
 
 	@Override
 	public Intervals lubAux(Intervals other) throws SemanticException {
-		
+
 		IntInterval a = this.interval;
 		IntInterval b = other.interval;
-		
+
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
-		
+
 		MathNumber uA = a.getHigh();
 		MathNumber uB = b.getHigh();
-		
+
 		MathNumber newLower = lA.min(lB);
 		MathNumber newUpper = uA.max(uB);
-		
+
 		if(lA.compareTo(uA) > 0 || lB.compareTo(uB) > 0)
 			return BOTTOM;
-		
+
 		Intervals newInterval = new Intervals(newLower, newUpper);
 		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() :
-			newInterval;
+				newInterval;
 	}
 
 	@Override
 	public boolean lessOrEqualAux(Intervals other) throws SemanticException {
-		
+
 		return other.interval.includes(this.interval);
 	}
 
@@ -177,10 +178,10 @@ public class Intervals
 	public boolean isTop() {
 		return interval != null && interval.isInfinity();
 	}
-	
+
 	@Override
 	public Intervals bottom() {
-		// the bottom element of the lattice is an element with a null interval 
+		// the bottom element of the lattice is an element with a null interval
 		return BOTTOM;
 	}
 
@@ -191,30 +192,30 @@ public class Intervals
 
 	@Override
 	public StructuredRepresentation representation() {
-		if(this.isBottom())
+		if (this.isBottom())
 			return Lattice.bottomRepresentation();
-		
-		return new StringRepresentation("["+this.interval.getLow()+","+this.interval.getHigh()+"]");
+
+		return new StringRepresentation(interval.toString());
 	}
 
 	@Override
 	public int compareTo(Intervals o) {
 		if(isBottom())
-			return o.isBottom() ? 0 : -1; 
+			return o.isBottom() ? 0 : -1;
 		if(isTop())
 			return o.isTop() ? 0 : 1;
-		
+
 		if(o.isBottom())
 			return 1;
-		
+
 		if(isTop())
 			return -1;
-		
+
 		return interval.compareTo(o.interval);
 	}
 
 	// logic for evaluating expressions below
-	
+
 	@Override
 	public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
@@ -223,78 +224,78 @@ public class Intervals
 			Intervals singletonInterval = new Intervals(i,i);
 			return singletonInterval;
 		}
-		
+
 		return top();
 	}
 
 	@Override
 	public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
-			SemanticOracle oracle) throws SemanticException {
-		
-		
+										  SemanticOracle oracle) throws SemanticException {
+
+
 		if(left.isBottom() || right.isBottom())
 			return bottom();
-		
+
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
-		
+
 		if(operator instanceof AdditionOperator)  {
-			
+
 			MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
-			
+
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
 
 			MathNumber newlower = lA.add(lB);
 			MathNumber newUpper = uA.add(uB);
-			
-			return new Intervals(newlower.min(newUpper), newlower.max(newUpper));
-			
-		} else 
-			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
-		if( operator instanceof SubtractionOperator) {
-			// [a,b] - [c,d] = [a-d, b-c]
-			MathNumber newLow = a.getLow().subtract(b.getHigh());
-			MathNumber newHigh = a.getHigh().subtract(b.getLow());
-			return new Intervals(newLow, newHigh);
-			
-		} else if( operator instanceof MultiplicationOperator) {
-			MathNumber ac = a.getLow().multiply(b.getLow());
-			MathNumber ad = a.getLow().multiply(b.getHigh());
-			MathNumber bc = a.getHigh().multiply(b.getLow());
-			MathNumber bd = a.getHigh().multiply(b.getHigh());
 
-			MathNumber min = ac.min(ad).min(bc).min(bd);
-			MathNumber max = ac.max(ad).max(bc).max(bd);
-			return  new Intervals(min, max);
-		}
-		else if(operator instanceof DivisionOperator){
-			MathNumber zero = MathNumber.ZERO;
-			if (b.getLow().compareTo(zero) <= 0 && b.getHigh().compareTo(zero) >= 0) {
-				//division by zero
-				return bottom();
+			return new Intervals(newlower.min(newUpper), newlower.max(newUpper));
+
+		} else
+
+			// TODO: The semantics of other binary mathematical operations should be implemented here!
+
+			if( operator instanceof SubtractionOperator) {
+				// [a,b] - [c,d] = [a-d, b-c]
+				MathNumber newLow = a.getLow().subtract(b.getHigh());
+				MathNumber newHigh = a.getHigh().subtract(b.getLow());
+				return new Intervals(newLow, newHigh);
+
+			} else if( operator instanceof MultiplicationOperator) {
+				MathNumber ac = a.getLow().multiply(b.getLow());
+				MathNumber ad = a.getLow().multiply(b.getHigh());
+				MathNumber bc = a.getHigh().multiply(b.getLow());
+				MathNumber bd = a.getHigh().multiply(b.getHigh());
+
+				MathNumber min = ac.min(ad).min(bc).min(bd);
+				MathNumber max = ac.max(ad).max(bc).max(bd);
+				return  new Intervals(min, max);
+			}
+			else if(operator instanceof DivisionOperator){
+				MathNumber zero = MathNumber.ZERO;
+				if (b.getLow().compareTo(zero) <= 0 && b.getHigh().compareTo(zero) >= 0) {
+					//division by zero
+					return bottom();
+				}
+
+				MathNumber aLow = a.getLow();
+				MathNumber aHigh = a.getHigh();
+				MathNumber bLow = b.getLow();
+				MathNumber bHigh = b.getHigh();
+
+				MathNumber div1 = aLow.divide(bLow);
+				MathNumber div2 = aLow.divide(bHigh);
+				MathNumber div3 = aHigh.divide(bLow);
+				MathNumber div4 = aHigh.divide(bHigh);
+
+				MathNumber mindiv = div1.min(div2).min(div3).min(div4);
+				MathNumber maxdiv = div1.max(div2).max(div3).max(div4);
+
+				return new Intervals(mindiv,maxdiv);
+
 			}
 
-			MathNumber aLow = a.getLow();
-			MathNumber aHigh = a.getHigh();
-			MathNumber bLow = b.getLow();
-			MathNumber bHigh = b.getHigh();
-
-			MathNumber div1 = aLow.divide(bLow);
-			MathNumber div2 = aLow.divide(bHigh);
-			MathNumber div3 = aHigh.divide(bLow);
-			MathNumber div4 = aHigh.divide(bHigh);
-
-			MathNumber mindiv = div1.min(div2).min(div3).min(div4);
-			MathNumber maxdiv = div1.max(div2).max(div3).max(div4);
-
-			return new Intervals(mindiv,maxdiv);
-
-		}
-			
 		return top();
 	}
 
@@ -316,14 +317,14 @@ public class Intervals
 	}
 
 	// logic for widening below
-	
+
 	@Override
 	public Intervals wideningAux(
 			Intervals other)
 			throws SemanticException {
 		MathNumber newLower, newUpper;
 		if (other.interval.getHigh().compareTo(interval.getHigh()) > 0)
-			//  high value is increasing 
+			//  high value is increasing
 			newUpper = MathNumber.PLUS_INFINITY;
 		else
 			newUpper = interval.getHigh();
@@ -336,9 +337,9 @@ public class Intervals
 
 		return newLower.isMinusInfinity() && newUpper.isPlusInfinity() ? top() : new Intervals(newLower, newUpper);
 	}
-	
+
 	// logic for narrowing below
-	
+
 	@Override
 	public Intervals narrowingAux(
 			Intervals other)
@@ -348,17 +349,66 @@ public class Intervals
 		newLow = interval.getLow().isInfinite() ? other.interval.getLow() : interval.getLow();
 		return new Intervals(newLow, newHigh);
 	}
-	
-	
+
+
 	@Override
 	public ValueEnvironment<Intervals> assumeBinaryExpression(ValueEnvironment<Intervals> environment,
-			BinaryOperator operator, ValueExpression left, ValueExpression right, ProgramPoint src, ProgramPoint dest,
-			SemanticOracle oracle) throws SemanticException {
-		
-		// Any assumptions should be implemented here!
-		
-		return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest, oracle);
-	}
+															  BinaryOperator operator, ValueExpression left, ValueExpression right, ProgramPoint src, ProgramPoint dest,
+															  SemanticOracle oracle) throws SemanticException {
+		Identifier id;
+		Intervals eval;
+		boolean rightIsExpr;
+		if (left instanceof Identifier) {
+			eval = eval(right, environment, src, oracle);
+			id = (Identifier) left;
+			rightIsExpr = true;
+		} else if (right instanceof Identifier) {
+			eval = eval(left, environment, src, oracle);
+			id = (Identifier) right;
+			rightIsExpr = false;
+		} else
+			return environment;
+
+		Intervals starting = environment.getState(id);
+		if (eval.isBottom() || starting.isBottom())
+			return environment.bottom();
+
+		boolean lowIsMinusInfinity = eval.interval.lowIsMinusInfinity();
+		Intervals low_inf = new Intervals(eval.interval.getLow(), MathNumber.PLUS_INFINITY);
+		Intervals lowp1_inf = new Intervals(eval.interval.getLow().add(MathNumber.ONE), MathNumber.PLUS_INFINITY);
+		Intervals inf_high = new Intervals(MathNumber.MINUS_INFINITY, eval.interval.getHigh());
+		Intervals inf_highm1 = new Intervals(MathNumber.MINUS_INFINITY, eval.interval.getHigh().subtract(MathNumber.ONE));
+
+		Intervals update = null;
+		if (operator == ComparisonEq.INSTANCE)
+			update = eval;
+		else if (operator == ComparisonGe.INSTANCE)
+			if (rightIsExpr)
+				update = lowIsMinusInfinity ? null : starting.glb(low_inf);
+			else
+				update = starting.glb(inf_high);
+		else if (operator == ComparisonGt.INSTANCE)
+			if (rightIsExpr)
+				update = lowIsMinusInfinity ? null : starting.glb(lowp1_inf);
+			else
+				update = lowIsMinusInfinity ? eval : starting.glb(inf_highm1);
+		else if (operator == ComparisonLe.INSTANCE)
+			if (rightIsExpr)
+				update = starting.glb(inf_high);
+			else
+				update = lowIsMinusInfinity ? null : starting.glb(low_inf);
+		else if (operator == ComparisonLt.INSTANCE)
+			if (rightIsExpr)
+				update = lowIsMinusInfinity ? eval : starting.glb(inf_highm1);
+			else
+				update = lowIsMinusInfinity ? null : starting.glb(lowp1_inf);
+
+		if (update == null)
+			return environment;
+		else if (update.isBottom())
+			return environment.bottom();
+		else
+			return environment.putState(id, update);	}
 
 	@Override
 	public Satisfiability satisfiesBinaryExpression(
@@ -427,5 +477,6 @@ public class Intervals
 		return Satisfiability.UNKNOWN;
 	}
 
-	
+
+
 }

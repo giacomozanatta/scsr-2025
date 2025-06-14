@@ -1,0 +1,24 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for constants
+
+class Metrics {
+    evaluation() {
+
+        def _1 = 0;     // This should not generate any warnings.
+        def _2 = 64;    // This should not generate any warnings.
+        def _3 = -1;    // This should generate a warning for all non-negative types.
+        def _4 = 128;   // This should generate a warning for the int8 type.
+
+        def _5 = (2147483647 * 2) + 1; // This should generate a warning for all types except uint32.
+
+        def _6 = 0.0;   // This should not generate any warnings.
+        def _7 = 6.4;   // This should not generate any warnings.
+
+        def _8 = 0.014625;                      // This should generate a warning since the value for float8 is close to zero.
+        def _9 = 0.000000059604644775390625;    // This should generate a warning since the value for float8 and float16 will round to zero.
+
+        def small_float_32 = 0.00000000000000000000009; // Base value for compute small 32 floating point values.
+        def _10 = small_float_32 * small_float_32;      // This should generate a warning since the value for float8, float16, and float32 are close to zero.
+        def _11 = _10 * small_float_32;                 // This should generate a warning since the value for float8, float16, and float32 will round to zero.
+    }
+}

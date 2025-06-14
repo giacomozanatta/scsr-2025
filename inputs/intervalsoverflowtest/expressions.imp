@@ -1,0 +1,13 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for expressions
+
+class Metrics {
+    evaluation() {
+
+        def _1 = (12 + 24 - 15 / 3) * 2 + 2;    // This should not generate any warnings.
+        def _2 = _1 * -1;                       // This should generate a warning for all non-negative types.
+
+        def _3 = (24.5 * 5 + 0.5 / 2) * 2 - 0.5;    // This will round towards plus infinity.
+        def _4 = _3 * -1;                           // This will round towards negative infinity.
+    }
+}

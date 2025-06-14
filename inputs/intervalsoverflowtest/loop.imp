@@ -1,0 +1,42 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for loop
+
+class Metrics {
+
+    // ...
+    int_array_5() {
+
+        def data = new int[5];
+
+        for (def i = 0; i < 5; i = i + 1) {
+            data[i] = i * 2;
+        }
+
+        return data;
+    }
+
+    sum(array, size) {
+
+        def sum = 0;
+
+        for (def i = 0; i < 5; i = i + 1) {
+            sum = sum + array[i];
+        }
+
+        return sum;
+    }
+
+    evaluation() {
+
+        def data = this.int_array_5();
+        def sum = this.sum();
+
+        def extra = sum + 32;
+        def normalized = sum - 64;
+
+        def flag_1 = 0;
+        def flag_2 = 0;
+        if (normalized < 0) { flag_1 = 1; }
+        if (normalized < extra) { flag_2 = 1; }
+    }
+}

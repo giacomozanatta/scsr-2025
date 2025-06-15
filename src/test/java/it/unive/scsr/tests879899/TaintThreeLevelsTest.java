@@ -29,13 +29,46 @@ public class TaintThreeLevelsTest {
       extends ProgramResource<TaintThreeLevelsChecker, ValueEnvironment<TaintThreeLevels>> {
 
     private static final String[] sources =
-        new String[] {"source_SQL", "source_HTML", "source_PATH", "source1", "source2"};
+        new String[] {
+          "source_SQL",
+          "source_HTML",
+          "source_PATH",
+          "source1",
+          "source2",
+          "getFormField",
+          "sourceInt",
+          "sourceStr",
+          "getUsernameInInput",
+          "getPasswordInInput",
+          "sourceLogin"
+        };
 
     private static final String[] sanitizers =
-        new String[] {"sanitize_SQL", "sanitize_HTML", "sanitize_PATH", "sanitizer1", "sanitizer2"};
+        new String[] {
+          "sanitize_SQL",
+          "sanitize_HTML",
+          "sanitize_PATH",
+          "sanitizer1",
+          "sanitizer2",
+          "sanitize",
+          "sanitizeHtml",
+          "sanitizeSql",
+          "sanitizeString",
+          "calculateHash"
+        };
 
     private static final String[] sinks =
-        new String[] {"sink_SQL", "sink_HTML", "sink_PATH", "sink1", "sinks"};
+        new String[] {
+          "sink_SQL",
+          "sink_HTML",
+          "sink_PATH",
+          "sink1",
+          "sinks",
+          "runQuery",
+          "sinkInt",
+          "sinkStr",
+          "queryDB"
+        };
 
     public TaintThreeLevelsProgram(String inputFile, String outputDirectory) {
       super(inputFile, outputDirectory);

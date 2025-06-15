@@ -90,7 +90,7 @@ public class TaintThreeLevelsChecker
                   // Filter taint checks for "this" reference.
                   if (filterFirstThis) {
                     var types = Analyzer.inferTypes(s, call, state.getState());
-                    if (types.stream().allMatch(Type::isReferenceType)
+                    if (types.stream().anyMatch(Type::isReferenceType)
                         && s.toString().equals("this")) {
                       continue;
                     }

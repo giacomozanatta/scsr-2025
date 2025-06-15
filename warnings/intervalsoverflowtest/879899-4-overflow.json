@@ -1,0 +1,7 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/879899-4-overflow.imp':21:34 for lub holding [128,128]"
+    }
+  ]
+}

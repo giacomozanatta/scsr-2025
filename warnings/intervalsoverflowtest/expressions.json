@@ -1,0 +1,16 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: false, round to negative limit: true] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/expressions.imp':11:12 for _4 holding [-245,-245]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/expressions.imp':10:12 for _3 holding [245,245]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/expressions.imp':11:17 for _3 holding [245,245]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/expressions.imp':8:12 for _2 holding [-64,-64]"
+    }
+  ]
+}

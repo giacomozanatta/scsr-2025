@@ -1,0 +1,34 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':29:12 for just_negative holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':36:12 for less_than_m128 holding [-129,-129]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT32,INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':38:12 for less_than_m2147483648 holding [-2147483649,-2147483649]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':37:12 for less_than_m32768 holding [-32769,-32769]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':30:12 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT32,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':34:12 for more_than_2147483647 holding [2147483648,2147483648]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':31:12 for more_than_255 holding [256,256]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':32:12 for more_than_32767 holding [32768,32768]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT32,INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':35:12 for more_than_4294967295 holding [4294967296,4294967296]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/879899-1-overflow.imp':33:12 for more_than_65535 holding [65536,65536]"
+    }
+  ]
+}

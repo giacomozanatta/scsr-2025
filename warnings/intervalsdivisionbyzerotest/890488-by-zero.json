@@ -1,0 +1,7 @@
+{
+  "intervalsdivisionbyzerotest": [
+    {
+      "warning": "division by zero at 'inputs/intervalsdivisionbyzerotest/890488-by-zero.imp':7:31 for time_h"
+    }
+  ]
+}

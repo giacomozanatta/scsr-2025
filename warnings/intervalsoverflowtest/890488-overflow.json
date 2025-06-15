@@ -1,0 +1,76 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':33:12 for shift_adjust holding [-0.0005000000237487257,-0.0005000000237487257]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':34:30 for shift_adjust holding [-0.0005000000237487257,-0.0005000000237487257]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false],reaching overflow [close to zero: true] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':34:12 for underflow_chk holding [-5.000000237487257E-7,-5.000000237487257E-7]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':36:12 for neg_scaled_Wh holding [-1.248E+5,-1.248E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':37:31 for neg_scaled_Wh holding [-1.248E+5,-1.248E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':31:12 for excess_energy holding [-2.52E+4,-2.52E+4]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':32:30 for excess_energy holding [-2.52E+4,-2.52E+4]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':26:12 for inst_power holding [1.036E+4,1.036E+4]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':27:30 for inst_power holding [1.036E+4,1.036E+4]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':14:12 for power_mW holding [1.036E+4,1.036E+4]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':20:15 for power_mW holding [1.036E+4,1.036E+4]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':37:12 for balanced_Wh holding [1.248E+5,1.248E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':29:12 for scaled_peak_Wh holding [1.248E+5,1.248E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':31:30 for scaled_peak_Wh holding [1.248E+5,1.248E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':36:31 for scaled_peak_Wh holding [1.248E+5,1.248E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':28:12 for peak_energy_Wh holding [1248,1248]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':29:30 for peak_energy_Wh holding [1248,1248]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':11:12 for current_mA holding [2.8E+3,2.8E+3]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':14:23 for current_mA holding [2.8E+3,2.8E+3]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':16:12 for current_mA holding [2.8E+3,2.8E+3]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':27:12 for energy_Wh holding [248,248]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':28:30 for energy_Wh holding [248,248]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':12:12 for voltage_mV holding [3.7E+3,3.7E+3]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/890488-overflow.imp':14:36 for voltage_mV holding [3.7E+3,3.7E+3]"
+    }
+  ]
+}

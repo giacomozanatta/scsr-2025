@@ -1,0 +1,13 @@
+{
+  "intervalsdivisionbyzerotest": [
+    {
+      "warning": "division by zero at 'inputs/intervalsdivisionbyzerotest/908677-by-zero.imp':7:20 for b"
+    },
+    {
+      "warning": "division by zero at 'inputs/intervalsdivisionbyzerotest/908677-by-zero.imp':53:19 for div"
+    },
+    {
+      "warning": "division by zero at 'inputs/intervalsdivisionbyzerotest/908677-by-zero.imp':134:24 for heap[w]:heap"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false],reaching overflow [close to zero: true] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':18:12 for _9 holding [5.960464477539063E-8,5.960464477539063E-8]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT32,FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':22:12 for _11 holding [7.28999961267610549961608043438121869206107899392E-67,7.28999961267610549961608043438121869206107899392E-67]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false],reaching overflow [close to zero: true] for sizes FLOAT16,FLOAT32,FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':21:12 for _10 holding [8.0999997130934089405985633072704E-45,8.0999997130934089405985633072704E-45]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false],reaching overflow [close to zero: true] for sizes FLOAT16,FLOAT32,FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':22:18 for _10 holding [8.0999997130934089405985633072704E-45,8.0999997130934089405985633072704E-45]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':20:12 for small_float_32 holding [8.999999840607448E-23,8.999999840607448E-23]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':21:18 for small_float_32 holding [8.999999840607448E-23,8.999999840607448E-23]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':21:35 for small_float_32 holding [8.999999840607448E-23,8.999999840607448E-23]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':22:24 for small_float_32 holding [8.999999840607448E-23,8.999999840607448E-23]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/constants.imp':9:12 for _3 holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/constants.imp':10:12 for _4 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT32,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/constants.imp':12:12 for _5 holding [4294967295,4294967295]"
+    },
+    {
+      "warning": "reaching overflow [close to zero: true] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/constants.imp':17:12 for _8 holding [0.014624999836087227,0.014624999836087227]"
+    }
+  ]
+}

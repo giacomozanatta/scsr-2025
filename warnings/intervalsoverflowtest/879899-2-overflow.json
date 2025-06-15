@@ -1,0 +1,37 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':11:12 for close_to_zero_16 holding [0.00006103515625,0.00006103515625]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':10:12 for round_to_zero_8 holding [0.0019531239522621036,0.0019531239522621036]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false],reaching overflow [close to zero: true] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':12:12 for round_to_zero_16 holding [5.960464477539063E-8,5.960464477539063E-8]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT32,FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':16:12 for round_to_zero_32 holding [7.28999961267610549961608043438121869206107899392E-67,7.28999961267610549961608043438121869206107899392E-67]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false],reaching overflow [close to zero: true] for sizes FLOAT16,FLOAT32,FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':15:12 for close_to_zero_32 holding [8.0999997130934089405985633072704E-45,8.0999997130934089405985633072704E-45]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false],reaching overflow [close to zero: true] for sizes FLOAT16,FLOAT32,FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':16:31 for close_to_zero_32 holding [8.0999997130934089405985633072704E-45,8.0999997130934089405985633072704E-45]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':14:12 for small_float_32 holding [8.999999840607448E-23,8.999999840607448E-23]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':15:31 for small_float_32 holding [8.999999840607448E-23,8.999999840607448E-23]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':15:48 for small_float_32 holding [8.999999840607448E-23,8.999999840607448E-23]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':16:50 for small_float_32 holding [8.999999840607448E-23,8.999999840607448E-23]"
+    },
+    {
+      "warning": "reaching overflow [close to zero: true] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/879899-2-overflow.imp':9:12 for close_to_zero_8 holding [0.015623999759554863,0.015623999759554863]"
+    }
+  ]
+}

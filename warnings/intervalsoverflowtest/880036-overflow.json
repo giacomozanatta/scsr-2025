@@ -1,0 +1,37 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: false, round to negative limit: true] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':26:6 for sure_neg_ofl_1 holding [-250.0250000011874362825,-2.5E+2]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: false, round to negative limit: true] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':27:26 for sure_neg_ofl_1 holding [-250.0250000011874362825,-2.5E+2]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: false, round to negative limit: true] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':39:27 for sure_neg_ofl_1 holding [-250.0250000011874362825,-2.5E+2]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':39:6 for sure_pos_ofl_1 holding [2.5E+2,250.0250000011874362825]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':23:6 for sure_pos_ofl_6 holding [8E+2,800.16000800760035216723884806303996697352]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':30:6 for sure_neg_ofl_2 holding [-0.000260013592196602825,-0.00001001358032224]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':35:27 for sure_neg_ofl_2 holding [-0.000260013592196602825,-0.00001001358032224]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':35:6 for sure_pos_ofl_2 holding [0.00001001358032224,0.000260013592196602825]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':24:6 for sure_pos_ofl_7 holding [6.4E+3,6.4E+3]"
+    },
+    {
+      "warning": "reaching overflow [close to zero: true] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':31:6 for maybe_cross_ofl_3 holding [-0.0149997723056002825,0.010000228881836]"
+    },
+    {
+      "warning": "reaching overflow [close to zero: true] for sizes FLOAT8 at 'inputs/intervalsoverflowtest/880036-overflow.imp':32:26 for maybe_cross_ofl_3 holding [-0.0149997723056002825,0.010000228881836]"
+    }
+  ]
+}

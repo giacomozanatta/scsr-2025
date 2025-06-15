@@ -1,0 +1,13 @@
+{
+  "intervalsdivisionbyzerotest": [
+    {
+      "warning": "division by zero at 'inputs/intervalsdivisionbyzerotest/880036-by-zero.imp':27:51 for 1 - 7 / 9 - 2"
+    },
+    {
+      "warning": "division by zero at 'inputs/intervalsdivisionbyzerotest/880036-by-zero.imp':57:49 for f_certain - 10.5"
+    },
+    {
+      "warning": "division by zero at 'inputs/intervalsdivisionbyzerotest/880036-by-zero.imp':33:47 for i_certain - 10"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':46:12 for just_negative holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':63:12 for just_negative holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':75:12 for just_negative holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':9:12 for just_negative holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':23:15 for eq_comparison_overflowing holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':64:15 for ge_comparison_overflowing2 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':34:33 for gt_comparison_overflowing holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':81:15 for le_comparison_overflowing2 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':46:33 for lt_comparison_overflowing holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':10:12 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':23:43 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':34:12 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':34:61 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':46:61 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':58:12 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':64:44 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':80:12 for more_than_127 holding [128,128]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/satisfiability.imp':81:44 for more_than_127 holding [128,128]"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "pentagonsdivisionbyzerotest": [
+    {
+      "warning": "division by zero at 'inputs/pentagonsdivisionbyzerotest/879899-1-by-zero.imp':34:82 for 10 / 2.0 - 2.0 + 3.0 + 1.0 - 5 * 1 - 2.5 * 2 - 1.0 + 1.0 + 3"
+    },
+    {
+      "warning": "division by zero at 'inputs/pentagonsdivisionbyzerotest/879899-1-by-zero.imp':29:55 for 8 / 2.0 + 3.5 - 1.5 - 5 + 1.0 * 1"
+    },
+    {
+      "warning": "division by zero at 'inputs/pentagonsdivisionbyzerotest/879899-1-by-zero.imp':20:53 for two * three / three * five"
+    },
+    {
+      "warning": "division by zero at 'inputs/pentagonsdivisionbyzerotest/879899-1-by-zero.imp':22:63 for two_fp * three_fp - five_fp + one_fp"
+    },
+    {
+      "warning": "division by zero at 'inputs/pentagonsdivisionbyzerotest/879899-1-by-zero.imp':18:23 for zero"
+    }
+  ]
+}

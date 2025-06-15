@@ -1,0 +1,94 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':55:12 for z holding [10000000252621254.38174965532430663515961869087035528917953593559352641104842626800144322585070535155510475901293049925857508599643129261257966860430563822461085017376972852387256843218860303048882689386694999846324545653831493610388789756044183338149713802418671160983012718913757985186674658782326527156548763379323997774152571405564473088281133602399414549287589791038844392429208689326845075019188275400096607854010439664671907311811873565024064121458822839495140632416611649659369086828859360732681412477217280639740100237738,10000000252621254.38174965532430663515961869087035528917953593559352641104842626800144322585070535155510475901293049925857508599643129261257966860430563822461085017376972852387256843218860303048882689386694999846324545653831493610388789756044183338149713802418671160983012718913757985186674658782326527156548763379323997774152571405564473088281133602399414549287589791038844392429208689326845075019188275400096607854010439664671907311811873565024064121458822839495140632416611649659369086828859360732681412477217280639740100237738]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':56:15 for z holding [10000000252621254.38174965532430663515961869087035528917953593559352641104842626800144322585070535155510475901293049925857508599643129261257966860430563822461085017376972852387256843218860303048882689386694999846324545653831493610388789756044183338149713802418671160983012718913757985186674658782326527156548763379323997774152571405564473088281133602399414549287589791038844392429208689326845075019188275400096607854010439664671907311811873565024064121458822839495140632416611649659369086828859360732681412477217280639740100237738,10000000252621254.38174965532430663515961869087035528917953593559352641104842626800144322585070535155510475901293049925857508599643129261257966860430563822461085017376972852387256843218860303048882689386694999846324545653831493610388789756044183338149713802418671160983012718913757985186674658782326527156548763379323997774152571405564473088281133602399414549287589791038844392429208689326845075019188275400096607854010439664671907311811873565024064121458822839495140632416611649659369086828859360732681412477217280639740100237738]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':54:12 for y holding [1E+11,1E+11]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':55:16 for y holding [1E+11,1E+11]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':53:12 for x holding [1E+5,1E+5]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':54:16 for x holding [1E+5,1E+5]"
+    },
+    {
+      "warning": "definite overflow [round to zero: false, round to positive limit: true, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':54:20 for x holding [1E+5,1E+5]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':61:12 for val holding [1.0000000414199800113356171503377E-11,1.0000000414199800113356171503377E-11]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':62:15 for val holding [1.0000000414199800113356171503377E-11,1.0000000414199800113356171503377E-11]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':60:12 for tiny holding [9.99999993922529E-9,9.99999993922529E-9]"
+    },
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false] for sizes FLOAT16,FLOAT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':61:18 for tiny holding [9.99999993922529E-9,9.99999993922529E-9]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':105:8 for u16 holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':106:20 for u16 holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':103:8 for u8 holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':106:15 for u8 holding [-1,-1]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':37:16 for a holding [-273,-273]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':25:12 for val holding [-Inf,-5E+2]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':48:12 for d holding [1.9737E+5,1.9737E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':49:15 for d holding [1.9737E+5,1.9737E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':17:12 for sum holding [1E+3,+Inf]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':33:12 for a holding [227,227]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':35:20 for a holding [227,227]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':37:20 for a holding [227,227]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':45:12 for a holding [382,382]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':47:16 for a holding [382,382]"
+    },
+    {
+      "warning": "definite overflow for sizes INT8,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':35:16 for a holding [427,427]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':46:12 for b holding [98303,98303]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':47:20 for b holding [98303,98303]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':47:12 for c holding [98685,98685]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT8 at 'inputs/intervalsoverflowtest/908677-overflow.imp':48:16 for c holding [98685,98685]"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "intervalsoverflowtest": [
+    {
+      "warning": "definite overflow [round to zero: true, round to positive limit: false, round to negative limit: false],definite overflow for sizes FLOAT16,FLOAT8,INT16,INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/885768-2-overflow.imp':85:28 for number holding [-9.999999717180685E-10,-9.999999717180685E-10],[-1.2E+5,-1.2E+5]"
+    },
+    {
+      "warning": "definite overflow for sizes INT16,INT8,UINT16,UINT32,UINT8 at 'inputs/intervalsoverflowtest/885768-2-overflow.imp':85:16 for val holding [-4.8E+5,-4.8E+5]"
+    }
+  ]
+}

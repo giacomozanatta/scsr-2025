@@ -1,0 +1,7 @@
+{
+  "intervalsdivisionbyzerotest": [
+    {
+      "warning": "division by zero at 'inputs/intervalsdivisionbyzerotest/892631-by-zero.imp':59:37 for consumption_rate"
+    }
+  ]
+}

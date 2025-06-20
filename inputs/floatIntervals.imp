@@ -1,0 +1,33 @@
+class floatIntervals {
+
+	basic() {
+		def i = 2.0;
+		def j = -10.0;
+		def k = 7.0;
+		def a = i + j;
+		def s = i - j;
+		def z = k / i;
+		def m = i * j;
+		def d = i / j;
+        def l = -i;
+	}
+
+	branches(b) {
+		def x = 0.0;
+		if (b)
+           	x = x + 7.0;
+       	else
+           	x = -7.0;
+		return x;
+  }
+
+	loop(b) {
+			def c = 1.0;
+
+			while (b < 3.0) {
+				c = c + 1.0;
+				b = b + 1.0;
+			}
+			return c;
+	}
+}

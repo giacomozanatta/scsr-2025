@@ -21,6 +21,8 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.IntInterval;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 
 public class OverflowChecker implements
@@ -81,6 +83,27 @@ SemanticCheck<
 				
 		// TODO: implement type checks, it is required a numerical type
 		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
+		// --------------------------------------------------------- mio ------------------------------------------------------------------
+		boolean isNumerical = staticType.isNumericType();
+		boolean isUntyped = staticType.isUntyped();
+
+		if (isUntyped || !isNumerical) {
+			for (Type dynamic : dynamicTypes) {
+				if (dynamic.isNumericType()) {
+					isNumerical = true;
+					break;
+				}
+			}
+		}
+
+		if (!isNumerical){
+			tool.warn("This is not a numerical type! ");
+			return;
+
+		}
+
+
+		// -------------------------------------------------------------------------------------------------------------------------------
 
 		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
 			target = varRef.getParentStatement();
@@ -94,6 +117,48 @@ SemanticCheck<
 				
 				// TODO: implement logic for overflow/underflow checks
 				// hint: it depends to the NumericalSize size
+			// -------------------------------- mio ----------------------------------------------------------
+			if(intervalAbstractValue.isBottom() || intervalAbstractValue.interval == null || intervalAbstractValue.isTop()){
+				tool.warn("interval abstract value null of top! ");
+				return;
+			}else{
+				IntInterval a = intervalAbstractValue.interval;
+				MathNumber la = a.getLow();
+				MathNumber ua = a.getHigh();
+
+				double lower = parseToDouble(la);
+				double upper = parseToDouble(ua);
+				double min = getMin(size);
+				double max = getMax(size);
+
+				//underflow
+				if(lower != Double.NEGATIVE_INFINITY && lower != Double.NaN){ //if lower is finite
+					if(lower < min){
+						if(upper <= min) {
+							System.err.printf("Definite Underflow! Lower bound is < then minimum and upper bound is <= then minimum (for size: %s )", size);
+						}
+						//System.err.println("Underflow! Lower bound is < then minimum ");
+						else
+							System.err.printf("Possible Underflow! Lower bound is < then minimum (for size: %s )", size);
+
+					}
+				}
+
+				//overflow
+				if(upper != Double.POSITIVE_INFINITY && upper != Double.NaN){
+					if(upper > max){
+						if(lower >= max){
+							System.err.printf("[%s] Underflow in %s: %.3f < %.3f location %s%n",
+									size, id.getName(), lower, min, id.getCodeLocation());
+							//System.err.printf("Definite Overflow! Lower bound is >= then maximum and upper bound is > then maximum (for size: %s )", size);
+						}
+						else System.err.printf("Possible Overflow! Upper bound is > then maximum (for size: %s )", size);
+					}
+				}
+			}
+
+
+			// --------------------------------------------------------------------------------------------------------
 		}
 		
 		
@@ -126,6 +191,48 @@ SemanticCheck<
 	
 			}	
 		return possibleDynamicTypes;
+	}
+
+	private double getMin(NumericalSize size){
+		return switch (size){
+			case INT8 -> -128;
+			case INT16 -> -32768;
+			case INT32 -> Integer.MIN_VALUE;
+			case UINT8 -> 0;
+			case UINT16 -> 0;
+			case UINT32 -> 0;
+			case FLOAT8 -> -240.0;
+			case FLOAT16 -> -65504.0;
+			case FLOAT32 -> -Float.MAX_VALUE;
+		};
+
+	}
+
+	private double getMax(NumericalSize size){
+		return switch (size){
+			case INT8 -> 127;
+			case INT16 -> 32767;
+			case INT32 -> Integer.MAX_VALUE;
+			case UINT8 -> 255;
+			case UINT16 -> 65535;
+			case UINT32 -> 4294967295L;
+			case FLOAT8 -> 240.0;
+			case FLOAT16 -> 65504.0;
+			case FLOAT32 -> Float.MAX_VALUE;
+		};
+
+	}
+
+	private double parseToDouble(MathNumber number){
+		if (number != null) {
+			String str = number.toString();
+			if (str.equals("Inf") || str.equals("+Inf"))
+				return Double.POSITIVE_INFINITY;
+			if (str.equals("-Inf"))
+				return Double.NEGATIVE_INFINITY;
+			return Double.parseDouble(str);
+		}
+		return Double.NaN;
 	}
 
 	

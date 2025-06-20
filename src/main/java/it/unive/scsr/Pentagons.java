@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import it.unive.lisa.util.numeric.IntInterval;
 import org.apache.commons.collections4.CollectionUtils;
 
 import it.unive.lisa.analysis.BaseLattice;
@@ -31,7 +32,7 @@ import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
 public class Pentagons 
-		implements ValueDomain<Pentagons>, BaseLattice<Pentagons>  
+		implements ValueDomain<Pentagons>, BaseLattice<Pentagons>
 {
 
 	
@@ -270,7 +271,7 @@ public class Pentagons
 		return intervals.knowsIdentifier(id) || upperbounds.knowsIdentifier(id);
 	}
 
-	private Pentagons closure() throws SemanticException {
+	/*private Pentagons closure() throws SemanticException {
 		ValueEnvironment<UpperBounds> newBounds = new ValueEnvironment<UpperBounds>(upperbounds.lattice, upperbounds.getMap());
 
 		for (Identifier id1 : intervals.getKeys()) {
@@ -287,9 +288,38 @@ public class Pentagons
 		}
 
 		return new Pentagons(newBounds, intervals);
+	}*/
+
+	private Pentagons closure() throws SemanticException {
+		ValueEnvironment<UpperBounds> newBounds = new ValueEnvironment<>(upperbounds.lattice, upperbounds.getMap());
+
+		for (Identifier id1 : intervals.getKeys()) {
+			Set<Identifier> closure = new HashSet<>();
+			for (Identifier id2 : intervals.getKeys()) {
+				if (!id1.equals(id2)) {
+					IntInterval interval1 = intervals.getState(id1).interval;
+					IntInterval interval2 = intervals.getState(id2).interval;
+
+					// Check for nulls
+					if (interval1 != null && interval2 != null) {
+						if (interval1.getHigh().compareTo(interval2.getLow()) < 0) {
+							closure.add(id2);
+						}
+					}
+				}
+			}
+			if (!closure.isEmpty()) {
+				UpperBounds existing = newBounds.getState(id1);
+				UpperBounds newUB = existing != null ? existing.glb(new UpperBounds(closure)) : new UpperBounds(closure);
+				newBounds = newBounds.putState(id1, newUB);
+			}
+		}
+
+		return new Pentagons(newBounds, intervals);
 	}
 
-	
-	
 
+	public ValueEnvironment<Intervals> getIntervals() {
+		return intervals;
+	}
 }

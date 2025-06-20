@@ -22,6 +22,8 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.IntInterval;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
@@ -73,12 +75,49 @@ SemanticCheck<
 						
 			
 							// TODO: implement type checks, it is required a numerical type
-			
+							// ------------ mio ------------------------------------------------------------------------------------
+							boolean isNumeric = types.stream().anyMatch(Type::isNumericType);
+							if (!isNumeric) {
+								tool.warn("This is not a numerical type! ");
+								return;
+							}
+							// ------------------------------------------------------------------------------------------------------
+
+
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 							
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 							
 							// TODO: add checks for division by zero
+							// ------------ mio ------------------------------------------------------------------------------------
+							if (intervalAbstractValue == null){
+								tool.warnOn(div, "IntervalAbstractValue is null! ");
+								return;
+							}else if (intervalAbstractValue.isBottom()){
+								tool.warnOn(div, "IntervalAbstractValue is bottom! ");
+								return;
+							}
+							else if(intervalAbstractValue.isTop()){
+								tool.warnOn(div, "Interval abstract value is top! Possible division by zero!");
+							}
+							else {
+								IntInterval a = intervalAbstractValue.interval;
+								MathNumber al = a.getLow();
+								MathNumber au = a.getHigh();
+
+								if (al.isFinite() && au.isFinite() && (al.isNegative() || al.isZero()) && (au.isPositive() || au.isZero())) {
+									if(al.isZero() && au.isZero()){
+										tool.warnOn(div, "Definite division by zero " + a);
+										System.err.println("Division by zero ([0,0])! ");
+
+									}
+									tool.warnOn(div, "Possible division by zero: divisor may be zero in " + a);
+									System.err.println("Potential division by zero! ");
+								}
+							}
+
+
+							// ------------------------------------------------------------------------------------------------------
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();

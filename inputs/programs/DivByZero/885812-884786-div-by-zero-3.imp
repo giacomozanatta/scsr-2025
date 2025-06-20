@@ -1,0 +1,21 @@
+class DivByZeroTest{
+
+    def iteration = 20;
+    def var = -20.0;
+    def res;
+
+    while(iteration != var) {
+        
+        iteration = iteration - 1;
+        def res = iteration / var;
+        var = var + 1;
+
+        if (var == -5) {
+            res = res + 1;
+        }
+
+    }
+
+    return ((iteration + 1) / var) + res;
+
+}

@@ -1,0 +1,35 @@
+class DivByZeroTest{
+
+    // Integer constants
+    def zero = 0;
+    def one = 1;
+    def two = 2;
+    def minus_one = -1;
+    def minus_two = -2;
+
+    // Floating-point constants (simulated with .0 suffix)
+    def zero_f = 0.0;
+    def one_f = 1.0;
+    def two_f = 2.0;
+    def minus_one_f = -1.0;
+    def minus_two_f = -2.0;
+
+    // Simple division tests
+    def expr1 = one / zero;          // Division by zero (integer)
+    def expr2 = minus_one_f / minus_two;  // Valid float / int division
+    def expr3 = two / zero_f;        // Division by zero (float)
+
+    // Complex expression with division by zero
+    def error1 = (((3 * 4 - minus_two_f) / two) - 7) / zero_f; // Division by zero (float)
+
+    // Another division by zero deep in the expression
+    def temp1 = (minus_two / 0.0);   // Division by zero (float)
+    def temp2 = (minus_two + two) + (one + minus_one) - temp1;
+    def error2 = (((two + 7) / 3.0) - one_f) / temp2; // Denominator may be undefined due to temp1
+
+    // Large arithmetic expression with division by zero in the denominator
+    def numerator = (7.5 * (9 + 4)) - (4.0 / 2.0) + ((6 * 1.2 - 3) * (minus_two_f + minus_one));
+    def denominator = ((8 / 2.0) + (3.5 - 1.5)) - (5 + (1.0 * 1));
+    def error3 = numerator / denominator; // Division
+
+}

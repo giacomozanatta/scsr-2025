@@ -1,0 +1,59 @@
+class DivByZeroTest{
+
+    // Define f'(x) = (u' * v - u * v') / (v * v)
+
+    def derivative(u, up, v, vp) {
+        return (up * v - u * vp) / (v * v);
+    }
+
+
+    // Test 1: f(x) = (x^2 + 3x + 2) / (x + 1), x = -1
+    def x1 = -1;
+
+    def u1 = x1 * x1 + 3 * x1 + 2;
+    def u1p = 2 * x1 + 3;
+
+    def v1 = x1 + 1;
+    def v1p = 1;
+    def res = u1 / v1;
+
+    def d1 = derivative(u1, u1p, v1, v1p);  // Expected Division By Zero
+
+
+    // Test 2 (float): f(x) = (2x + 5) / (x^2 - 4), x = 2.0
+    def x2 = 2.0;
+
+    def u2 = 2.0 * x2 + 5.0;      // u(x) = 2x + 5
+    def u2p = 2.0;                // u'(x) = 2
+
+    def v2 = x2 * x2 - 4.0;       // v(x) = x^2 - 4
+    def v2p = 2.0 * x2;           // v'(x) = 2x
+    def res = u2 / v2;
+
+    def d2 = derivative(u2, u2p, v2, v2p);  // Expected: Division by Zero (denominator = 0.0)
+
+
+    // Test 3: division by zero only in the derivative, f(x) = x^2 / (x^2 - 1)
+        def x1 = 4;
+        def x2 = 4;
+
+    while(x1 != -4) {
+
+        // f(x1)
+        def num1 = x1 * x1;                      
+        def den1 = x1 * x1 - 1;
+        def res = num1 / den1;
+
+        // f'(x2)
+        def num2 = x2 * x2;
+        def den2 = x2 * x2 - 1;
+        def deriv_num = 2 * x1;                    
+        def deriv_den = (x2 * x2 - 1) * (x2 * x2 - 1);                      
+            
+        def df1 = derivative(num2, deriv_num, den2, deriv_den); // Expected Division By Zero only for x2 = 1
+
+        x1 = x1 - 1;
+        x2 = x2 - 1;
+    }
+
+}

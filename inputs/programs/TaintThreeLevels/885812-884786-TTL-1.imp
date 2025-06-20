@@ -1,0 +1,19 @@
+class TaintTestProgram {
+
+    // Simulate some tainted inputs
+    def tainted_input = "user_input";  // imagine this is tainted
+    def safe_input = "constant_string"; // untainted
+
+    // Expressions mixing tainted and untainted
+    def expr1 = tainted_input;          // tainted
+    def expr2 = safe_input;             // untainted
+    def expr3 = tainted_input + " safe";   // tainted because it uses tainted_input
+    def expr4 = safe_input + " text";       // untainted
+
+    // Passing expressions to "sink" parameters (simulated)
+    def sink_param1 = expr1;  // tainted → should warn
+    def sink_param2 = expr2;  // untainted → no warning
+    def sink_param3 = expr3;  // tainted → should warn
+    def sink_param4 = expr4;  // untainted → no warning
+
+}

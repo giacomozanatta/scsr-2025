@@ -1,0 +1,18 @@
+class TaintTests {
+
+    // Tainted and untainted inputs
+    def user = "input";          // tainted
+    def fixed = "safe_string";   // untainted
+
+    // Expressions
+    def a = user;                // tainted
+    def b = fixed;               // untainted
+    def c = user + "_ok";        // tainted
+    def d = fixed + "_log";      // untainted
+
+    // Sinks
+    def s1 = a;   // tainted → warning
+    def s2 = b;   // untainted
+    def s3 = c;   // tainted → warning
+    def s4 = d;   // untainted
+}

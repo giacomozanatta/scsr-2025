@@ -1,0 +1,45 @@
+class OverflowUnderflowTests {
+
+        // INT32: Overflow in loop, underflow in if
+    int_loop_if_test(flag) {
+        def x = 2147483600;    // near INT32_MAX
+        def y = -2147483600;   // near INT32_MIN
+
+        for (def i = 0; i < 10; i = i + 1) {
+            x = x + 10;        // overflow for i >= 5
+        }
+
+        if (flag) {
+            y = y - 100;       // underflow if flag == true
+        }
+    }
+
+    // FLOAT32: Overflow in loop, underflow in if
+    float_loop_if_test(flag) {
+        def x = 3.4e38;        // near FLOAT32 max
+        def y = -3.4e38;       // near FLOAT32 min
+
+        for (def i = 0; i < 5; i = i + 1) {
+            x = x * 10.0;      // float overflow
+        }
+
+        if (flag) {
+            y = y * 10.0;      // float underflow
+        }
+    }
+
+    // UINT8: Overflow in loop, underflow in if (simulated)
+    uint8_loop_if_test(flag) {
+        def x = 250;           // near UINT8 max (255)
+        def y = 5;             // small value for underflow
+
+        for (def i = 0; i < 10; i = i + 1) {
+            x = x + 1;         // overflow after 5 iterations
+        }
+
+        if (flag) {
+            y = y - 10;        // underflow if flag == true
+        }
+    }
+
+}

@@ -1,0 +1,29 @@
+class TaintTestProgram {
+
+    // Simulate getting input (tainted for multiples of 3)
+    def getInput(i) {
+        if (i % 3 == 0)
+            return "tainted_" + i;  // tainted input
+        else
+            return "clean_" + i;    // untainted input
+    }
+
+    // Simulate sink function (annotated @Sink)
+    def sendToSink(data) {
+        // pretend this is a sink
+    }
+
+    def runTest() {
+        def i = 0;
+        while (i < 10) {
+            def inputData = getInput(i);
+
+            if (inputData.startsWith("tainted")) {
+                // tainted data path
+                sendToSink(inputData);
+            }
+
+            i = i + 1;
+        }
+    }
+}

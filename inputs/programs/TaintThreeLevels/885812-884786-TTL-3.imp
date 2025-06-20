@@ -1,0 +1,29 @@
+class TaintTestProgram {
+
+        // Simulate getting input data (tainted)
+    def getInput(i) {
+        if (i % 2 == 0)
+            return "user_data_" + i;  // tainted input for even i
+        else
+            return "constant";        // untainted input for odd i
+    }
+
+    // Simulate a sink function annotated with @Sink
+    def logToDatabase(data) {
+        // Imagine this function is annotated with @Sink
+        // Actual implementation not needed here
+    }
+
+    def processInputs() {
+        def i = 0;
+        while (i < 10) {
+            def data = getInput(i);
+
+            // Call sink with data
+            logToDatabase(data);
+
+            i = i + 1;
+        }
+    }
+
+}

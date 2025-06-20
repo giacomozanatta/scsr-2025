@@ -1,0 +1,30 @@
+class DivByZeroTest{ 
+    
+    // Variable declarations
+    def iteration = 20;
+    def var = -20.0;
+    def res = 0.0;
+
+    // Loop until iteration equals var
+    while (iteration != var) {
+        
+        iteration = iteration - 1;
+
+        // Compute division (possible div-by-zero)
+        def temp = iteration / var;
+        res = temp;
+
+        // Update var
+        var = var + 1.0;
+
+        // Branch when var reaches -5
+        if (var == -5.0) {
+            res = res + 1.0;
+        }
+    }
+
+    // Final expression involving division
+    def final = (iteration + 1.0) / var;
+    res = final + res;
+
+}

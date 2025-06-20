@@ -1,0 +1,31 @@
+class TankTests {
+
+    // Overflow: tank gets too full
+    tank_overflow() {
+        def level = 2147483600;
+        def fill = 100;
+
+        for (def i = 0; i < 10; i = i + 1) {
+            level = level + fill; // overflow after a few steps
+        }
+    }
+
+    // Underflow: tank gets too empty
+    tank_underflow() {
+        def level = 0.00001;
+        def drain = 0.000002;
+
+        for (def i = 0; i < 10; i = i + 1) {
+            level = level - drain; // underflow after some steps
+        }
+    }
+
+    // Conditional drain
+    tank_conditional_drain(leak) {
+        def level = 0.01;
+
+        if (leak) {
+            level = level - 0.02; // underflow if leak is true
+        }
+    }
+}

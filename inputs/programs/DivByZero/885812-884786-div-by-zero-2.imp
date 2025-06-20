@@ -29,7 +29,7 @@ class DivByZeroTest{
 
     // Large arithmetic expression with division by zero in the denominator
     def numerator = (7.5 * (9 + 4)) - (4.0 / 2.0) + ((6 * 1.2 - 3) * (minus_two_f + minus_one));
-    def denominator = ((8 / 2.0) + (3.5 - 1.5)) - (5 + (1.0 * 1));
+    def denominator = ((58 * 0) + (3.5 - 1.5)) - (173 - (2 * 2 * 2 * 2 * 2 * 2 * 2) - 43);
     def error3 = numerator / denominator; // Division
 
 }

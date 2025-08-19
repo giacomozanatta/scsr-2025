@@ -3,7 +3,7 @@
  * This is mainly used to test overflows, because RSA has big exponents, making
  * it easy to overflow even with small primes.
  * WARNING: I still need to test it, so this file will probably be re-uploaded.
- * Current upload number: 1
+ * Current upload number: 2
  *
  * @author Alvise Favero -- 888851@stud.unive.it
  */
@@ -13,7 +13,7 @@ class Key {
     exponent;
     modulus;
 
-    constructor(exponent, modulus) {
+    ~Key(exponent, modulus) {
         this.exponent = exponent;
         this.modulus = modulus;
     }
@@ -43,16 +43,16 @@ class RsaCipher {
      * Computes the Bezout coefficients using the Extended Euclidean Algorithm.
      * @param a
      * @param b
-     * @return an array of integers where:
-     *   - index 0 is the GCD of a and b
-     *   - index 1 is the coefficient x such that a*x + b*y = GCD(a, b) (also its the inverse of a mod b)
-     *   - index 2 is the coefficient y such that a*x + b*y = GCD(a, b)
+     * @return the modular inverse of a mod b
      */
     extendedEuclidean(a, b) {
+        def a0 = a;
+        def b0 = b;
+
         def c = 1;
         def d = 0;
-        def e = 1;
-        def f = 0;
+        def e = 0;
+        def f = 1;
 
 
         while (b != 0) {
@@ -79,6 +79,9 @@ class RsaCipher {
         }
         */
 
+        if (c < 0) {
+            c = c + b0;
+        }
         return c; // c is the modular inverse of a mod b
     }
 

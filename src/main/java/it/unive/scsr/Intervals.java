@@ -14,10 +14,8 @@ import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.*;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
-import it.unive.lisa.symbolic.value.operator.binary.NumericNonOverflowingDiv;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
-import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
@@ -36,17 +34,17 @@ public class Intervals
 	/**
 	 * The interval represented by this domain element.
 	 */
-	public final IntInterval interval;
+	public final DoubleInterval interval;
 	
 	/**
 	 * The abstract zero ({@code [0, 0]}) element.
 	 */
-	public static final Intervals ZERO = new Intervals(IntInterval.ZERO);
+	public static final Intervals ZERO = new Intervals(DoubleInterval.ZERO);
 
 	/**
 	 * The abstract top ({@code [-Inf, +Inf]}) element.
 	 */
-	public static final Intervals TOP = new Intervals(IntInterval.INFINITY);
+	public static final Intervals TOP = new Intervals(DoubleInterval.INFINITY);
 
 	/**
 	 * The abstract bottom element.
@@ -56,10 +54,10 @@ public class Intervals
 	/**
 	 * Builds the interval.
 	 * 
-	 * @param interval the underlying {@link IntInterval}
+	 * @param interval the underlying {@link DoubleInterval}
 	 */
 	public Intervals(
-			IntInterval interval) {
+			DoubleInterval interval) {
 		this.interval = interval;
 	}
 
@@ -72,7 +70,7 @@ public class Intervals
 	public Intervals(
 			MathNumber lower,
 			MathNumber upper) {
-		this(new IntInterval(lower, upper));
+		this(new DoubleInterval(lower, upper));
 	}
 
 	/**
@@ -84,21 +82,21 @@ public class Intervals
 	public Intervals(
 			int low,
 			int high) {
-		this(new IntInterval(low, high));
+		this(new DoubleInterval(low, high));
 	}
 
 	/**
 	 * Builds the top interval.
 	 */
 	public Intervals() {
-		this(IntInterval.INFINITY);
+		this(DoubleInterval.INFINITY);
 	}
 	
 	@Override
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		IntInterval a = arg.interval;
+		DoubleInterval a = arg.interval;
 
 		if(operator instanceof NumericNegation) {
 			MathNumber lA = a.getLow();
@@ -116,8 +114,8 @@ public class Intervals
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
 		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+		DoubleInterval a = this.interval;
+		DoubleInterval b = other.interval;
 		
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
@@ -139,8 +137,8 @@ public class Intervals
 	@Override
 	public Intervals lubAux(Intervals other) throws SemanticException {
 		
-		IntInterval a = this.interval;
-		IntInterval b = other.interval;
+		DoubleInterval a = this.interval;
+		DoubleInterval b = other.interval;
 		
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();
@@ -234,8 +232,8 @@ public class Intervals
 		if(left.isBottom() || right.isBottom())
 			return bottom();
 		
-		IntInterval a = left.interval;
-		IntInterval b = right.interval;
+		DoubleInterval a = left.interval;
+		DoubleInterval b = right.interval;
 		
 		if(operator instanceof AdditionOperator)  {
 			
@@ -279,9 +277,7 @@ public class Intervals
 			newUpper = MathNumber.ONE.divide(lB);
 			newLower = MathNumber.ONE.divide(uB);
 
-			Intervals result = evalMultiplication(left, new Intervals(newLower, newUpper));
-			// Round results: we're using integers
-			return new Intervals(result.interval.getLow().roundDown(), result.interval.getHigh().roundUp());
+            return evalMultiplication(left, new Intervals(newLower, newUpper));
 		}
 
 		return top();
@@ -292,8 +288,8 @@ public class Intervals
 	 * just because both the multiplication and the division use it
 	 */
 	private Intervals evalMultiplication(Intervals left, Intervals right) {
-		IntInterval a = left.interval;
-		IntInterval b = right.interval;
+		DoubleInterval a = left.interval;
+		DoubleInterval b = right.interval;
 
 		MathNumber lA = a.getLow();
 		MathNumber lB = b.getLow();

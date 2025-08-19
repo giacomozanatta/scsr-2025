@@ -21,23 +21,39 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.scsr.DoubleInterval;
 import it.unive.scsr.Intervals;
 
 public class OverflowChecker implements
 SemanticCheck<
 		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
-	
+
+    // Each size carries its bounds
 	public enum NumericalSize {
-		INT8,  // signed integer 8-bit
-		INT16, // signed integer 16-bit
-		INT32, // signed integer 32-bit
-		UINT8,  // unsigned integer 8-bit
-		UINT16, // unsigned integer 16-bit
-		UINT32, // unsigned integer 32-bit
-		FLOAT8, // signed float 8-bit
-		FLOAT16, // signed float 16-bit
-		FLOAT32, // signed float 32-bit
-	}
+		INT8(new DoubleInterval(Byte.MIN_VALUE, Byte.MAX_VALUE)),  // signed integer 8-bit
+		INT16(new DoubleInterval(Short.MIN_VALUE, Short.MAX_VALUE)), // signed integer 16-bit
+		INT32(new DoubleInterval(Integer.MIN_VALUE, Integer.MAX_VALUE)), // signed integer 32-bit
+		UINT8(new DoubleInterval(0., Byte.MAX_VALUE * 2 + 1)),  // unsigned integer 8-bit
+		UINT16(new DoubleInterval(0., Short.MAX_VALUE * 2 + 1)), // unsigned integer 16-bit
+		UINT32(new DoubleInterval(0., ((long) Integer.MAX_VALUE) * 2L + 1L)), // unsigned integer 32-bit
+        // Minifloat
+        // https://en.wikipedia.org/wiki/Minifloat
+		FLOAT8(new DoubleInterval(-240., 240.)), // signed float 8-bit
+        // Half precision floating point
+        // https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+		FLOAT16(new DoubleInterval(-65504., 65504.)), // signed float 16-bit
+		FLOAT32(new DoubleInterval(-Float.MAX_VALUE, Float.MAX_VALUE)); // signed float 32-bit
+
+        private final DoubleInterval bounds;
+
+        NumericalSize(DoubleInterval bounds) {
+            this.bounds = bounds;
+        }
+
+        public DoubleInterval getBounds() {
+            return bounds;
+        }
+    }
 	
 	private NumericalSize size;
 	
@@ -70,27 +86,63 @@ SemanticCheck<
 		return true;
 		
 	}
-	
+
 	private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node ) {
-		Variable id = new Variable(((VariableRef) varRef).getStaticType(), ((VariableRef) varRef).getName(), ((VariableRef) varRef).getLocation());
+		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 		
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
 				
-		// TODO: implement type checks, it is required a numerical type
-		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
-		
+        // It's a different type, ignore
+        if (!staticType.isNumericType() && !staticType.isUntyped())
+            return;
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(node).getState();
-				Intervals intervalAbstractValue = state.getValueState().getState(id);	
-				
-				// TODO: implement logic for overflow/underflow checks
-				// hint: it depends to the NumericalSize size
+        // Handle dynamic types
+        if (staticType.isUntyped()) {
+            boolean found = false;
+            for (Type type : dynamicTypes) {
+                if (type.isNumericType()) {
+                    found = true;
+                    break;
+                }
+            }
+
+            // Even the dynamic type is not numeric
+            if  (!found)
+                return;
+        }
+
+		for (var result : tool.getResultOf(graph)) {
+				var state = result.getAnalysisStateAfter(node).getState();
+				Intervals intervalAbstractValue = state.getValueState().getState(id);
+
+                // We can't check a bottom value
+                if (intervalAbstractValue.isBottom())
+                    continue;
+
+                if (!size.bounds.includes(intervalAbstractValue.interval)) {
+                    if (intervalAbstractValue.interval.getLow().isInfinite()
+                            || intervalAbstractValue.interval.getHigh().isInfinite()) {
+                        // We're not sure whether the overflow occurred, it might be widening
+                        tool.warn(String.format(
+                                "Possible %s overflow detected on node %s with interval %s",
+                                size,
+                                node,
+                                intervalAbstractValue.interval
+                        ));
+                    } else {
+                        // The interval has finite bounds, we're certain that an overflow occurred
+                        tool.warn(String.format(
+                                "%s overflow detected on node %s with interval %s",
+                                size,
+                                node,
+                                intervalAbstractValue.interval
+                        ));
+                    }
+                }
 		}
-		
-		
+
+
 	}
 
 	// compute possible dynamic types / runtime types

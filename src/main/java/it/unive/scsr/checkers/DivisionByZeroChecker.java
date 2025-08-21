@@ -53,11 +53,9 @@ SemanticCheck<
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Division div) {
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-			AnalysisState<
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-					TypeEnvironment<InferredTypes>>> state = result.getAnalysisStateAfter(div.getRight());
+		for (var result : tool.getResultOf(graph)) {
+            // Takes the result of the expression on the divisor, like in expr1 / expr2 it takes expr2
+			var state = result.getAnalysisStateAfter(div.getRight());
 			
 			Set<SymbolicExpression> reachableIds = new HashSet<>();
 			Iterator<SymbolicExpression> comExprIterator = state.getComputedExpressions().iterator();
@@ -68,16 +66,45 @@ SemanticCheck<
 								.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
 						
 						for (SymbolicExpression s : reachableIds) {
-							
-							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
-						
-			
-							// TODO: implement type checks, it is required a numerical type
+                            Type staticType = s.getStaticType();
+							Set<Type> dynamicTypes = getPossibleDynamicTypes(s, div, state.getState());
+
+                            // It's a different type, ignore
+                            if (!staticType.isNumericType() && !staticType.isUntyped())
+                                return;
+
+                            // Handle dynamic types
+                            if (staticType.isUntyped()) {
+                                boolean found = false;
+                                for (Type type : dynamicTypes) {
+                                    if (type.isNumericType()) {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                // Even the dynamic type is not numeric
+                                if  (!found)
+                                    return;
+                            }
+
 			
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 							
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
-							
+
+                            if (!intervalAbstractValue.isBottom()) {
+                                if (intervalAbstractValue.interval.includes(Intervals.ZERO.interval)) {
+                                    if (intervalAbstractValue.equals(Intervals.ZERO)) {
+                                        tool.warn("Division by zero detected in " + div + " at " + div.getLocation() +
+                                                ". The divisor is exactly zero: " + intervalAbstractValue.interval);
+                                    } else {
+                                        tool.warn("Possible division by zero detected in " + div + " at " + div.getLocation() +
+                                                ". The divisor may include zero: " + intervalAbstractValue.interval);
+                                    }
+                                }
+                            }
+
 							// TODO: add checks for division by zero
 						}
 					} catch (SemanticException e) {

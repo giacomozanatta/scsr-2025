@@ -42,7 +42,7 @@ public class DoubleInterval implements Comparable<DoubleInterval> {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         DoubleInterval that = (DoubleInterval) o;
-        return Objects.equals(low, that.low) && Objects.equals(high, that.high);
+        return this.compareTo(that) == 0;
     }
 
     @Override

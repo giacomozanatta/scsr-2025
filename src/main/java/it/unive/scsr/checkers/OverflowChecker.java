@@ -125,17 +125,17 @@ SemanticCheck<
                             || intervalAbstractValue.interval.getHigh().isInfinite()) {
                         // We're not sure whether the overflow occurred, it might be widening
                         tool.warn(String.format(
-                                "Possible %s overflow detected on node %s with interval %s",
+                                "Possible %s overflow detected at %s with interval %s",
                                 size,
-                                node,
+                                node.getLocation(),
                                 intervalAbstractValue.interval
                         ));
                     } else {
                         // The interval has finite bounds, we're certain that an overflow occurred
                         tool.warn(String.format(
-                                "%s overflow detected on node %s with interval %s",
+                                "%s overflow detected at %s with interval %s",
                                 size,
-                                node,
+                                node.getLocation(),
                                 intervalAbstractValue.interval
                         ));
                     }

@@ -5,8 +5,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import it.unive.lisa.analysis.AnalysisState;
-import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
@@ -23,19 +21,11 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
-import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 public class DivisionByZeroChecker implements
 SemanticCheck<
 		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 	
-	
-	private NumericalSize size;
-	
-	public DivisionByZeroChecker(NumericalSize size) {
-		this.size = size;
-	}
-
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
@@ -96,16 +86,18 @@ SemanticCheck<
                             if (!intervalAbstractValue.isBottom()) {
                                 if (intervalAbstractValue.interval.includes(Intervals.ZERO.interval)) {
                                     if (intervalAbstractValue.equals(Intervals.ZERO)) {
-                                        tool.warn("Division by zero detected in " + div + " at " + div.getLocation() +
-                                                ". The divisor is exactly zero: " + intervalAbstractValue.interval);
+                                        tool.warn(String.format(
+                                                "Division by zero detected at %s. The divisor is exactly zero: %s",
+                                                div.getLocation(), intervalAbstractValue.interval
+                                        ));
                                     } else {
-                                        tool.warn("Possible division by zero detected in " + div + " at " + div.getLocation() +
-                                                ". The divisor may include zero: " + intervalAbstractValue.interval);
+                                        tool.warn(String.format(
+                                                "Possible division by zero detected at %s. The divisor may include zero: %s",
+                                                div.getLocation(), intervalAbstractValue.interval
+                                        ));
                                     }
                                 }
                             }
-
-							// TODO: add checks for division by zero
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();

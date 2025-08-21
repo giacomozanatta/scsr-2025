@@ -1,0 +1,20 @@
+class divbyzero{
+
+    uncertain(x){
+		def y = 0;
+        if (x)
+            y = y + x;
+        return y;
+    }
+
+    test_definite(){
+        def definite1 = 10 / 0;
+    }
+
+    test_possibile(){
+        def possible1 = 10 / this.uncertain(-3);
+        def possible2 = 10 / this.uncertain(-1);
+        def possible3 = 10 / this.uncertain(3.14);
+        def sure = 10 / this.uncertain(0);
+    }
+}

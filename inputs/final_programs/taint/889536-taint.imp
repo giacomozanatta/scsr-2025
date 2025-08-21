@@ -1,0 +1,63 @@
+class taint{
+	source(){
+		return -99;
+	}
+
+	sanitizer(v){
+		return 0;
+	}
+
+
+	sink(v){
+	}
+    sinks(v,k){
+    }
+    test1(){
+        def x=this.source();
+        def y=0;
+        def z=x+y;
+        def zz=this.sink(z);  //always tainted
+    }
+
+    test2(v){
+        def x=this.source();
+        if(v){
+            x=this.sanitizer(x);
+        }
+        def zz=this.sink(x);  //may be tainted
+    }
+
+    test4(d){
+        def x=this.source();
+        if(d){
+            x=this.sanitizer(x);
+        }else{
+            x=2-this.sanitizer(x);
+        }
+        def res=this.sink(x);   //not tainted
+    }
+
+    test5(){
+        def username=this.source();
+        def password=this.source();
+        username=this.sanitizer(username);
+        this.sinks(username,password);  //tainted
+    }
+
+    strangesnitizer(f,k){
+        if(k!="secret"){
+            f=this.sanitizer(f);
+        }
+        return f;
+    }
+    test6(k){
+        def f=this.source();
+        f=this.strangesnitizer(f,k);
+        this.sink(f);      //tainted
+    }
+
+    text7(){
+        def x=6;
+    }
+
+}

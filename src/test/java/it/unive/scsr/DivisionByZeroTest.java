@@ -66,7 +66,7 @@ public class DivisionByZeroTest {
         conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 
         // Execute the Overflow Checker
-        conf.semanticChecks.add(new DivisionByZeroChecker(OverflowChecker.NumericalSize.INT32));
+        conf.semanticChecks.add(new DivisionByZeroChecker());
 
         // we instantiate LiSA with our configuration
         LiSA lisa = new LiSA(conf);

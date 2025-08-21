@@ -1,0 +1,84 @@
+/*
+    IMP file for Overflow/Underflow Checker
+    Author: 892631
+*/
+
+class OverflowUnderflowTest {
+
+    // Simulates sensor temperature readings
+    processTemperature(sensor_value) {
+        def base = -128;                                // int8
+        def adjustment = sensor_value * 2;              // int8 multiplication, overflow risk
+        def corrected = base + adjustment;              // overflow if sensor_value > 63
+        return corrected;
+    }
+
+    simulatePacketCounter(packets_sent) {
+        def counter = 250;
+        counter = counter + packets_sent;
+        return counter;
+    }
+
+    // Computes force using Newton's second law
+    computeForce(mass, acceleration) {
+        def force = mass * acceleration;        // float16 or float32 depending on input
+        return force;
+    }
+
+    sumEnergy(readings) {
+        def total = 0;
+
+        for (def i = 0; i < 5; i = i + 1) {
+            total = total + readings[i];        // int32 sum, risk of overflow with large values
+        }
+
+        return total;
+    }
+
+    computeRemainingCharge(charge_level, discharge_rate) {
+        def remaining = charge_level - discharge_rate;          // uint16 subtraction, underflow risk
+        return remaining;
+    }
+
+    // Floating point exponential growth of the population
+    estimatePopulationGrowth(current, rate, years) {
+        def future = current;
+
+        for (def i = 0; i < years; i = i + 1) {
+            future = future * rate;             // float32 growth, risk of overflow
+        }
+
+        return future;
+    }
+
+    computeCoolantTemperatureDrop() {
+        def initial_temp = 0.1;
+        def cooling_rate = 2.5;
+        def time = 13;
+
+        def temp = initial_temp;
+
+        for (def i = 0; i < time; i = i + 1) {
+            temp = temp - cooling_rate * 20.0;
+        }
+
+        return temp;
+    }
+
+    main() {
+        def temp = this.processTemperature(100);               // int8 overflow
+        def packets = this.simulatePacketCounter(10);          // uint8 overflow
+        def force = this.computeForce(3000.0, 25.0);            // float16 overflow
+
+        def energy_readings = new int[5];
+        energy_readings[0] = 1123414234;
+        energy_readings[1] = 253423324;
+        energy_readings[2] = 2134234434;
+        energy_readings[3] = 1234424323;
+        energy_readings[4] = 1112342432;
+        def total_energy = this.sumEnergy(energy_readings);                      // int32 overflow
+
+        def remaining = this.computeRemainingCharge(20, 30);                     // uint16 underflow
+        def population = this.estimatePopulationGrowth(1000000.0, 2.0, 10);      // float32 overflow
+    }
+}

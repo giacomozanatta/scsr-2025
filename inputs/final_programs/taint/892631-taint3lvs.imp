@@ -1,0 +1,112 @@
+/*
+    IMP file for Taint Three Levels Checker
+    Author: 892631
+*/
+
+class TaintThreeLevelsTest {
+
+	source() {
+		return -99;
+	}
+
+	sanitizer(v) {
+		return 0;
+	}
+
+	sink(v) {
+	}
+
+	taint1() {
+		def a = this.source();
+		def b = a;
+		def c = b * 2;
+		this.sink(c);               // tainted
+	}
+
+	taint2() {
+		def x = this.source();
+		def y = 10;
+		def z = x + y;
+		def clean = this.sanitizer(z);
+		this.sink(clean);           // clean
+	}
+
+	taint3(flag) {
+		def val = this.source();
+		if (flag) {
+			val = 100;
+		}
+		this.sink(val);             // may be tainted, expecting TOP
+	}
+
+	taint4(limit) {
+		def t = 0;
+		for (def i = 0; i < limit; i = i + 1) {
+			t = t + this.source();
+		}
+		this.sink(t);               // TOP
+	}
+
+	taint5(idx) {
+        def data = new int[4];
+        data[0] = 1;
+        data[1] = this.source();
+        data[2] = 3;
+        data[3] = 4;
+
+        def v = data[idx];
+        def y = data[1];
+        def z = data[3];
+        this.sink(v);               // should be TOP
+        this.sink(y);               // should be TAINTED
+        this.sink(z);               // should be CLEAN
+    }
+
+	taint6() {
+		def x = this.source();
+		x = this.sanitizer(x);
+		def y = x + 1;
+		this.sink(y);               // clean
+	}
+
+	taint7(c) {
+		def x = this.source();
+		def y = 0;
+
+		if (c > 10) {
+			x = this.sanitizer(x);
+		}
+
+		y = x + 5;
+		this.sink(y);               // should be TOP
+	}
+
+	taint8() {
+        def t = 0;
+        def flag = this.source();
+
+        for (def i = 0; i < 3; i = i + 1) {
+            if (flag < 0) {
+                t = t + this.source();
+            } else {
+                t = t + 1;
+            }
+        }
+
+        this.sink(t);               // TOP
+    }
+
+    taint9() {
+        def data = new int[3];
+        data[0] = 1;
+        data[1] = 2;
+        data[2] = this.source();
+
+        def idx = 2;
+        def extracted = data[idx];
+
+        def result = extracted * 3;
+
+        this.sink(result);          // TOP
+    }
+}

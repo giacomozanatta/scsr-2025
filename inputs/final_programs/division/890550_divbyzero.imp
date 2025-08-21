@@ -1,0 +1,65 @@
+class divbyzero {
+    testBasic() {
+        def flag = 1;
+        def a = 10;
+        if (flag == 2) {
+          a = a - 10;
+        }
+        def res = 100 / a;       // Expected ERROR
+
+        def b = 3;
+        def i = 0;
+        while (i < 3) {
+          b = b - 1;
+          i = i + 1;
+        }
+        res = 50 / b;           // Expected ERROR
+    }
+
+    testArray() {
+        def arr = new int[3];
+        arr[0] = 1;
+        arr[1] = 0;
+        arr[2] = 2;
+
+        def idx = 1;
+        def val = arr[idx];
+        def res = 100 / val;     // Expected ERROR
+
+        idx = 2;
+        val = arr[idx];
+        res = 100 / val;         // Expected ERROR
+    }
+
+    testExpressionandParameter(x) {
+        def a = 100;
+        def res = a / x;         // Expected ERROR
+
+        def y = 6;
+        def z = (3 * 2) - y;
+        res = 60 / z;            // Expected ERROR
+    }
+
+    callFunction() {
+        def x = this.extFunc(4);
+        def res = 100 / x;       // Expected ERROR
+    }
+
+    extFunc(p) {
+        def res = 0;
+        if (p == 10) {
+          res = 5;
+        }
+        return res;       
+    }
+
+    nonNumericalError() {
+        def a = 100;
+        def b = 10;
+        def c = a / b;
+
+        a = 10;
+        b = "err";
+        c = a / b;            // Expected ERROR
+    }
+}

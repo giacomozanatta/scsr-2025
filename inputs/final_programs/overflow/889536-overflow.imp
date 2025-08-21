@@ -1,0 +1,50 @@
+class crono{
+    add_time(t,split){
+        def time= t +split;
+        return time;
+    }
+    add_km(km,split){
+        km= km +split;
+        return km;
+    }
+    sec_to_minute(t){
+        def ret= t/60;
+        return ret;
+    }
+    min_to_sec(t){
+        def ret= t*60;
+        return ret;
+    }
+    modify_time(t,action,amount){
+        if(action==1){
+            t=amount;
+        }else{
+            t=t-amount;
+        }
+        return t;
+    }
+
+    get_pace(time,km){
+        def ret=time/km;
+        return ret;
+    }
+
+    main(){
+        def time=0;
+        def km=0;
+        time=this.add_time(time,100);
+        def xx= this.min_to_sec(200);           // 8-bit overflow
+        def x2=this.modify_time(time,1,200);    //unsigned underflow
+        time=this.add_time(time,200);          // 8-bit overflow
+
+
+        def x5= this.get_pace(600,.001);   // 16 bit overflow
+        def x6= this.sec_to_min(x5);        // 8-bit overflow only
+
+        def x7= this.modify_time(200,1,199);
+        x7=x7*1000;                         // 16 bit possible overflow
+        def x8= this.min_to_sec(x7);        // 16 bit possible overflow
+        def x9= this.modify_time(x8,2,x7);  // possible underflow and overflow
+
+    }
+}

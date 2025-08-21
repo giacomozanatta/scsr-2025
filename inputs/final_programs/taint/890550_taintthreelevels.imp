@@ -1,0 +1,51 @@
+class taintthreelevels {
+    source1() {
+        return -99;
+    }
+
+    sanitizer1(v) {
+        return 0;
+    }
+
+    sink1(v) {
+    }
+
+    direct_taint() {
+        def a = this.source1();
+        this.sink1(a);              // TAINTED
+    }
+
+    overwrite_tainted_value() {
+        def a = this.source1();
+        a = 100;                   // OVERWRITE
+        this.sink1(a);              // CLEAN
+    }
+
+    sanitized_value() {
+        def a = this.source1();
+        def b = this.sanitizer1(a);  //SANITIZED
+        this.sink1(b);               // CLEAN
+    }
+
+    conditional_branch() {
+        def input = this.source1();
+        def result = 0;
+
+        if (input > 0) {
+            result = this.sanitizer1(input);
+        } else {
+            result = input;
+        }
+
+        this.sink1(result);          // POSSIBLE TAINTED
+    }
+
+    arithmetic_flow() {
+        def x = this.source1();
+        def y = x + 1;
+        def z = y * 2;
+        this.sink1(z);              // TAINTED
+    }
+
+}
+

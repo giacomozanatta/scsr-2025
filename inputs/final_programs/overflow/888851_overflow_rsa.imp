@@ -2,7 +2,6 @@
  * RSA encryption and decryption implementation.
  * This is mainly used to test overflows, because RSA has big exponents, making
  * it easy to overflow even with small primes.
- * WARNING: I still need to test it, so this file will probably be re-uploaded.
  * Current upload number: 2
  *
  * @author Alvise Favero -- 888851@stud.unive.it

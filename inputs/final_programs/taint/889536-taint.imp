@@ -44,7 +44,7 @@ class taint{
         this.sinks(username,password);  //tainted
     }
 
-    strangesnitizer(f,k){
+    strangesanitizer(f,k){
         if(k!="secret"){
             f=this.sanitizer(f);
         }
@@ -52,7 +52,7 @@ class taint{
     }
     test6(k){
         def f=this.source();
-        f=this.strangesnitizer(f,k);
+        f=this.strangesanitizer(f,k);
         this.sink(f);      //tainted
     }
 

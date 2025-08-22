@@ -165,15 +165,21 @@ public class TestExam {
     }
 
     private final Pattern[] sourcePatterns = {
-            Pattern.compile("source.*", Pattern.CASE_INSENSITIVE)
+            Pattern.compile("source.*", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("getFormField"),
+            Pattern.compile("sourceLogin"),
+            Pattern.compile("getUsernameInInput"),
+            Pattern.compile("getPasswordInInput"),
     };
 
     private final Pattern[] sanitizerPatterns = {
-            Pattern.compile("santitizer.*", Pattern.CASE_INSENSITIVE)
+            Pattern.compile(".*sanitize.*", Pattern.CASE_INSENSITIVE),
     };
 
     private final Pattern [] sinkPatterns = {
-            Pattern.compile("sink.*", Pattern.CASE_INSENSITIVE)
+            Pattern.compile("sink.*", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("runQuery"),
+            Pattern.compile("queryDB"),
     };
 
     private boolean matchesAnyPattern(Pattern[] patterns, CodeMember cm) {

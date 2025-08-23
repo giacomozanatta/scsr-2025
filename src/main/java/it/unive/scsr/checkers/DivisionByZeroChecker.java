@@ -9,7 +9,6 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
@@ -21,14 +20,16 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
+import it.unive.scsr.UpperBounds;
 
 public class DivisionByZeroChecker implements
 SemanticCheck<
-		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+		SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> {
 	
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
 		
 		if( node instanceof Division)
@@ -40,7 +41,7 @@ SemanticCheck<
 	}
 
 	private void checkDivision(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Division div) {
 
 		for (var result : tool.getResultOf(graph)) {
@@ -79,22 +80,37 @@ SemanticCheck<
                             }
 
 			
-							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
-							
-							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
+							Pentagons valueState = state.getState().getValueState();
+
+
+							Intervals intervalAbstractValue = valueState.getIntervals().eval((ValueExpression) s, div, state.getState());
+                            UpperBounds upperboundsAbstractValue = valueState.getUpperbounds().eval((ValueExpression) s, div, state.getState());
+                            for (var id : upperboundsAbstractValue) {
+                                Intervals ubInterval = valueState.getIntervals().getState(id);
+                                intervalAbstractValue = intervalAbstractValue.lub(ubInterval);
+                            }
 
                             if (!intervalAbstractValue.isBottom()) {
                                 if (intervalAbstractValue.interval.includes(Intervals.ZERO.interval)) {
                                     if (intervalAbstractValue.equals(Intervals.ZERO)) {
                                         tool.warn(String.format(
-                                                "Division by zero detected at %s. The divisor is exactly zero: %s",
-                                                div.getLocation(), intervalAbstractValue.interval
+                                                "Division by zero detected at %s. The divisor is exactly zero: %s with upper bounds %s",
+                                                div.getLocation(),
+                                                intervalAbstractValue.interval,
+                                                upperboundsAbstractValue.representation()
                                         ));
                                     } else {
-                                        tool.warn(String.format(
-                                                "Possible division by zero detected at %s. The divisor may include zero: %s",
-                                                div.getLocation(), intervalAbstractValue.interval
-                                        ));
+                                        // Check for negative upper bounds
+                                        if (!hasNegativeUpperBound(valueState, upperboundsAbstractValue)) {
+                                            tool.warn(String.format(
+                                                    "Possible division by zero detected at %s. The divisor may include zero: %s with upper bounds %s",
+                                                    div.getLocation(),
+                                                    intervalAbstractValue.interval,
+                                                    upperboundsAbstractValue.representation()
+                                            ));
+                                        } else {
+                                            tool.warn("[DEBUG] Prevented a false positive due to negative upper bounds at " + div.getLocation());
+                                        }
                                     }
                                 }
                             }
@@ -109,9 +125,31 @@ SemanticCheck<
 		
 	}
 
+    /**
+     * Check if there is a negative upper bound with interval whose high is negative
+     * @param pentagons the pentagons abstract state
+     * @param upperBounds the upper bounds to check
+     * @return true if there is at least one negative upper bound, false otherwise
+     */
+    private boolean hasNegativeUpperBound(Pentagons pentagons, UpperBounds upperBounds) {
+        System.out.println("[DEBUG] I'm recursing! This time on " + upperBounds.representation());
+        if (upperBounds.isBottom())
+            return false;
+        for (var id : upperBounds) {
+            Intervals ubInterval = pentagons.getIntervals().getState(id);
+            if (ubInterval.interval.getHigh().isNegative()) {
+                return true;
+            }
+            if (hasNegativeUpperBound(pentagons, pentagons.getUpperbounds().getState(id))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 	// compute possible dynamic types / runtime types
 	private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div,
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state) throws SemanticException {
+			SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>> state) throws SemanticException {
 		
 		Set<Type> possibleDynamicTypes = new HashSet<>();
 		Type dynamicTypes = state.getDynamicTypeOf(s, div, state);

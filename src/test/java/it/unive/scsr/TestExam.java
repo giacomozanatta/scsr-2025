@@ -112,7 +112,7 @@ public class TestExam {
         String workdir = "outputs/final_programs/division";
 
         LiSAConfiguration conf = createConfiguration(
-                new ValueEnvironment<>(new Intervals()),
+                new Pentagons(),
                 new DivisionByZeroChecker(),
                 workdir
         );

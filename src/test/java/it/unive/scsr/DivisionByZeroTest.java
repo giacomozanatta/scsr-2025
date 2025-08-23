@@ -59,7 +59,7 @@ public class DivisionByZeroTest {
                 // DefaultConfiguration.defaultHeapDomain(),
                 // The monolithic heap is less precise, we use the point based heap
                 new PointBasedHeap(),
-                new ValueEnvironment<>(new Intervals()),
+                new Pentagons(),
                 DefaultConfiguration.defaultTypeDomain());
 
         // we specify to perform an interprocedural analysis (require to recognize calls to sources, sanitizers, and sinks)

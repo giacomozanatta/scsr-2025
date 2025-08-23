@@ -58,14 +58,14 @@ public class OverflowTest {
                 // DefaultConfiguration.defaultHeapDomain(),
                 // The monolithic heap is less precise, we use the point based heap
                 new PointBasedHeap(),
-                new ValueEnvironment<>(new Intervals()),
+                new Pentagons(),
                 DefaultConfiguration.defaultTypeDomain());
 
         // we specify to perform an interprocedural analysis (require to recognize calls to sources, sanitizers, and sinks)
         conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 
         // Execute the Overflow Checker
-        conf.semanticChecks.add(new OverflowChecker(OverflowChecker.NumericalSize.INT32));
+        conf.semanticChecks.add(new OverflowChecker(OverflowChecker.NumericalSize.INT8));
 
         // we instantiate LiSA with our configuration
         LiSA lisa = new LiSA(conf);

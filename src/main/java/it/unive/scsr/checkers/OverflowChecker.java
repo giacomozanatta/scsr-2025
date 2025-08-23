@@ -9,7 +9,6 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
@@ -18,15 +17,18 @@ import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.scsr.DoubleInterval;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
+import it.unive.scsr.UpperBounds;
 
 public class OverflowChecker implements
 SemanticCheck<
-		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+		SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> {
 
     // Each size carries its bounds
 	public enum NumericalSize {
@@ -63,7 +65,7 @@ SemanticCheck<
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
 		
 		if (node instanceof Assignment) {
@@ -87,7 +89,7 @@ SemanticCheck<
 		
 	}
 
-	private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node ) {
+	private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node ) {
 		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 		
 		Type staticType = id.getStaticType();
@@ -114,47 +116,106 @@ SemanticCheck<
 
 		for (var result : tool.getResultOf(graph)) {
 				var state = result.getAnalysisStateAfter(node).getState();
-				Intervals intervalAbstractValue = state.getValueState().getState(id);
+				Pentagons pentagonsValueState = state.getValueState();
+                Intervals intervalAbstractValue = pentagonsValueState.getIntervals().getState(id);
+                UpperBounds upperboundsAbstractValue = pentagonsValueState.getUpperbounds().getState(id);
 
                 // We can't check a bottom value
                 if (intervalAbstractValue.isBottom())
                     continue;
 
-                if (!size.bounds.includes(intervalAbstractValue.interval)) {
-                    if (intervalAbstractValue.interval.getLow().isInfinite()
-                            || intervalAbstractValue.interval.getHigh().isInfinite()) {
+                if (intervalAbstractValue.interval.getLow().compareTo(size.bounds.getLow()) < 0) {
+                    if (intervalAbstractValue.interval.getLow().isInfinite()) {
                         // We're not sure whether the overflow occurred, it might be widening
                         tool.warn(String.format(
-                                "Possible %s overflow detected at %s with interval %s",
+                                "Possible %s overflow detected at %s with interval %s and upper bounds %s",
                                 size,
                                 node.getLocation(),
-                                intervalAbstractValue.interval
+                                intervalAbstractValue.interval,
+                                upperboundsAbstractValue.representation()
                         ));
                     } else {
                         // The interval has finite bounds, we're certain that an overflow occurred
                         tool.warn(String.format(
-                                "%s overflow detected at %s with interval %s",
+                                "%s overflow detected at %s with interval %s and upper bounds %s",
                                 size,
                                 node.getLocation(),
-                                intervalAbstractValue.interval
+                                intervalAbstractValue.interval,
+                                upperboundsAbstractValue.representation()
                         ));
+                    }
+                } else if (intervalAbstractValue.interval.getHigh().compareTo(size.bounds.getHigh()) > 0) {
+                    Identifier upperbound = getInBoundsUpperBound(pentagonsValueState, upperboundsAbstractValue);
+                    if (upperbound != null) {
+                        // There's an upper bound that is in range, so we assume no overflow
+                        tool.warn(String.format(
+                                "[DEBUG] %s false positive avoided at %s with interval %s due to upper bound %s = %s",
+                                size,
+                                node.getLocation(),
+                                intervalAbstractValue.interval,
+                                pentagonsValueState.getUpperbounds().getState(upperbound).representation(),
+                                pentagonsValueState.getIntervals().getState(upperbound).interval
+
+                        ));
+                    } else {
+                        if (intervalAbstractValue.interval.getHigh().isInfinite()) {
+                            // We're not sure whether the overflow occurred, it might be widening
+                            tool.warn(String.format(
+                                    "Possible %s overflow detected at %s with interval %s and upper bounds %s",
+                                    size,
+                                    node.getLocation(),
+                                    intervalAbstractValue.interval,
+                                    upperboundsAbstractValue.representation()
+                            ));
+                        } else {
+                            // The interval has finite bounds, we're certain that an overflow occurred
+                            tool.warn(String.format(
+                                    "%s overflow detected at %s with interval %s and upper bounds %s",
+                                    size,
+                                    node.getLocation(),
+                                    intervalAbstractValue.interval,
+                                    upperboundsAbstractValue.representation()
+                            ));
+                        }
                     }
                 }
 		}
-
-
 	}
+
+    private Identifier getInBoundsUpperBound(Pentagons valueState, UpperBounds upperboundsAbstractValue) {
+        return getInBoundsUpperBoundAux(valueState, upperboundsAbstractValue, new HashSet<>());
+    }
+
+    private Identifier getInBoundsUpperBoundAux(Pentagons valueState, UpperBounds upperboundsAbstractValue, Set<Identifier> seen) {
+        System.out.println("[DEBUG] I'm recursing for in-bounds! This time on " + upperboundsAbstractValue.representation());
+        for (var id : upperboundsAbstractValue) {
+            if (seen.contains(id)) {
+                System.out.println("[DEBUG] Cycle detected on " + id + ", skipping");
+                continue;
+            }
+            seen.add(id);
+            Intervals ubInterval = valueState.getIntervals().getState(id);
+            // We check if high bound is in type size bounds
+            var high = ubInterval.interval.getHigh();
+            if (size.bounds.includes(new DoubleInterval(high, high)))
+                return id;
+            var boundId = getInBoundsUpperBoundAux(valueState, valueState.getUpperbounds().getState(id), seen);
+            if (boundId != null)
+                return boundId;
+        }
+        return null;
+    }
 
 	// compute possible dynamic types / runtime types
 	private Set<Type> getPossibleDynamicTypes(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node, Variable id, VariableRef varRef) {
 		
 			Set<Type> possibleDynamicTypes = new HashSet<>();
 			for (AnalyzedCFG<
-					SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
+					SimpleAbstractState<PointBasedHeap, Pentagons,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(varRef).getState();
+				SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(varRef).getState();
 				try {
 					Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
 					if(dynamicTypes != null && !dynamicTypes.isUntyped()) {

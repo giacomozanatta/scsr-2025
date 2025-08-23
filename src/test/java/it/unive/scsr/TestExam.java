@@ -94,7 +94,7 @@ public class TestExam {
 
         for (var size : OverflowChecker.NumericalSize.values()) {
             LiSAConfiguration conf = createConfiguration(
-                    new ValueEnvironment<>(new Intervals()),
+                    new Pentagons(),
                     new OverflowChecker(size),
                     workdir + "/" + size.name().toLowerCase()
             );

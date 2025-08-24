@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public class TestExam {
+public class ExamTest {
 
     public Program[] getPrograms(String dirPath) throws ParsingException {
         File dir = new File(dirPath);

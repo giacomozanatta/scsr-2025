@@ -1,5 +1,6 @@
 package it.unive.scsr;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -211,12 +212,12 @@ public class Intervals
 	}
 
 	// logic for evaluating expressions below
-	
+
 	@Override
 	public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		if(constant.getValue() instanceof Number n) {
-			MathNumber i = new MathNumber(n.doubleValue());
+			MathNumber i = new MathNumber(new BigDecimal(n.toString()));
             return new Intervals(i,i);
 		}
 		

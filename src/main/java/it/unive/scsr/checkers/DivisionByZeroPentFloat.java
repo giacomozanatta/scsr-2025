@@ -93,10 +93,12 @@ public class DivisionByZeroPentFloat implements SemanticCheck<SimpleAbstractStat
                         else {
                             FloatInterval a = intervalAbstractValue.interval;
                             // IntInterval a = interval.interval;
-                            double al = a.getLow();
-                            double au = a.getHigh();
+
+
 
                             if(a != null && !intervalAbstractValue.isBottom() && !intervalAbstractValue.isTop()) {
+                                double al = a.getLow();
+                                double au = a.getHigh();
                                 if (a != null && a.isFinite() && al <= 0.0 && au >= 0.0) {
                                     if (al == 0.0 && au == 0.0) {
                                         tool.warnOn(div, "Definite division by zero " + a);

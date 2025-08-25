@@ -6,7 +6,9 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.taint.BaseTaint;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.binary.StringConcat;
 import it.unive.lisa.symbolic.value.operator.ternary.TernaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.representation.StringRepresentation;
@@ -123,24 +125,57 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 			SemanticOracle oracle)
 			throws SemanticException {
 
+
+		if (operator instanceof AdditionOperator && operator instanceof StringConcat) {
+			if (left == TAINT || right == TAINT)
+				return TAINT;
+			if (left == TOP || right == TOP)
+				return TOP;
+			return CLEAN;
+		}
+
 		if(left == TAINT || right == TAINT)
 			return TAINT;
 		if(left == TOP || right == TOP)
 			return TOP;
 
 
-		/*else if(left == TAINT && right == TAINT){
-			return TAINT;
-		}
-		else if((left == TAINT || right == TAINT) && (left == TOP || right == TOP)){
-			return TOP;
-		}
-		else if((left == TAINT || right == TAINT) && (left == CLEAN || right == CLEAN)){
-			return TOP;
-		}*/
+
+
+											/*else if(left == TAINT && right == TAINT){
+												return TAINT;
+											}
+											else if((left == TAINT || right == TAINT) && (left == TOP || right == TOP)){
+												return TOP;
+											}
+											else if((left == TAINT || right == TAINT) && (left == CLEAN || right == CLEAN)){
+												return TOP;
+											}*/
 
 		return CLEAN;
 	}
+
+	/*@Override
+	public TaintThreeLevels evalBinaryExpression(
+			BinaryOperator operator,
+			TaintThreeLevels left,
+			TaintThreeLevels right,
+			ProgramPoint pp,
+			SemanticOracle oracle)
+			throws SemanticException {
+
+		if (operator.toString().equals("StringConcat")) {
+			if (left == TAINT || right == TAINT)
+				return TAINT;
+			if (left == TOP || right == TOP)
+				return TOP;
+			return CLEAN;
+		}
+
+		// Per altri operatori, comportamento conservativo
+		return TOP;
+	}*/
+
 
 	@Override
 	public TaintThreeLevels evalUnaryExpression(UnaryOperator operator, TaintThreeLevels arg, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {

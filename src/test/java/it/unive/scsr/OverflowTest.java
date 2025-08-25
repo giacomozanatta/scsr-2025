@@ -53,13 +53,13 @@ public class OverflowTest {
 	
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/overflow.imp");
+		Program program = IMPFrontend.processFile("inputs/programs/OverflowUnderflow/885812-884786-underoverflow-1.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/overflow/"+path;
+		conf.workdir = "outputs/programs/new/overflow1/numerical/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;
@@ -90,13 +90,14 @@ public class OverflowTest {
 
 	private <V extends ValueDomain<V>> void runAnalysisPent(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/overflow.imp");
+		Program program = IMPFrontend.processFile("inputs/programs/OverflowUnderflow/885812-884786-underoverflow-1.imp");
+		//Program program = IMPFrontend.processFile("inputs/programs/Others/Overflow/890488_890441overflow.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/overflow/"+path;
+		conf.workdir = "outputs/programs/new/overflow1/pent/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

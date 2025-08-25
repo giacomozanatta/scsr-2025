@@ -1,40 +1,42 @@
 class TaintTestProgram {
 
+    source1(){
+        return "taint";
+    }
+
+
+    sink1(v){
+    }
+
     // Simulate reading user input (tainted)
-    def getUserInput(i) {
+    getUserInput(i) {
         if (i % 2 == 0)
             return "12345";          // valid numeric input (untainted)
         else
-            return "DROP TABLE";     // malicious input (tainted)
+            return this.source1() + "DROP TABLE";     // malicious input (tainted)
     }
 
     // Simple validation function: returns true if input is numeric
-    def isValid(input) {
+    isValid(input) {
         def i = 0;
-        def valid = true;
-        while (i < input.length()) {
-            def c = input.charAt(i);
-            if (!(c >= '0' && c <= '9')) {
-                valid = false;
-                break;
-            }
-            i = i + 1;
+        def valid = false;
+        if (i == 0) {
+            valid = true;
         }
         return valid;
     }
 
     // Simulate sink: writing to file, annotated @Sink
-    def writeToFile(data) {
-        // Imagine this function is @Sink annotated
-        // Implementation omitted
+    writeToFile(data) {
+        this.sink1(data);
     }
 
-    def processData() {
+    processData() {
         def i = 0;
         while (i < 4) {
-            def userInput = getUserInput(i);
-            if (isValid(userInput)) {
-                writeToFile(userInput);   // safe: only numeric input reaches sink
+            def userInput = this.getUserInput(i);
+            if (userInput == this.source1()) {
+                this.writeToFile(userInput);   // safe: only numeric input reaches sink
             } else {
                 // invalid input detected, do not write
             }

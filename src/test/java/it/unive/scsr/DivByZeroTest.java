@@ -37,24 +37,24 @@ public class DivByZeroTest {
 	@Test
 	public void testDivByZeroFloat() throws ParsingException, AnalysisException {
 		//runAnalysisPent(new Pentagons(), NumericalSize.UINT8, "intervals-pentagons");
-		runAnalysisFloat(new ValueEnvironment<>(new FloatIntervals()), NumericalSize.UINT8, "intervals-divByZeroFloat");
+		runAnalysisFloat(new ValueEnvironment<>(new FloatIntervals()), NumericalSize.FLOAT8, "intervals-divByZeroFloat");
 	}
 
 	@Test
 	public void testtestDivByZeroPentagonsFloat() throws ParsingException, AnalysisException {
 		//runAnalysisPent(new Pentagons(), NumericalSize.UINT8, "intervals-pentagons");
-		runAnalysisPentFloat(new FloatPentagons(), NumericalSize.UINT8, "intervals-pentagonsFloat");
+		runAnalysisPentFloat(new FloatPentagons(), NumericalSize.FLOAT8, "intervals-pentagonsFloat");
 	}
 
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
+		Program program = IMPFrontend.processFile("inputs/programs/Others/DivByZero/908677-benchmark-divbyzero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/divbyzero/"+path;
+		conf.workdir = "outputs/programs/others/divbyzero/908677/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;
@@ -85,13 +85,13 @@ public class DivByZeroTest {
 
 	private <V extends ValueDomain<V>> void runAnalysisPent(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
+		Program program = IMPFrontend.processFile("inputs/programs/Others/DivByZero/908677-benchmark-divbyzero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/divbyzero/"+path;
+		conf.workdir = "outputs/programs/others/divbyzero/908677/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;
@@ -124,13 +124,13 @@ public class DivByZeroTest {
 
 	private <V extends ValueDomain<V>> void runAnalysisFloat(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/divzerofloat.imp");
+		Program program = IMPFrontend.processFile("inputs/programs/Others/DivByZero/908677-benchmark-divbyzero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/divbyzero/"+path;
+		conf.workdir = "outputs/programs/others/divbyzero/908677/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;
@@ -161,13 +161,13 @@ public class DivByZeroTest {
 
 	private <V extends ValueDomain<V>> void runAnalysisPentFloat(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/divzerofloat.imp");
+		Program program = IMPFrontend.processFile("inputs/programs/Others/DivByZero/908677-benchmark-divbyzero.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/divbyzero/"+path;
+		conf.workdir = "outputs/programs/others/divbyzero/908677/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

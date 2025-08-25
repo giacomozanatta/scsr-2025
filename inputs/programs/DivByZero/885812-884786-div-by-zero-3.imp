@@ -1,21 +1,22 @@
 class DivByZeroTest{
+    example(){
+        def iteration = 20.0;
+        def var = -20.0;
+        def res = 0.0;
 
-    def iteration = 20;
-    def var = -20.0;
-    def res;
+        while(iteration != var) {
 
-    while(iteration != var) {
-        
-        iteration = iteration - 1;
-        def res = iteration / var;
-        var = var + 1;
+            iteration = iteration - 1.0;
+            res = iteration / var;
+            var = var + 1.0;
 
-        if (var == -5) {
-            res = res + 1;
+            if (var == -5.0) {
+                res = res + 1.0;
+            }
+
         }
 
+        return ((iteration + 1.0) / var) + res;
     }
-
-    return ((iteration + 1) / var) + res;
 
 }

@@ -1,127 +1,126 @@
 class OverflowUnderflowTests {
 
-    // --- Signed Integer Tests ---
+    // --- Signed Integer Tests (usiamo INT16: -32768..32767) ---
 
-    // Overflow: addition
     int_overflow_add() {
-        def x = 2147483647;
-        x = x + 1; // INT32 overflow
+        def x = 32766;       // vicino a 32767
+        x = x + 1000;        // overflow INT16
     }
 
-    // Underflow: subtraction
     int_underflow_sub() {
-        def x = -2147483648;
-        x = x - 1; // INT32 underflow
+        def x = -32000;      // vicino a -32768
+        x = x - 1000;        // underflow INT16
     }
 
-    // Overflow: multiplication
     int_overflow_mul() {
-        def x = 100000;
-        def y = 100000;
-        def z = x * y; // overflow expected
+        def x = 200;
+        def y = 200;
+        def z = x * y;       // 40.000 -> overflow INT16
     }
 
-    // Underflow: large negative product
     int_underflow_mul() {
-        def x = -100000;
-        def y = 100000;
-        def z = x * y; // underflow expected
+        def x = -200;
+        def y = 200;
+        def z = x * y;       // -40.000 -> underflow INT16
     }
 
-    // Division overflow (MIN_INT / -1)
     int_overflow_div() {
-        def x = -2147483648;
+        def x = -32768;
         def y = -1;
-        def z = x / y; // overflow in INT32
+        def z = x / y;       // overflow in INT16
     }
 
-    // --- Unsigned Integer Tests (UINT8 simulation) ---
+
+    // --- Unsigned Integer Tests (UINT8: 0..255) ---
 
     uint8_overflow_simple() {
         def x = 250;
-        x = x + 10; // overflow for UINT8
+        x = x + 20;          // overflow UINT8
     }
 
     uint8_underflow_simple() {
         def x = 5;
-        x = x - 10; // underflow for UINT8
+        x = x - 20;          // underflow UINT8
     }
 
-    // --- Floating Point Tests ---
+
+    // --- Floating Point Tests (FLOAT16: ±65504) ---
 
     float_overflow() {
-        def x = 3.4e38;
-        x = x * 10.0; // overflow for FLOAT32
+        def x = 60000.0;
+        x = x * 2.0;         // overflow FLOAT16 (> 65504)
     }
 
     float_underflow() {
-        def x = -3.4e38;
-        x = x * 10.0; // underflow for FLOAT32
+        def x = -60000.0;
+        x = x * 2.0;         // underflow FLOAT16 (< -65504)
     }
+
 
     // --- Control Flow Based ---
 
     conditional_overflow(flag) {
-        def x = 2147483640;
+        def x = 32000;
         if (flag) {
-            x = x + 100; // overflow if flag == true
+            x = x + 2000;    // overflow INT16 se flag == true
         }
     }
 
     loop_based_overflow() {
-        def x = 2147483600;
+        def x = 32000;
         for (def i = 0; i < 10; i = i + 1) {
-            x = x + 10; // overflow after a few iterations
+            x = x + 1000;    // overflow dopo alcune iterazioni
         }
     }
+
 
     // --- Parameterized ---
 
     param_overflow_add(a) {
-        def x = 2147483640;
-        x = x + a; // overflow if a > 7
+        def x = 32000;
+        x = x + a;           // overflow se a > 767
     }
 
     param_underflow_sub(a) {
-        def x = -2147483640;
-        x = x - a; // underflow if a > 7
+        def x = -32000;
+        x = x - a;           // underflow se a > 767
     }
 
     param_overflow_mul(a, b) {
-        def x = a * b; // overflow if a and b are large enough
+        def x = a * b;       // overflow se a,b grandi (es. > 200)
     }
 
     param_uint8_overflow(a) {
         def x = 250;
-        x = x + a; // overflow if a > 5
+        x = x + a;           // overflow se a > 5
     }
 
     param_uint8_underflow(a) {
         def x = 5;
-        x = x - a; // underflow if a > 5
+        x = x - a;           // underflow se a > 5
     }
 
     param_float_overflow(a) {
-        def x = 3.4e38;
-        x = x * a; // overflow if a > 1
+        def x = 60000.0;
+        x = x * a;           // overflow se a > 2
     }
 
     param_float_underflow(a) {
-        def x = -3.4e38;
-        x = x * a; // underflow if a < -1
+        def x = -60000.0;
+        x = x * a;           // underflow se a < -2
     }
 
     param_loop_overflow(n) {
-        def x = 2147483600;
+        def x = 32000;
         for (def i = 0; i < n; i = i + 1) {
-            x = x + 10; // overflow if n > 4
+            x = x + 1000;    // overflow se n > 7
         }
     }
 
     param_branch_underflow(flag, a) {
-        def x = -2147483640;
+        def x = -32000;
         if (flag) {
-            x = x - a; // underflow if a > 7
+            x = x - a;       // underflow se a > 767
         }
     }
 }

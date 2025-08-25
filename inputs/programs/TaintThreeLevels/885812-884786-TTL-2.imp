@@ -1,18 +1,28 @@
 class TaintTests {
 
-    // Tainted and untainted inputs
-    def user = "input";          // tainted
-    def fixed = "safe_string";   // untainted
+     source1(){
+        return "taint";
+    }
 
-    // Expressions
-    def a = user;                // tainted
-    def b = fixed;               // untainted
-    def c = user + "_ok";        // tainted
-    def d = fixed + "_log";      // untainted
 
-    // Sinks
-    def s1 = a;   // tainted → warning
-    def s2 = b;   // untainted
-    def s3 = c;   // tainted → warning
-    def s4 = d;   // untainted
+    sink1(v){
+    }
+
+    example(){
+        // Tainted and untainted inputs
+        def user = this.source1();          // tainted
+        def fixed = "safe_string";   // untainted
+
+        // Expressions
+        def a = user;                // tainted
+        def b = fixed;               // untainted
+        def c = user + "_ok";        // tainted
+        def d = fixed + "_log";      // untainted
+
+        // Sinks
+        this.sink1(a);   // tainted → warning
+        this.sink1(b);   // untainted
+        this.sink1(c);   // tainted → warning
+        this.sink1(d);   // untainted
+    }
 }

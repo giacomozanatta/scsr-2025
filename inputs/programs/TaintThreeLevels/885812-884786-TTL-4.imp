@@ -1,26 +1,33 @@
 class TaintTestProgram {
 
+    source1(){
+        return "taint";
+    }
+
+    sink1(v){
+    }
+
     // Simulate getting input (tainted for multiples of 3)
-    def getInput(i) {
+    getInput(i) {
         if (i % 3 == 0)
-            return "tainted_" + i;  // tainted input
+            return this.source1() + "tainted_";  // tainted input
         else
-            return "clean_" + i;    // untainted input
+            return "clean_";    // untainted input
     }
 
     // Simulate sink function (annotated @Sink)
-    def sendToSink(data) {
-        // pretend this is a sink
+    sendToSink(data) {
+        this.sink1(data);
     }
 
-    def runTest() {
+    runTest() {
         def i = 0;
         while (i < 10) {
-            def inputData = getInput(i);
+            def inputData = this.getInput(i);
 
-            if (inputData.startsWith("tainted")) {
+            if (inputData == this.source1()) {      // if inputData is tainted
                 // tainted data path
-                sendToSink(inputData);
+                this.sendToSink(inputData);
             }
 
             i = i + 1;

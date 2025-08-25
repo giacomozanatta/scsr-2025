@@ -41,6 +41,9 @@ public class FloatIntervals implements BaseNonRelationalValueDomain<FloatInterva
         FloatInterval a = this.interval;
         FloatInterval b = other.interval;
 
+        if (a == null || b == null)
+            return a != null ? this : other; // o un intervallo vuoto
+
         double lA = a.getLow();
         double lB = b.getLow();
         double uA = a.getHigh();

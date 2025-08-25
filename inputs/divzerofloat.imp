@@ -1,0 +1,47 @@
+class divzerofloat {
+
+
+	f0() {
+		def a = 1.0/0.0;
+	}
+
+	f1() {
+		def a = 1.0;
+		def b = 0.0;
+		def c = a/b;
+	}
+
+	f2(b) {
+		def x = 0.0;
+		if(b)
+           	x = 1.0;
+       	else
+           	x = 2.0;
+
+        def r = 1.0/x;
+    }
+
+	f3(i) {
+		def x = 1.0 / i;
+    }
+
+	f4(a) {
+		if(a > 0.0) {
+			def c = 1.0/a;
+		}
+		def d = 1.0/a;
+	}
+
+	f5(a) {
+		def b = 0.0;
+		if(a > b) {
+			def c = 1.0/a;
+		}
+	}
+
+	f6() {
+		def a = 1.0 - 1.0 + 1.0 * 0.0;
+		def c = 1.0/a;
+	}
+
+}

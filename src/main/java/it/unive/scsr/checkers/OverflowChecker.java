@@ -135,11 +135,37 @@ SemanticCheck<
 				if(lower != Double.NEGATIVE_INFINITY && lower != Double.NaN){ //if lower is finite
 					if(lower < min){
 						if(upper <= min) {
-							System.err.printf("Definite Underflow! Lower bound is < then minimum and upper bound is <= then minimum (for size: %s )", size);
+							tool.warn(
+									String.format(
+											"[%s] Definite Underflow in variable '%s' at %s: [%.3f, %.3f] < min %.3f",
+											size,
+											id.getName(),
+											id.getCodeLocation(),
+											lower,
+											upper,
+											min
+									)
+							);
+
+							//tool.warn("Definite Underflow! Lower bound is < then minimum and upper bound is <= then minimum (for size: %s )");
+							//System.err.printf("Definite Underflow! Lower bound is < then minimum and upper bound is <= then minimum (for size: %s )", size);
 						}
 						//System.err.println("Underflow! Lower bound is < then minimum ");
-						else
-							System.err.printf("Possible Underflow! Lower bound is < then minimum (for size: %s )", size);
+						else{
+							tool.warn(
+									String.format(
+											"[%s] Possible Underflow in variable '%s' at %s: [%.3f, %.3f] < min %.3f",
+											size,
+											id.getName(),
+											id.getCodeLocation(),
+											lower,
+											upper,
+											min
+									)
+							);
+							//tool.warn("Possible Underflow! Lower bound is < then minimum (for size: %s )");
+							//System.err.printf("Possible Underflow! Lower bound is < then minimum (for size: %s )", size);
+						}
 
 					}
 				}
@@ -148,11 +174,37 @@ SemanticCheck<
 				if(upper != Double.POSITIVE_INFINITY && upper != Double.NaN){
 					if(upper > max){
 						if(lower >= max){
-							System.err.printf("[%s] Underflow in %s: %.3f < %.3f location %s%n",
-									size, id.getName(), lower, min, id.getCodeLocation());
-							//System.err.printf("Definite Overflow! Lower bound is >= then maximum and upper bound is > then maximum (for size: %s )", size);
+							tool.warn(
+									String.format(
+											"[%s] Definite Overflow in variable '%s' at %s: [%.3f, %.3f] > max %.3f",
+											size,
+											id.getName(),
+											id.getCodeLocation(),
+											lower,
+											upper,
+											max
+									)
+							);
+							//tool.warn("[%s] Overflow in %s: %.3f < %.3f location %s%n");
+							//System.err.printf("[%s] Underflow in %s: %.3f < %.3f location %s%n", size, id.getName(), lower, min, id.getCodeLocation());
 						}
-						else System.err.printf("Possible Overflow! Upper bound is > then maximum (for size: %s )", size);
+						else{
+							tool.warn(
+									String.format(
+											"[%s] Possible Overflow in variable '%s' at %s: [%.3f, %.3f] > max %.3f",
+											size,
+											id.getName(),
+											id.getCodeLocation(),
+											lower,
+											upper,
+											max
+									)
+							);
+
+							//tool.warn("Possible Overflow! Upper bound is > then maximum (for size: %s )");
+							//System.err.printf("Possible Overflow! Upper bound is > then maximum (for size: %s )", size);
+						}
+
 					}
 				}
 			}

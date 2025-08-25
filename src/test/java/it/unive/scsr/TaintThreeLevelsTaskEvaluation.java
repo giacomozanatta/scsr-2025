@@ -46,7 +46,7 @@ public class TaintThreeLevelsTaskEvaluation {
 	@Test
 	public void testTaintThreeLevels() throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/taint-3lvs-eval.imp");
+		Program program = IMPFrontend.processFile("inputs/programs/Others/Taint/908677-benchmark-taint-3lvs.imp");
 
 		// we load annotation for identify sources, sanitizer, and sinks during the analysis and checker execution
 		loadAnnotations(program);
@@ -55,7 +55,7 @@ public class TaintThreeLevelsTaskEvaluation {
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/taint-3lvs-eval";
+		conf.workdir = "outputs/programs/others/taint/908677";
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

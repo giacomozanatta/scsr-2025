@@ -1,42 +1,60 @@
 class PasswordCheck {
 
+    source1(){
+        return "taint";
+    }
+
+    sanitizer1(v){
+        return "clean";
+    }
+
+
+    sink1(v){
+    }
+
+
     // Simulate input: returns password attempts
-    def getPasswordAttempt(i) {
+    getPasswordAttempt(i) {
         if (i == 0)
             return "P@ssw0rd";         // valid format (untainted)
-        else if (i == 1)
-            return "DROP DATABASE";    // malicious input (tainted)
         else
-            return "123456";           // simple numeric (untainted)
+            return this.source1() + "DROP DATABASE";    // malicious input (tainted)
+
     }
 
     // Simple validation: password must contain at least one letter and one digit
-    def isPasswordValid(pw) {
+    isPasswordValid(pw) {
         def i = 0;
-        def hasLetter = false;
-        def hasDigit = false;
-        while (i < pw.length()) {
-            def c = pw.charAt(i);
-            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
-                hasLetter = true;
-            if (c >= '0' && c <= '9')
-                hasDigit = true;
-            i = i + 1;
+        def valid = false;
+        if (i == 0) {
+            valid = true;
         }
-        return hasLetter && hasDigit;
+        return valid;
     }
+
 
     // Sink: simulate saving password hash (annotated @Sink)
-    def savePasswordHash(pw) {
-        // Imagine this saves hashed password securely
+    savePasswordHash(pw) {
+        this.sink1(pw);
     }
 
-    def checkPasswords() {
+    cleaner(pw){
+        def clean = this.sanitizer1(pw);
+        return clean;
+    }
+
+    checkPasswords() {
         def i = 0;
+        def cleaned = this.cleaner("text");         // initialization
+        def attempt = this.getPasswordAttempt(0);   // initialization
         while (i < 3) {
-            def attempt = getPasswordAttempt(i);
-            if (isPasswordValid(attempt)) {
-                savePasswordHash(attempt);  // safe: only valid passwords saved
+            attempt = this.getPasswordAttempt(i);
+            if (this.isPasswordValid(attempt)) {
+                this.savePasswordHash(attempt);  // safe: only valid passwords saved
+            }
+            else{
+                cleaned = this.cleaner(attempt);
+
             }
             i = i + 1;
         }

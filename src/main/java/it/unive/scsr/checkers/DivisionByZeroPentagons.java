@@ -97,10 +97,11 @@ public class DivisionByZeroPentagons implements SemanticCheck<SimpleAbstractStat
                         else {
                             IntInterval a = intervalAbstractValue.interval;
                            // IntInterval a = interval.interval;
-                            MathNumber al = a.getLow();
-                            MathNumber au = a.getHigh();
+
 
                             if(a != null && !intervalAbstractValue.isBottom() && !intervalAbstractValue.isTop()) {
+                                MathNumber al = a.getLow();
+                                MathNumber au = a.getHigh();
                                 if (a != null && al.isFinite() && au.isFinite() && (al.isNegative() || al.isZero()) && (au.isPositive() || au.isZero())) {
                                     if (al.isZero() && au.isZero()) {
                                         tool.warnOn(div, "Definite division by zero " + a);

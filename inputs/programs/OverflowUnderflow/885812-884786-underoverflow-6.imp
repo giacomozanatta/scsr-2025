@@ -1,31 +1,31 @@
 class TankTests {
 
-    // Overflow: tank gets too full
+    // Overflow: tank gets too full (INT16)
     tank_overflow() {
-        def level = 2147483600;
-        def fill = 100;
+        def level = 32000;     // near INT16 max (32767)
+        def fill = 500;
 
-        for (def i = 0; i < 10; i = i + 1) {
-            level = level + fill; // overflow after a few steps
+        for (def i = 0; i < 5; i = i + 1) {
+            level = level + fill; // overflow già dopo poche iterazioni
         }
     }
 
-    // Underflow: tank gets too empty
+    // Underflow: tank gets too empty (FLOAT16)
     tank_underflow() {
-        def level = 0.00001;
-        def drain = 0.000002;
+        def level = 0.01;      // small initial level
+        def drain = 0.003;
 
-        for (def i = 0; i < 10; i = i + 1) {
-            level = level - drain; // underflow after some steps
+        for (def i = 0; i < 5; i = i + 1) {
+            level = level - drain; // underflow verso zero
         }
     }
 
-    // Conditional drain
+    // Conditional drain (FLOAT16)
     tank_conditional_drain(leak) {
         def level = 0.01;
 
         if (leak) {
-            level = level - 0.02; // underflow if leak is true
+            level = level - 0.02; // underflow immediato se leak == true
         }
     }
 }

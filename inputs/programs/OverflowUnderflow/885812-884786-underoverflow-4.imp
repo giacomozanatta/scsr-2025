@@ -1,50 +1,50 @@
 class OverflowUnderflowTests {
 
-    // INT32: overflow in loop, underflow in if
+    // INT16: overflow in loop, underflow in if
     int_loop_if_test(flag) {
-        def x = 2147483600;   // near INT32_MAX
-        def y = -2147483600;  // near INT32_MIN
-
-        def i = 0;
-        while (i < 10) {
-            x = x + 10;       // overflow for i >= 5
-            i = i + 1;
-        }
-
-        if (flag) {
-            y = y - 200;      // underflow if flag == true
-        }
-    }
-
-    // FLOAT32: overflow in loop, underflow in if
-    float_loop_if_test(flag) {
-        def x = 3.4e38;       // near FLOAT32_MAX
-        def y = -3.4e38;      // near FLOAT32_MIN
+        def x = 32000;      // near INT16_MAX (32767)
+        def y = -32000;     // near INT16_MIN (-32768)
 
         def i = 0;
         while (i < 5) {
-            x = x * 10.0;     // overflow expected
+            x = x + 500;    // overflow già per i >= 2
             i = i + 1;
         }
 
         if (flag) {
-            y = y * 10.0;     // underflow expected if flag == true
+            y = y - 1000;   // underflow se flag == true
         }
     }
 
-    // UINT8: simulated overflow and underflow
-    uint8_loop_if_test(flag) {
-        def x = 250;          // near UINT8 max (255)
-        def y = 5;            // low enough for underflow
+    // FLOAT16: overflow in loop, underflow in if
+    float_loop_if_test(flag) {
+        def x = 60000.0;    // near FLOAT16 max (65504)
+        def y = -60000.0;   // near FLOAT16 min (-65504)
 
         def i = 0;
-        while (i < 10) {
-            x = x + 1;        // overflow when x > 255
+        while (i < 3) {
+            x = x * 2.0;    // overflow molto rapido
             i = i + 1;
         }
 
         if (flag) {
-            y = y - 10;       // underflow if flag == true
+            y = y * 2.0;    // underflow se flag == true
+        }
+    }
+
+    // UINT8: overflow e underflow simulati
+    uint8_loop_if_test(flag) {
+        def x = 250;        // near UINT8 max (255)
+        def y = 5;          // valore piccolo per underflow
+
+        def i = 0;
+        while (i < 5) {
+            x = x + 2;      // overflow dopo ~3 iterazioni
+            i = i + 1;
+        }
+
+        if (flag) {
+            y = y - 10;     // underflow se flag == true
         }
     }
 }

@@ -1,0 +1,24 @@
+class floatPentagons {
+
+	basic() {
+
+		def arr = new int[5];
+		def i = 0.0;
+
+		while(i < arraylen(arr)) {
+			arr[i] = i;
+			i = i + 1.0;
+		}
+	}
+
+	arrayoutofbounds() {
+
+		def arr = new int[5];
+		def i = 0.0;
+
+		while(i <= arraylen(arr)) {
+			arr[i] = i; // out of bounds
+			i = i + 1.0;
+		}
+	}
+}

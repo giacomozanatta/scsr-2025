@@ -1,0 +1,82 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating satisfiability during overflow analysis.
+class Test {
+
+    benchmark() {
+        // Association of simple variables to evaluate the basic correctness of the validation.
+        def just_zero =             0;                          // This should not generate any warnings.
+        def just_negative =         -1;                         // This should generate a warning for all non-negative types.
+        def more_than_127 =         128;                        // This should generate a warning for the int8 type.
+
+        // Association of simple floating point variables to evaluate the basic correctness of the validation.
+        // This should successfully prevent the else branch from marking the eq_comparison_not_overflowing variable as
+        // overflowing.
+        def eq_comparison_not_overflowing = 0;
+        if (just_zero == 0) { eq_comparison_not_overflowing = 1; }
+        else { eq_comparison_not_overflowing = more_than_127; }
+
+        // This should allow to successfully access the else branch and mark the eq_comparison_overflowing variable as
+        // overflowing.
+        def eq_comparison_overflowing = 0;
+        if (just_zero != 0) { eq_comparison_overflowing = 1; }
+        else { eq_comparison_overflowing = more_than_127; }
+
+        // This should successfully prevent the true branch from marking the gt_comparison_not_overflowing variable as
+        // overflowing.
+        def gt_comparison_not_overflowing = 0;
+        if (just_zero > 0) { gt_comparison_not_overflowing = more_than_127;  }
+        else { gt_comparison_not_overflowing = 1; }
+
+        // This should allow to successfully access the true branch and mark the gt_comparison_overflowing variable as
+        // overflowing.
+        def gt_comparison_overflowing = 0;
+        if (more_than_127 > 0) { gt_comparison_overflowing = more_than_127;  }
+        else { gt_comparison_overflowing = 1; }
+
+        // This should successfully prevent the true branch from marking the lt_comparison_not_overflowing variable as
+        // overflowing.
+        def lt_comparison_not_overflowing = 0;
+        if (just_zero < 0) { lt_comparison_not_overflowing = more_than_127;  }
+        else { lt_comparison_not_overflowing = 1; }
+
+        // This should allow to successfully access the true branch and mark the lt_comparison_overflowing variable as
+        // overflowing.
+        def lt_comparison_overflowing = 0;
+        if (just_negative < 0) { lt_comparison_overflowing = more_than_127;  }
+        else { lt_comparison_overflowing = 1; }
+
+        // This should successfully prevent the else branch from marking the ge_comparison_not_overflowing0 variable as
+        // overflowing.
+        def ge_comparison_not_overflowing0 = 0;
+        if (just_zero >= 0) { ge_comparison_not_overflowing0 = 1;  }
+        else { ge_comparison_not_overflowing0 = more_than_127; }
+
+        // This should successfully prevent the else branch from marking the ge_comparison_not_overflowing1 variable as
+        // overflowing.
+        def ge_comparison_not_overflowing1 = 0;
+        if (more_than_127 >= 0) { ge_comparison_not_overflowing1 = 1;  }
+        else { ge_comparison_not_overflowing1 = more_than_127; }
+
+        // This should successfully mark ge_comparison_overflowing2 variable as overflowing.
+        def ge_comparison_overflowing2 = 0;
+        if (just_negative >= 0) { ge_comparison_overflowing2 = 1;  }
+        else { ge_comparison_overflowing2 = more_than_127; }
+
+        // This should successfully prevent the else branch from marking the le_comparison_not_overflowing0 variable as
+        // overflowing.
+        def le_comparison_not_overflowing0 = 0;
+        if (just_zero <= 0) { le_comparison_not_overflowing0 = 1;  }
+        else { le_comparison_not_overflowing0 = more_than_127; }
+
+        // This should successfully prevent the else branch from marking the le_comparison_not_overflowing1 variable as
+        // overflowing.
+        def le_comparison_not_overflowing1 = 0;
+        if (just_negative <= 0) { le_comparison_not_overflowing1 = 1;  }
+        else { le_comparison_not_overflowing1 = more_than_127; }
+
+        // This should successfully mark le_comparison_overflowing2 variable as overflowing.
+        def le_comparison_overflowing2 = 0;
+        if (more_than_127 <= 0) { le_comparison_overflowing2 = 1;  }
+        else { le_comparison_overflowing2 = more_than_127; }
+    }
+}

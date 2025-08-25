@@ -1,42 +1,46 @@
 class DivByZeroTest{
 
     // Function to compute Req = (R1 * R2) / (R1 + R2)
-    def parallel_resistance(R1, R2) {
+    parallel_resistance(R1, R2) {
         return (R1 * R2) / (R1 + R2);
     }
 
     // Function to compute derivative of Req w.r.t R1:
     // d/dR1 [(R1 * R2) / (R1 + R2)] = (R2*(R1 + R2) - R1*R2) / (R1 + R2)^2
-    def d_parallel_resistance(R1, R2) {
+    d_parallel_resistance(R1, R2) {
         def num = R2 * (R1 + R2) - R1 * R2;
         def den = (R1 + R2) * (R1 + R2);
         return num / den;
     }
 
-    // Test 1: R1 = 10, R2 = -10: Denominator is zero (division by zero)
-    def R1 = 10.0;
-    def R2 = -10.0;
+    test(){
 
-    def req1 = parallel_resistance(R1, R2); // Division by zero expected
-    def dreq1 = d_parallel_resistance(R1, R2); // Also division by zero
+        // Test 1: R1 = 10, R2 = -10: Denominator is zero (division by zero)
+        def R1 = 10.0;
+        def R2 = -10.0;
 
-    // Test 2: Safe case R1 = 100, R2 = 200
-    R1 = 100.0;
-    R2 = 200.0;
+        def req1 = this.parallel_resistance(R1, R2); // Division by zero expected
+        def dreq1 = this.d_parallel_resistance(R1, R2); // Also division by zero
 
-    def req2 = parallel_resistance(R1, R2);  // Valid computation
-    def dreq2 = d_parallel_resistance(R1, R2); // Valid derivative
+        // Test 2: Safe case R1 = 100, R2 = 200
+        R1 = 100.0;
+        R2 = 200.0;
 
-    // Test 3: Simulate R1 approaching -R2 in a loop
-    def i = 5;
-    while (i > -6) {
-        R1 = i * 2.0;
-        R2 = -10.0;
+        def req2 = this.parallel_resistance(R1, R2);  // Valid computation
+        def dreq2 = this.d_parallel_resistance(R1, R2); // Valid derivative
 
-        def req = parallel_resistance(R1, R2);     // Risk of division by zero
-        def dreq = d_parallel_resistance(R1, R2);  // Risk of division by zero
+        // Test 3: Simulate R1 approaching -R2 in a loop
+        def i = 5;
+        while (i > -6) {
+            R1 = i * 2.0;
+            R2 = -10.0;
 
-        i = i - 1;
+            def req = this.parallel_resistance(R1, R2);     // Risk of division by zero
+            def dreq = this.d_parallel_resistance(R1, R2);  // Risk of division by zero
+
+            i = i - 1;
+        }
+
     }
 
 }

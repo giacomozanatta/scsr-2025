@@ -2,21 +2,21 @@ class OverflowUnderflowTests {
 
     // Simulate overcharging a battery (risk of overflow)
     battery_overcharge() {
-        def charge = 2147483600;  // close to INT32 max
-        def charging_rate = 100;
+        def charge = 32000;        // close to INT16 max (32767)
+        def charging_rate = 500;
 
-        for (def i = 0; i < 100; i = i + 1) {
-            charge = charge + charging_rate; // will overflow at some point
+        for (def i = 0; i < 10; i = i + 1) {
+            charge = charge + charging_rate; // will overflow after a few steps
         }
     }
 
     // Simulate slow battery drain (risk of underflow)
     battery_drain() {
-        def charge = 0.00001;    // small initial charge
-        def drain_rate = 0.000001;
+        def charge = 0.01;        // small initial charge
+        def drain_rate = 0.002;
 
-        for (def i = 0; i < 100; i = i + 1) {
-            charge = charge - drain_rate; // underflow likely after many steps
+        for (def i = 0; i < 10; i = i + 1) {
+            charge = charge - drain_rate; // underflow to ~0
         }
     }
 }

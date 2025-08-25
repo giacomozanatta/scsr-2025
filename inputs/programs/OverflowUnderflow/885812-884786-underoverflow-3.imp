@@ -1,44 +1,44 @@
 class OverflowUnderflowTests {
 
-        // INT32: Overflow in loop, underflow in if
+    // INT16: Overflow in loop, underflow in if
     int_loop_if_test(flag) {
-        def x = 2147483600;    // near INT32_MAX
-        def y = -2147483600;   // near INT32_MIN
+        def x = 32000;      // near INT16_MAX (32767)
+        def y = -32000;     // near INT16_MIN (-32768)
 
         for (def i = 0; i < 10; i = i + 1) {
-            x = x + 10;        // overflow for i >= 5
+            x = x + 500;    // overflow for i >= 2
         }
 
         if (flag) {
-            y = y - 100;       // underflow if flag == true
+            y = y - 1000;   // underflow if flag == true
         }
     }
 
-    // FLOAT32: Overflow in loop, underflow in if
+    // FLOAT16: Overflow in loop, underflow in if
     float_loop_if_test(flag) {
-        def x = 3.4e38;        // near FLOAT32 max
-        def y = -3.4e38;       // near FLOAT32 min
+        def x = 60000.0;    // near FLOAT16 max (65504)
+        def y = -60000.0;   // near FLOAT16 min (-65504)
 
-        for (def i = 0; i < 5; i = i + 1) {
-            x = x * 10.0;      // float overflow
+        for (def i = 0; i < 3; i = i + 1) {
+            x = x * 2.0;    // overflow quickly (>65504)
         }
 
         if (flag) {
-            y = y * 10.0;      // float underflow
+            y = y * 2.0;    // underflow quickly (<-65504)
         }
     }
 
     // UINT8: Overflow in loop, underflow in if (simulated)
     uint8_loop_if_test(flag) {
-        def x = 250;           // near UINT8 max (255)
-        def y = 5;             // small value for underflow
+        def x = 250;        // near UINT8 max (255)
+        def y = 5;          // small value for underflow
 
         for (def i = 0; i < 10; i = i + 1) {
-            x = x + 1;         // overflow after 5 iterations
+            x = x + 2;      // overflow after 3 iterations
         }
 
         if (flag) {
-            y = y - 10;        // underflow if flag == true
+            y = y - 10;     // underflow if flag == true
         }
     }
 

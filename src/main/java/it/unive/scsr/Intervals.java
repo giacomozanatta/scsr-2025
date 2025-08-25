@@ -18,6 +18,7 @@ import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
+import it.unive.lisa.util.numeric.MathNumberConversionException;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
@@ -241,16 +242,16 @@ public class Intervals
 
 		if(operator instanceof AdditionOperator)  {
 
-			MathNumber lA = a.getLow();
+			/*MathNumber lA = a.getLow();
 			MathNumber lB = b.getLow();
 
 			MathNumber uA = a.getHigh();
 			MathNumber uB = b.getHigh();
 
 			MathNumber newlower = lA.add(lB);
-			MathNumber newUpper = uA.add(uB);
+			MathNumber newUpper = uA.add(uB);*/
 
-			return new Intervals(newlower.min(newUpper), newlower.max(newUpper));
+			return new Intervals((a.getLow().add(b.getLow())).min((a.getHigh().add(b.getHigh()))), (a.getLow().add(b.getLow())).max((a.getHigh().add(b.getHigh()))));
 
 		} else
 
@@ -260,7 +261,7 @@ public class Intervals
 				// [a,b] - [c,d] = [a-d, b-c]
 				MathNumber newLow = a.getLow().subtract(b.getHigh());
 				MathNumber newHigh = a.getHigh().subtract(b.getLow());
-				return new Intervals(newLow, newHigh);
+				return new Intervals(a.getLow().subtract(b.getHigh()), a.getHigh().subtract(b.getLow()));
 
 			} else if( operator instanceof MultiplicationOperator) {
 				MathNumber ac = a.getLow().multiply(b.getLow());
@@ -270,7 +271,21 @@ public class Intervals
 
 				MathNumber min = ac.min(ad).min(bc).min(bd);
 				MathNumber max = ac.max(ad).max(bc).max(bd);
-				return  new Intervals(min, max);
+
+				int low = 0;
+				int up = 0;
+
+				try {
+					if(min.isFinite())
+						low = (int) Math.floor(min.toDouble());
+					if(max.isFinite())
+						up = (int) Math.ceil(max.toDouble());
+
+				} catch (MathNumberConversionException e) {
+					e.printStackTrace();
+				}
+
+				return  new Intervals(low, up);
 			}
 			else if(operator instanceof DivisionOperator){
 				MathNumber zero = MathNumber.ZERO;
@@ -291,8 +306,22 @@ public class Intervals
 
 				MathNumber mindiv = div1.min(div2).min(div3).min(div4);
 				MathNumber maxdiv = div1.max(div2).max(div3).max(div4);
+				int min = 0;
+				int max = 0;
 
-				return new Intervals(mindiv,maxdiv);
+				try {
+					if(mindiv.isFinite())
+						min = (int) Math.floor(mindiv.toDouble());
+					if(maxdiv.isFinite())
+						max = (int) Math.ceil(maxdiv.toDouble());
+
+				} catch (MathNumberConversionException e) {
+					e.printStackTrace();
+				}
+
+				IntInterval inter = new IntInterval(min, max);
+
+				return new Intervals(inter);
 
 			}
 

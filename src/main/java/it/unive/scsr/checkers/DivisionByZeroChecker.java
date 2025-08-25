@@ -16,6 +16,7 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -94,8 +95,9 @@ SemanticCheck<
                                 if (intervalAbstractValue.interval.includes(Intervals.ZERO.interval)) {
                                     if (intervalAbstractValue.equals(Intervals.ZERO)) {
                                         tool.warn(String.format(
-                                                "Division by zero detected at %s. The divisor is exactly zero: %s with upper bounds %s",
+                                                "Division by zero detected at %s. The divisor '%s' is exactly zero: %s with upper bounds %s",
                                                 div.getLocation(),
+                                                divisor,
                                                 intervalAbstractValue.interval,
                                                 upperboundsAbstractValue.representation()
                                         ));
@@ -103,8 +105,9 @@ SemanticCheck<
                                         // Check for negative upper bounds
                                         if (!hasNegativeUpperBound(valueState, upperboundsAbstractValue)) {
                                             tool.warn(String.format(
-                                                    "Possible division by zero detected at %s. The divisor may include zero: %s with upper bounds %s",
+                                                    "Possible division by zero detected at %s. The divisor '%s' may include zero: %s with upper bounds %s",
                                                     div.getLocation(),
+                                                    divisor,
                                                     intervalAbstractValue.interval,
                                                     upperboundsAbstractValue.representation()
                                             ));
@@ -125,22 +128,31 @@ SemanticCheck<
 		
 	}
 
+    private boolean hasNegativeUpperBound(Pentagons pentagons, UpperBounds upperBounds) {
+        return hasNegativeUpperBoundAux(pentagons, upperBounds, new HashSet<>());
+    }
+
     /**
      * Check if there is a negative upper bound with interval whose high is negative
      * @param pentagons the pentagons abstract state
      * @param upperBounds the upper bounds to check
      * @return true if there is at least one negative upper bound, false otherwise
      */
-    private boolean hasNegativeUpperBound(Pentagons pentagons, UpperBounds upperBounds) {
+    private boolean hasNegativeUpperBoundAux(Pentagons pentagons, UpperBounds upperBounds, Set<Identifier> seen) {
         System.out.println("[DEBUG] I'm recursing! This time on " + upperBounds.representation());
         if (upperBounds.isBottom())
             return false;
         for (var id : upperBounds) {
+            if (seen.contains(id)) {
+                System.out.println("[DEBUG] Already seen " + id + ", skipping to avoid cycles");
+                continue;
+            }
+            seen.add(id);
             Intervals ubInterval = pentagons.getIntervals().getState(id);
             if (ubInterval.interval.getHigh().isNegative()) {
                 return true;
             }
-            if (hasNegativeUpperBound(pentagons, pentagons.getUpperbounds().getState(id))) {
+            if (hasNegativeUpperBoundAux(pentagons, pentagons.getUpperbounds().getState(id), seen)) {
                 return true;
             }
         }

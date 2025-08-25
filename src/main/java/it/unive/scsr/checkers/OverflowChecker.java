@@ -124,17 +124,12 @@ SemanticCheck<
                 if (intervalAbstractValue.isBottom())
                     continue;
 
-                if (intervalAbstractValue.interval.getLow().compareTo(size.bounds.getLow()) < 0) {
-                    if (intervalAbstractValue.interval.getLow().isInfinite()) {
-                        // We're not sure whether the overflow occurred, it might be widening
-                        tool.warn(String.format(
-                                "Possible %s overflow detected at %s with interval %s and upper bounds %s",
-                                size,
-                                node.getLocation(),
-                                intervalAbstractValue.interval,
-                                upperboundsAbstractValue.representation()
-                        ));
-                    } else {
+                if (
+                        intervalAbstractValue.interval.getHigh().isFinite()
+                        && intervalAbstractValue.interval.getLow().isFinite()
+                ) {
+                    // Both bounds are finite, we can simply check if they are in the size bounds
+                    if (!size.bounds.includes(intervalAbstractValue.interval)) {
                         // The interval has finite bounds, we're certain that an overflow occurred
                         tool.warn(String.format(
                                 "%s overflow detected at %s with interval %s and upper bounds %s",
@@ -143,51 +138,75 @@ SemanticCheck<
                                 intervalAbstractValue.interval,
                                 upperboundsAbstractValue.representation()
                         ));
+
                     }
-                } else if (intervalAbstractValue.interval.getHigh().compareTo(size.bounds.getHigh()) > 0) {
-                    Identifier upperbound = getInBoundsUpperBound(pentagonsValueState, upperboundsAbstractValue);
-                    if (upperbound != null) {
-                        // There's an upper bound that is in range, so we assume no overflow
+                } else {
+                    // At least one of the bounds is infinite, we need to check upper bounds and lower bounds
+                    Identifier upperbound = getInBoundsUpperBound(pentagonsValueState, id);
+                    Identifier lowerbound = getInBoundsLowerBound(pentagonsValueState, id);
+
+                    if (upperbound != null && lowerbound != null) {
                         tool.warn(String.format(
-                                "[DEBUG] %s false positive avoided at %s with interval %s due to upper bound %s = %s",
+                                "[DEBUG] %s false positive avoided at %s with interval %s due to upper bound %s = %s and lower bound %s = %s",
                                 size,
                                 node.getLocation(),
                                 intervalAbstractValue.interval,
                                 pentagonsValueState.getUpperbounds().getState(upperbound).representation(),
-                                pentagonsValueState.getIntervals().getState(upperbound).interval
-
+                                pentagonsValueState.getIntervals().getState(upperbound).interval,
+                                pentagonsValueState.getUpperbounds().getState(lowerbound).representation(),
+                                pentagonsValueState.getIntervals().getState(lowerbound).interval
                         ));
                     } else {
-                        if (intervalAbstractValue.interval.getHigh().isInfinite()) {
-                            // We're not sure whether the overflow occurred, it might be widening
-                            tool.warn(String.format(
-                                    "Possible %s overflow detected at %s with interval %s and upper bounds %s",
-                                    size,
-                                    node.getLocation(),
-                                    intervalAbstractValue.interval,
-                                    upperboundsAbstractValue.representation()
-                            ));
-                        } else {
-                            // The interval has finite bounds, we're certain that an overflow occurred
-                            tool.warn(String.format(
-                                    "%s overflow detected at %s with interval %s and upper bounds %s",
-                                    size,
-                                    node.getLocation(),
-                                    intervalAbstractValue.interval,
-                                    upperboundsAbstractValue.representation()
-                            ));
-                        }
+                        // We're not sure whether the overflow occurred, it might be widening
+                        tool.warn(String.format(
+                                "Possible %s overflow detected at %s with interval %s and upper bounds %s",
+                                size,
+                                node.getLocation(),
+                                intervalAbstractValue.interval,
+                                upperboundsAbstractValue.representation()
+                        ));
                     }
                 }
 		}
 	}
 
-    private Identifier getInBoundsUpperBound(Pentagons valueState, UpperBounds upperboundsAbstractValue) {
-        return getInBoundsUpperBoundAux(valueState, upperboundsAbstractValue, new HashSet<>());
+    private Identifier getInBoundsLowerBound(Pentagons valueState, Identifier id) {
+        return getInBoundsLowerBoundAux(valueState, id, new HashSet<>());
     }
 
-    private Identifier getInBoundsUpperBoundAux(Pentagons valueState, UpperBounds upperboundsAbstractValue, Set<Identifier> seen) {
-        System.out.println("[DEBUG] I'm recursing for in-bounds! This time on " + upperboundsAbstractValue.representation());
+    private Identifier getInBoundsLowerBoundAux(Pentagons valueState, Identifier id, Set<Identifier> seen) {
+        System.out.println("[DEBUG] I'm recursing for lower bounds! This time on " + id);
+        for (var lowerBound : valueState.getUpperbounds()) {
+            if (seen.contains(lowerBound.getKey())) {
+                System.out.println("[DEBUG] Cycle detected on " + lowerBound.getKey() + ", skipping");
+                continue;
+            }
+
+            seen.add(lowerBound.getKey());
+            // id is an upper bound of lowerBound => lowerBound is a lower bound of id
+            if (lowerBound.getValue().contains(id)) {
+                Intervals lbInterval = valueState.getIntervals().getState(lowerBound.getKey());
+                DoubleInterval low = new DoubleInterval(lbInterval.interval.getLow(), lbInterval.interval.getLow());
+                if (size.bounds.includes(low)) {
+                    return lowerBound.getKey();
+                } else {
+                    var boundId = getInBoundsLowerBoundAux(valueState, lowerBound.getKey(), seen);
+                    if (boundId != null)
+                        return boundId;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Identifier getInBoundsUpperBound(Pentagons valueState, Identifier id) {
+        return getInBoundsUpperBoundAux(valueState, id, new HashSet<>());
+    }
+
+    private Identifier getInBoundsUpperBoundAux(Pentagons valueState, Identifier identifier, Set<Identifier> seen) {
+        System.out.println("[DEBUG] I'm recursing for upper bounds! This time on " + identifier);
+        UpperBounds upperboundsAbstractValue = valueState.getUpperbounds().getState(identifier);
         for (var id : upperboundsAbstractValue) {
             if (seen.contains(id)) {
                 System.out.println("[DEBUG] Cycle detected on " + id + ", skipping");
@@ -199,7 +218,7 @@ SemanticCheck<
             var high = ubInterval.interval.getHigh();
             if (size.bounds.includes(new DoubleInterval(high, high)))
                 return id;
-            var boundId = getInBoundsUpperBoundAux(valueState, valueState.getUpperbounds().getState(id), seen);
+            var boundId = getInBoundsUpperBoundAux(valueState, id, seen);
             if (boundId != null)
                 return boundId;
         }

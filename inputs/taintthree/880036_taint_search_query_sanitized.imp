@@ -1,0 +1,210 @@
+//  In order to let this source be correctly verified, please add the following setting on Lisa:
+
+//	String[] sources    = new String[] {"getFormField"};
+//	String[] sanitizers = new String[] {"sanitize"};
+//	String[] sinks      = new String[] {"runQuery"};
+
+//  In this experiment the pseude code of a search function is presented
+//  The user specifies which information he /she wants to search for along with the value of the parameter
+//  Example : search all customers where "fullname" contains "Rossi"
+//  The checker should highlight *NO WARNING* since the user input is completely sanitized before to be added to the sql query
+
+class CustomerHandler {
+	
+	doSearch() {
+		def agencyId    = "1234";
+		def searchBy    = this.getFormField("searchBy");
+		def searchValue = this.getFormField("searchValue");
+		def searchType  = this.getFormField("searchType");
+		
+		def customerTypes = new string[10];
+		customerTypes[0] = "client";
+		customerTypes[1] = "prospect";
+		def onlyActive = true;
+		
+        if (agencyId == null) {
+            return null;
+
+        } else if (searchBy == null) {
+            return null;
+
+        } else if (searchValue == null || searchValue == "") {
+            return null;
+
+        } else {
+
+			if (searchType == null) {
+				searchType = "ExactMatch";
+			}
+			def operator = " = ";
+			if (searchType == "StartsWith") {
+				operator = " LIKE "; 
+				searchValue = searchValue + "%";
+
+			} else if (searchType == "Contains") {
+				operator = " LIKE ";
+				searchValue = "%" + searchValue + "%";				
+			}
+
+			def sql = "";
+			sql = sql + "SELECT cu.* \n";
+			sql = sql + "FROM customer cu \n";
+			if (onlyActive) {
+				sql = sql + "JOIN contract ct \n";
+				sql = sql + "	ON ct.customerId = cu.customerId \n";
+				sql = sql + "	AND ct.agencyId = " + this.sanitize(agencyId) + " \n";
+				sql = sql + "    AND NOT IFNULL(ct.deletedRecord, FALSE) \n";
+				sql = sql + "LEFT OUTER JOIN product prd \n";
+				sql = sql + "    ON prd.productId = ct.productId \n";
+				sql = sql + "    AND NOT IFNULL(prd.deletedRecord, FALSE) \n";
+			}
+
+			if ((searchBy == "TinVat") && (searchType != "Contains")) {
+				// the following subquery added to exploit proper indexes
+				sql = sql + "JOIN \n";
+				sql = sql + "      (SELECT customerId FROM customer WHERE agencyId = " + this.sanitize(agencyId) + " AND       tin " + operator + " " + this.sanitize(searchValue) + " UNION \n";
+				sql = sql + "       SELECT customerId FROM customer WHERE agencyId = " + this.sanitize(agencyId) + " AND vatNumber " + operator + " " + this.sanitize(searchValue) + ") filter \n";
+				sql = sql + "	ON filter.customerId = cu.customerId \n";
+			}
+
+			sql = sql + "WHERE cu.deletedRecord = FALSE \n";
+
+			if (searchBy == "Fullname") {
+				sql = sql + "  AND cu.fullname" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "GroupCode") {
+				sql = sql + "  AND cu.groupCode" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "TinVat" && searchType == "Contains") {
+				sql = sql + "  AND (cu.tin" + operator + this.sanitize(searchValue) + " OR cu.vatNumber" + operator + this.sanitize(searchValue) + " )\n";
+				 
+			} else if (searchBy == "CustomerIdNumber") {
+				sql = sql + "  AND (cu.customerId" + operator + this.sanitize(searchValue) + ""
+							 + " OR cu.customerNumber" + operator + this.sanitize(searchValue) + ""
+							 + " OR cu.externalKey" + operator + this.sanitize(searchValue) + ") \n";
+				
+			} else if (searchBy == "CardNumber") {
+				sql = sql + "  AND cu.cardNumber" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "FolderNumber") {
+				sql = sql + "  AND cu.folderNumber" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "LegalRepresentative") {
+				sql = sql + "  AND cu.legalRepresentative" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "Email") {
+				sql = sql + "  AND cu.email" + operator + this.sanitize(searchValue) + " \n";
+				
+			} else if (searchBy == "EmailExtra") {
+				sql = sql + "  AND (cu.email" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	 FROM customerContact cc";
+				sql = sql + "	 WHERE cc.customerId = cu.customerId \n";
+				sql = sql + "	   AND NOT IFNULL(cc.deletedRecord, FALSE) \n";
+				sql = sql + "	   AND cc.email" + operator + this.sanitize(searchValue) + " ) \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	 FROM customerEmail ce";
+				sql = sql + "	 WHERE ce.customerId = cu.customerId \n";
+				sql = sql + "	   AND NOT IFNULL(ce.deletedRecord, FALSE) \n";
+				sql = sql + "	   AND ce.email" + operator + this.sanitize(searchValue) + " ) \n";
+				sql = sql + "	) \n";
+				
+			} else if (searchBy == "PhoneNumber") {
+				sql = sql + "  AND (cu.phoneNumber"           + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "    OR cu.mobilePhoneNumber"     + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "    OR cu.officePhoneNumber"     + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "    OR cu.additionalPhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "    OR cu.faxNumber"             + operator + this.sanitize(searchValue) + ")";
+				
+			} else { // searchBy == "PhoneNumberExtra"
+				sql = sql + "  AND (cu.phoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR cu.faxNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR cu.mobilePhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR cu.additionalPhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR cu.officePhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	FROM customerContact cc";
+				sql = sql + "	WHERE cc.customerId = cu.customerId \n";
+				sql = sql + "	  AND NOT IFNULL(cc.deletedRecord, FALSE) \n";
+				sql = sql + "	  AND (cc.phoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "	    OR cc.mobilePhoneNumber" + operator + this.sanitize(searchValue) + " \n";
+				sql = sql + "	    OR cc.faxNumber" + operator + this.sanitize(searchValue) + ") \n)";
+				sql = sql + "   OR EXISTS (\n";
+				sql = sql + "	SELECT * \n";
+				sql = sql + "	FROM customerPhone cp \n";
+				sql = sql + "	WHERE cp.customerId = cu.customerId \n";
+				sql = sql + "	  AND NOT IFNULL(cp.deletedRecord, FALSE) \n";
+				sql = sql + "	  AND cp.phoneNumber" + operator + this.sanitize(searchValue) + ") ) \n";
+			}
+
+			if (customerTypes != null) {
+				def filter = "1 = 0";
+				for (def t = 0; t < 10; t = t + 1) {
+					def entityType = customerTypes[t];
+					if (entityType != null) {
+						filter = filter + " OR cu.entityType = " + entityType + " \n";
+					}
+				}
+				sql = sql + "  AND (";
+				sql = sql + filter;
+				sql = sql + ") \n";
+			}
+			if (onlyActive) {
+				sql = sql + "GROUP BY cu.customerId \n";
+			}
+			if (searchBy == "Fullname" || searchBy == "Email" || searchBy == "PhoneNumber") {
+				sql = sql + "ORDER BY cu.fullname \n";
+				
+			} else if (searchBy == "GroupCode") {
+				sql = sql + "ORDER BY cu.groupCode, cu.fullname \n";
+				
+			} else if (searchBy == "TinVat") {
+				sql = sql + "ORDER BY cu.vatNumber, cu.fullname \n";
+				
+			} else if (searchBy == "CustomerIdNumber") {
+				sql = sql + "ORDER BY cu.creation \n";
+				
+			} else if (searchBy == "CardNumber") {
+				sql = sql + "ORDER BY cu.cardNumber \n";
+				
+			} else if (searchBy == "FolderNumber") {
+				sql = sql + "ORDER BY cu.folderNumber \n";
+				
+			} else if (searchBy == "LegalRepresentative") {
+				sql = sql + "ORDER BY cu.legalRepresentative \n";
+				
+			}
+			sql = sql + "LIMIT 100 \n";
+
+			def result = this.runQuery(sql);
+			return result;
+		}
+    }
+
+	runQuery(sql) {
+		return "the query result";
+		// launch the actual query ...
+	}
+
+	sanitize(value) {
+	
+		def sanitized = "'";
+		for (def c = 0; c < strlen(value); c = c + 1) {
+			def chr = strsub(value, c, c + 1);
+			if (chr == "'")
+				sanitized = sanitized + "'";  // double possible apostrophes
+			sanitized = sanitized + chr;
+		}
+		sanitized = sanitized + "'";
+	}
+
+	getFormField(fieldName) {
+		// read the input field provided by applicatio user and return its value
+		def value = "some input written by the user";
+		return value;
+	}
+
+}

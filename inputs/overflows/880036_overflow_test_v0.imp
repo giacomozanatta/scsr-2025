@@ -1,0 +1,43 @@
+//
+// short benchmark program to test OverFlowChecker
+// even if NOT exhaustive, it produces some border-line intervals to simulate both possible and definite ufs/ofs
+// works best against NumericalSize.FLOAT8 (if you adapt it, it may be used against any other NumericalSize though)
+//
+// Disclaimer : may contain catastrofic errors...
+//
+
+class Tests {
+
+	some_numeric_function(unknown) {
+		def some = 10;
+		if (unknown == 123) {
+			some = some + 0.001;
+		}
+		return some;                                          // some         = [10, 10.001]
+	}
+
+	test_bad_flows_FP8(unknown) {
+
+		def uncertain = this.some_numeric_function(unknown);
+		
+		def sure_pos_ofl_6    = 8 * uncertain * uncertain;    // sure_pos_ofl_6    = [800,      800.160008]
+		def sure_pos_ofl_7    = 80 * 80;                      // sure_pos_ofl_7    = [6400,    6400]
+
+		def sure_neg_ofl_1    = uncertain         * -25;      // sure_neg_ofl_1    = [-250.025,   -250]
+		def maybe_neg_ofl_1   = sure_neg_ofl_1    + 10.01;    // maybe_neg_ofl_1   = [-240.015,   -239.99]
+		def NO_neg_ofl        = maybe_neg_ofl_1   + 10;       // NO_neg_ofl        = [-230.015,   -229.99]
+		def maybe_neg_ofl_2   = NO_neg_ofl        + 229.989;  // maybe_neg_ofl_2   = [  -0.026,   -0.001]
+		def sure_neg_ofl_2    = maybe_neg_ofl_2   / 100;      // sure_neg_ofl_2    = [  -0.00026, -0.00001]
+		def maybe_cross_ofl_3 = NO_neg_ofl        + 230;      // maybe_cross_ofl_3 = [  -0.015,    0.01]
+		def maybe_cross_ofl_4 = maybe_cross_ofl_3 * 100;      // maybe_cross_ofl_4 = [  -1.5,      1]
+		def maybe_cross_ofl_5 = maybe_cross_ofl_4 * 230 + 70; // maybe_cross_ofl_5 = [-275,      300]
+
+		def sure_pos_ofl_2    = -sure_neg_ofl_2;
+		def maybe_pos_ofl_2   = -maybe_neg_ofl_2;
+		def NO_pos_ofl        = -NO_neg_ofl;
+		def maybe_pos_ofl_1   = -maybe_neg_ofl_1;
+		def sure_pos_ofl_1    = -sure_neg_ofl_1;
+
+	}
+   
+}

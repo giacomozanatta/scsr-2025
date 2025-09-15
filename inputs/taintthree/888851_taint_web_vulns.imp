@@ -1,0 +1,138 @@
+// Simulated user requests
+class Request {
+    sourceFilename() {
+        return "../../../../../etc/passwd";
+    }
+
+    sourceCmdInjection() {
+        return "id.jpg; rm -rf /";
+    }
+}
+
+
+class Sanitizer {
+    ~Sanitizer() {}
+
+    sanitizePath(path) {
+        // Sanitizes the path to prevent directory traversal
+    }
+
+    sanitizeCommand(command) {
+        // Sanitizes the command to prevent command injection
+    }
+}
+
+
+class FileConverter {
+    ~FileConverter() {}
+
+    convert(file, format) {
+        // Converts the file and returns the converted file
+        def newFile = strcat(file, format);
+        return newFile;
+    }
+}
+
+class FileSystem {
+    ~FileSystem() {}
+
+    saveFile(file) {
+        // Saves the file to the filesystem
+    }
+
+    getFile(filename) {
+        // Retrieves the file from the filesystem
+        return filename;
+    }
+}
+
+
+class WebServerFlawed {
+    converter;
+    fs;
+
+    ~WebServerFlawed() {
+        this.converter = new FileConverter();
+        this.fs = new FileSystem();
+    }
+
+    uploadFile(request) {
+        def file = request.sourceFilename();
+        def fs = this.fs;
+        fs.saveFile(file);
+    }
+
+    convertFile(request) {
+        def filename = request.sourceCmdInjection();
+        def converter = this.converter;
+        converter.convert(filename, ".pdf");
+    }
+
+    downloadFile(request) {
+        def filename = request.sourceFilename();
+        def fs = this.fs;
+        fs.getFile(filename);
+        // Download
+    }
+}
+
+
+class WebServerSecure {
+    converter;
+    fs;
+    sanitizer;
+
+    ~WebServerSecure() {
+        this.converter = new FileConverter();
+        this.fs = new FileSystem();
+        this.sanitizer = new Sanitizer();
+    }
+
+    uploadFile(request) {
+        def file = request.sourceFilename();
+
+        def sanitizer = this.sanitizer;
+        file = sanitizer.sanitizePath(file);
+
+        def fs = this.fs;
+        fs.saveFile(file);
+    }
+
+    convertFile(request) {
+        def filename = request.sourceCmdInjection();
+
+        def sanitizer = this.sanitizer;
+        filename = sanitizer.sanitizeCommand(filename);
+
+        def converter = this.converter;
+        converter.convert(filename, ".pdf");
+    }
+
+    downloadFile(request) {
+        def filename = request.sourceFilename();
+
+        def sanitizer = this.sanitizer;
+        filename = sanitizer.sanitizePath(filename);
+
+        def fs = this.fs;
+        fs.getFile(filename);
+        // Download
+    }
+}
+
+
+class Main {
+    main() {
+        def badServer = new WebServerFlawed();
+        def goodServer = new WebServerSecure();
+        def request = new Request();
+
+        badServer.uploadFile(request);
+        badServer.convertFile(request);
+        badServer.downloadFile(request);
+
+        goodServer.uploadFile(request);
+        goodServer.convertFile(request);
+        goodServer.downloadFile(request);
+    }
+}

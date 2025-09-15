@@ -1,0 +1,40 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating integer overflow for different sizes.
+
+class MinMaxNumeric {
+    ~MinMaxNumeric() {}
+
+    min_int_8() { return -128; }
+    max_int_8() { return 127; }
+    min_uint_8() { return 0; }
+    max_uint_8() { return 255; }
+    min_int_16() { return -32768; }
+    max_int_16() { return 32767; }
+    min_uint_16() { return 0; }
+    max_uint_16() { return 65535; }
+    min_int_32() { return -2147483647 - 1; }
+    max_int_32() { return 2147483647; }
+    min_uint_32() { return 0; }
+    max_uint_32() { return (2147483647 * 2) + 1; }
+}
+
+class Test {
+
+    benchmark() {
+        // Object to contain basic numeric limits.
+        def limits = new MinMaxNumeric();
+
+        // Association of simple variables to evaluate the basic correctness of the validation.
+        def just_zero =             0;                          // This should not generate any warnings.
+        def just_negative =         -1;                         // This should generate a warning for all non-negative types.
+        def more_than_127 =         limits.max_int_8() + 1;     // This should generate a warning for the int8 type.
+        def more_than_255 =         limits.max_uint_8() + 1;    // This should generate a warning for int8 and uint8 types.
+        def more_than_32767 =       limits.max_int_16() + 1;    // This should generate a warning for int8, uint8, and int16 types.
+        def more_than_65535 =       limits.max_uint_16() + 1;   // This should generate a warning for int8, uint8, int16, and uint16 types.
+        def more_than_2147483647 =  limits.max_int_32() + 1;    // This should generate a warning for int8, uint8, int16, uint16, and int32 types.
+        def more_than_4294967295 =  limits.max_uint_32() + 1;   // This should generate a warning for int8, uint8, int16, uint16, int32, and uint32 types.
+        def less_than_m128 =        limits.min_int_8() - 1;     // This should generate a warning for all non-negative types and for int8.
+        def less_than_m32768 =      limits.min_int_16() - 1;    // This should generate a warning for all non-negative types and for int8, and int16.
+        def less_than_m2147483648 = limits.min_int_32() - 1;    // This should generate a warning for all non-negative types and for int8, int16, and int32.
+    }
+}

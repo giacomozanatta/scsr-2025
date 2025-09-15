@@ -1,70 +1,56 @@
-class taint {
+class webapp {
 
-	source1(){
-		return -99;
+	source1() {
+		// Untrusted user input (e.g., from a web form)
+		def user_input = 1;
+		return user_input;
 	}
 
-	sanitizer1(v){
-		return 0;
+	source2() {
+		// Untrusted query parameter
+		def query_param = 2;
+		return query_param;
 	}
 
-
-	sink1(v){
+	sanitizer1(input) {
+		// Simulated sanitization (cleans input)
+		def clean_input = input / 2; // e.g., validation or encoding
+		return clean_input;
 	}
 
-
-	basic1() {
-		def c = 0;
-
-		this.sink1(c);  // the value is clean
+	sanitizer2(input) {
+		// Another sanitizer example
+		def result = input + 1;
+		return result;
 	}
 
-	basic2() {
-		def t = this.source1();
-
-		this.sink1(t); // a tainted value flows in a sink!
+	sink1(cmd) {
+		// Dangerous operation: shell command execution
+		def run = cmd;
 	}
 
-	basic3() {
-		def t = this.source1();
-
-		def s = this.sanitizer1(t);
-
-		this.sink1(s);  // the value is clean due to sanitization
-	}
-	
-	basic4() {
-		def t1 = this.source1();
-		def t2 = 0;
-		def t3 = t1+t2;
-		this.sink1(t3); // the value may be tainted
+	sinks(query) {
+		// Dangerous operation: raw SQL query
+		def exec = query;
 	}
 
-	branch(b) {
-		def m = 0;
-
-		if(b) {
-			m = this.source1();
-		} else {
-		  m = 5;
-		}
-
-		this.sink1(m); // the value may be tainted
+	process_direct_flow() {
+		// Flow: tainted source directly to sink (should trigger DEFINITE warning)
+		def tainted_data = this.source1();
+		this.sink1(tainted_data);
 	}
 
-	branch2(b) {
-		def m = 0;
-
-		def n = this.source1();
-		if(b) {
-			m = this.source1();
-		} else {
-		  m = 5;
-		}
-		
-		def o = n + m;
-
-		this.sink1(o); // the value may be tainted
+	process_sanitized_flow() {
+		// Flow: tainted source passed through sanitizer (should NOT trigger warning)
+		def user = this.source2();
+		def safe = this.sanitizer1(user);
+		this.sinks(safe);
 	}
 
+	process_partial_sanitization() {
+		// Flow: partial sanitization but not fully trusted (should trigger POSSIBLE warning)
+		def q = this.source2();
+		def partial = q + 1; // not a real sanitization
+		this.sink1(partial);
+	}
 }

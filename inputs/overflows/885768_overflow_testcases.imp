@@ -1,0 +1,88 @@
+class Overflow {
+
+    get_int8_min()     { return -128; }
+    get_int8_max()     { return 127; }
+
+    get_uint8_min()    { return 0; }
+    get_uint8_max()    { return 255; }
+
+    get_int16_min()    { return -32768; }
+    get_int16_max()    { return 32767; }
+
+    get_uint16_min()   { return 0; }
+    get_uint16_max()   { return 65535; }
+
+    get_int32_min()    { return -2147483647 - 1; }
+    get_int32_max()    { return 2147483647; }
+
+    get_uint32_min()   { return 0; }
+    get_uint32_max()   { return (2147483647 * 2) + 1; }
+
+    get_float8_min()    { return 0.015625;}
+    get_float8_max()    { return 240;}
+
+    get_float16_min()    { return 0.000061;}
+    get_float16_max()    { return 655504;}
+
+    get_float32_min()    { return 0.00000 * 0.0118; }
+    get_float32_max()    { return 34028235 * 10000 * 10000 * 100000 * 100000; }
+
+    // UINT
+	test_bad_uint8(){
+	    def case1 = this.get_uint8_min() - 1;
+	    def case2 = this.get_uint8_max() + 1;
+	    def case3 = -this.get_uint32_max();
+	}
+
+    test_bad_uint16() {
+	    def case1 = this.get_uint16_min() - 1;
+	    def case2 = this.get_uint16_max() + 1;
+	    def case3 = -this.get_uint32_max();
+	}
+
+    test_bad_uint32() {
+   	    def case1 = this.get_uint32_min() - 1;
+   	    def case2 = this.get_uint32_max() + 1;
+   	    def case3 = -this.get_uint32_max();
+    }
+
+    // INT
+    test_bad_int8() {
+        def case1 = this.get_int8_min() - 1;
+        def case2 = this.get_int8_max() + 1;
+        def case3 = -this.get_uint32_max();
+    }
+
+    test_bad_int16() {
+        def case1 = this.get_int16_min() - 1;
+        def case2 = this.get_int16_max() + 1;
+        def case3 = -this.get_uint32_max();
+    }
+
+    test_bad_int32() {
+        def case1 = this.get_int32_min() - 1;
+        def case2 = this.get_int32_max() + 1;
+        def case3 = -this.get_uint32_max();
+    }
+
+
+    // FLOAT
+    test_bad_float8(){
+        def case1 = this.get_float8_min() - 0.00000001;
+        def case2 = this.get_float8_max() + 1.0001;
+        def case3 = -this.get_float8_min();
+    }
+
+    test_bad_float16(){
+        def case1 = this.get_float16_min() - 0.00000001;;
+        def case2 = this.get_float16_max() + 1.0001;
+        def case3 = -this.get_float16_min();
+    }
+
+    test_bad_float32() {
+        def case1 = this.get_float32_min() - 0.0000000001;
+        def case2 = this.get_float32_max() + 1.0001;
+        def case3 = -this.get_float32_min();
+    }
+   
+}

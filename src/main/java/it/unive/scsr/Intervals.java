@@ -13,7 +13,7 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.NumericNegation;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
@@ -98,10 +98,13 @@ public class Intervals
 	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
 		
-		// TODO: The semantics of negation should be implemented here! 
-		
 		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
-			
+			if (arg.isTop())
+				return top();
+			else if (arg.isBottom())
+				return bottom();
+			else
+				return new Intervals(arg.interval.mul(new it.unive.lisa.util.numeric.IntInterval(-1, -1)));
 		}
 		
 		return top();
@@ -243,13 +246,40 @@ public class Intervals
 			
 		} else 
 			
-		// TODO: The semantics of other binary mathematical operations should be implemented here!
-			
 		if( operator instanceof SubtractionOperator) {
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
+			
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
+			
+			return new Intervals(lA.subtract(uB), uA.subtract(lB));
 			
 		} else if( operator instanceof MultiplicationOperator) {
+			MathNumber lA = a.getLow();
+			MathNumber lB = b.getLow();
 			
+			MathNumber uA = a.getHigh();
+			MathNumber uB = b.getHigh();
 			
+			MathNumber[] products = {
+				lA.multiply(lB),
+				lA.multiply(uB),
+				uA.multiply(lB),
+				uA.multiply(uB)
+			};
+			
+			MathNumber min = products[0];
+			MathNumber max = products[0];
+			
+			for (int i = 1; i < products.length; i++) {
+				if (products[i].compareTo(min) < 0)
+					min = products[i];
+				if (products[i].compareTo(max) > 0)
+					max = products[i];
+			}
+			
+			return new Intervals(min, max);
 		}
 			
 		return top();

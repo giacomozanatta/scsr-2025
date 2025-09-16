@@ -79,8 +79,22 @@ SemanticCheck<
 
 		Statement target = node;
 				
-		// TODO: implement type checks, it is required a numerical type
-		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
+		boolean isNumerical = false;
+		if (!staticType.isUntyped()) {
+			isNumerical = staticType.toString().contains("int") || 
+					  staticType.toString().contains("float") || 
+					  staticType.toString().contains("double") ||
+					  staticType.toString().contains("number");
+		} else {
+			isNumerical = dynamicTypes.stream().anyMatch(t -> 
+				t.toString().contains("int") || 
+				t.toString().contains("float") || 
+				t.toString().contains("double") ||
+				t.toString().contains("number"));
+		}
+		
+		if (!isNumerical)
+			return;
 
 		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
 			target = varRef.getParentStatement();
@@ -92,8 +106,33 @@ SemanticCheck<
 				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(target).getState();
 				Intervals intervalAbstractValue = state.getValueState().getState(id);	
 				
-				// TODO: implement logic for overflow/underflow checks
-				// hint: it depends to the NumericalSize size
+				if (intervalAbstractValue != null && !intervalAbstractValue.isBottom() && intervalAbstractValue.interval != null) {
+					long min = Long.MIN_VALUE, max = Long.MAX_VALUE;
+					
+					switch (size) {
+						case INT8: min = -128; max = 127; break;
+						case INT16: min = -32768; max = 32767; break;
+						case INT32: min = -2147483648L; max = 2147483647L; break;
+						case UINT8: min = 0; max = 255; break;
+						case UINT16: min = 0; max = 65535; break;
+						case UINT32: min = 0; max = 4294967295L; break;
+						default: return;
+					}
+					
+					try {
+						long low = intervalAbstractValue.interval.getLow().toLong();
+						long high = intervalAbstractValue.interval.getHigh().toLong();
+						
+						if (low < min || high > max) {
+							tool.warnOn(target, "Possible overflow/underflow for " + size + " type");
+						}
+					} catch (Exception e) {
+						if (intervalAbstractValue.interval.getLow().isMinusInfinity() || 
+							intervalAbstractValue.interval.getHigh().isPlusInfinity()) {
+							tool.warnOn(target, "Possible overflow/underflow for " + size + " type");
+						}
+					}
+				}
 		}
 		
 		

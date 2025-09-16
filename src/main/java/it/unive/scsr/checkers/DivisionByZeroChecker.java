@@ -72,13 +72,26 @@ SemanticCheck<
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
 						
 			
-							// TODO: implement type checks, it is required a numerical type
+							boolean isNumerical = types.stream().anyMatch(t -> 
+								t.toString().contains("int") || 
+								t.toString().contains("float") || 
+								t.toString().contains("double") ||
+								t.toString().contains("number"));
+							
+							if (!isNumerical && !types.isEmpty())
+								continue;
 			
 							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 							
 							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 							
-							// TODO: add checks for division by zero
+							if (intervalAbstractValue != null && !intervalAbstractValue.isBottom()) {
+								if (intervalAbstractValue.interval != null && 
+									intervalAbstractValue.interval.getLow().compareTo(it.unive.lisa.util.numeric.MathNumber.ZERO) <= 0 &&
+									intervalAbstractValue.interval.getHigh().compareTo(it.unive.lisa.util.numeric.MathNumber.ZERO) >= 0) {
+									tool.warnOn(div, "Possible division by zero");
+								}
+							}
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();

@@ -1,0 +1,48 @@
+class overflow_test3_financial {
+    
+    calculate_compound_interest(principal, rate_percent, years) {
+        def rate = rate_percent; 
+        def amount = principal;
+        def year = 0;
+        
+        while (year < years) {
+
+            def interest = amount * rate / 100;
+            amount = amount + interest;
+            year = year + 1;
+        }
+
+    }
+    
+    process_bulk_payment(num_transactions, amount_per_transaction) {
+        def total_amount = 0;
+        def transaction_count = 0;
+        
+        while (transaction_count < num_transactions) {
+            total_amount = total_amount + amount_per_transaction;
+            
+            def fee = amount_per_transaction * 2 / 100;
+            total_amount = total_amount + fee;
+            
+            transaction_count = transaction_count + 1;
+        }
+        
+    }
+    
+    calculate_tax_withholding(salary, tax_rate) {
+        def annual_salary = salary * 12; 
+        def tax_amount = annual_salary * tax_rate / 100;
+        
+        def ss_rate = 6;
+        def ss_tax = annual_salary * ss_rate / 100;
+        
+        def total_withholding = tax_amount + ss_tax;
+        
+    }
+
+    test_underflow_scenario(initial_balance, large_debt) {
+
+        def final_balance = initial_balance - large_debt;
+
+    }
+}

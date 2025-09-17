@@ -1,0 +1,56 @@
+class taint_test1_web {
+
+    source1() {
+        return 1;
+    }
+    
+    sanitizer1(input) {
+        return input;
+    }
+    
+    sink1(data) {
+    }
+    
+    process_user_input(user_data) {
+        def raw_input = this.source1();
+        
+        def query_param = raw_input;
+        this.sink1(query_param);
+        
+        def sanitized_input = this.sanitizer1(raw_input);
+        this.sink1(sanitized_input);
+        
+        def processed = sanitized_input + 100;
+        this.sink1(processed);
+    }
+    
+    database_query_builder(table_name, user_filter) {
+        def base_query = "SELECT * FROM ";
+        def tainted_table = this.source1();
+        def tainted_filter = this.source1();
+        
+        def unsafe_query = base_query + tainted_table;
+        def final_query = unsafe_query + tainted_filter;
+        this.sink1(final_query);
+        
+        def safe_table = this.sanitizer1(tainted_table);
+        def safe_filter = this.sanitizer1(tainted_filter);
+        def safe_query = base_query + safe_table + safe_filter;
+        this.sink1(safe_query);
+    }
+    
+    file_path_validation(user_path) {
+        def base_path = "/var/www/uploads/";
+        def user_filename = this.source1();
+        
+        def full_path = base_path + user_filename;
+        this.sink1(full_path);
+        
+        def maybe_safe_path = user_filename;
+        if (user_filename > 0) {
+            maybe_safe_path = this.sanitizer1(user_filename);
+        }
+        def conditional_path = base_path + maybe_safe_path;
+        this.sink1(conditional_path);
+    }
+}

@@ -1,0 +1,30 @@
+class overflow_test2_counter {
+    
+    millisecond_counter() {
+        def counter = 2147483640;
+        def increment = 10;
+        
+        def new_counter = counter + increment;
+    }
+    
+    temperature_sensor_reading() {
+        def raw_reading = 32700; 
+        def calibration_offset = 100;
+        
+        def calibrated_temp = raw_reading + calibration_offset;
+        
+        def temp_celsius = calibrated_temp / 100;
+        def temp_fahrenheit = temp_celsius * 9 / 5 + 32;
+    }
+    
+    pwm_duty_cycle(base_duty, adjustment) {
+        def max_duty = 255;
+        def calculated_duty = base_duty + adjustment;
+        
+        if (calculated_duty > max_duty) {
+            calculated_duty = max_duty;
+        }
+        
+        def final_duty = calculated_duty + 1;
+    }
+}

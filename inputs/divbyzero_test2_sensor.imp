@@ -1,0 +1,39 @@
+class divbyzero_test2_sensor {
+    
+    calculate_average_temperature(total_readings, num_sensors) {
+        def avg_temp = total_readings / num_sensors;
+        
+ì        def normalized_temp = avg_temp * 100 / num_sensors;
+    }
+    
+    motor_speed_control(target_rpm, current_rpm, time_delta) {
+        def error = target_rpm - current_rpm;
+        def error_rate = error / time_delta; 
+        
+        def proportional = error * 2;
+        def derivative = error_rate * 1;
+        def control_signal = proportional + derivative;
+    }
+    
+    pressure_safety_check(current_pressure, safe_pressure, measurement_count) {
+        def pressure_ratio = current_pressure / safe_pressure;
+        
+        def avg_pressure = current_pressure / measurement_count;
+        
+        if (avg_pressure > 100) { 
+            def safety_margin = safe_pressure / avg_pressure;
+        }
+
+        def offset = avg_pressure;
+        def corrected_avg = avg_pressure - offset; 
+        def another_check = 10 / corrected_avg; 
+    }
+    
+    flow_rate_monitor(volume_passed, time_interval) {
+        def flow_rate = volume_passed / time_interval;
+        
+        def expected_flow = 100;
+        def efficiency = flow_rate * 100 / expected_flow;
+        
+    }
+}

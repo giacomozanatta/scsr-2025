@@ -29,10 +29,27 @@ public class TaintTest {
 	String[] sinks = new String[] {"sink1", "sinks"};
 	
 
+	// Web security (SQL injection, XSS)
 	@Test
-	public void testTaint() throws ParsingException, AnalysisException {
+	public void testTaintWeb() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/taint_test1_web.imp", "web");
+	}
+	
+	// System security (command injection)
+	@Test
+	public void testTaintSystem() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/taint_test2_system.imp", "system");
+	}
+	
+	// Data processing (serialization attacks)
+	@Test
+	public void testTaintData() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/taint_test3_data.imp", "data");
+	}
+	
+	private void runAnalysis(String inputFile, String path) throws ParsingException, AnalysisException {
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/taint.imp");
+		Program program = IMPFrontend.processFile(inputFile);
 
 		// we load annotation for identify sources, sanitizer, and sinks during the analysis and checker execution
 		loadAnnotations(program);
@@ -41,7 +58,7 @@ public class TaintTest {
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/taint";
+		conf.workdir = "outputs/taint/" + path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

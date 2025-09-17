@@ -18,41 +18,28 @@ import it.unive.scsr.checkers.OverflowChecker;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 public class OverflowTest {
-	
 
+	// Buffer management scenarios
 	@Test
-	public void testOverflowIntervalsUINT8() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-uint8");
+	public void testOverflowBuffer() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/overflow_test1_buffer.imp", new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "buffer");
 	}
 	
+	// Counter/timer overflows
 	@Test
-	public void testOverflowIntervalsINT16() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "intervals-int16");
+	public void testOverflowCounter() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/overflow_test2_counter.imp", new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "counter");
 	}
 	
+	// Financial calculations
 	@Test
-	public void testOverflowIntervalsFLOAT8() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT8, "intervals-float8");
+	public void testOverflowFinancial() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/overflow_test3_financial.imp", new Pentagons(), NumericalSize.INT32, "financial");
 	}
 	
-	@Test
-	public void testOverflowPentagonsUINT8() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.UINT8, "pentagons-uint8");
-	}
-	
-	@Test
-	public void testOverflowPentagonsINT16() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.INT16, "pentagons-int16");
-	}
-	
-	@Test
-	public void testOverflowPentagonsFLOAT8() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.FLOAT8, "pentagons-float8");
-	}
-	
-	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
+	private <V extends ValueDomain<V>> void runAnalysis(String inputFile, V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/overflow.imp");
+		Program program = IMPFrontend.processFile(inputFile);
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();

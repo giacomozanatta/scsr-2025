@@ -1,0 +1,29 @@
+class divbyzero_test1_network {
+    
+    calculate_bandwidth_utilization(bytes_transferred, time_elapsed) {
+        def bandwidth = bytes_transferred / time_elapsed;
+        
+        def total_capacity = 1000000; 
+        def utilization_percent = bandwidth * 100 / total_capacity;
+    }
+    
+    network_latency_analysis(packet_count, total_time) {
+        def avg_latency = total_time / packet_count;
+        
+        def expected_interval = 1000 / packet_count; 
+        def actual_interval = total_time / packet_count;
+        def jitter = actual_interval - expected_interval;
+    }
+    
+    connection_timeout_handler(active_connections, timeout_period) {
+        def timeout_per_conn = timeout_period / active_connections;
+        
+        def adjusted_timeout = timeout_per_conn * 2;
+    }
+    
+    packet_loss_rate(packets_sent, packets_received) {
+        def packets_lost = packets_sent - packets_received;
+        
+        def loss_rate = packets_lost * 100 / packets_sent;
+    }
+}

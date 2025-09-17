@@ -1,0 +1,67 @@
+class taint_test2_system {
+
+    source1() {
+        return 1;
+    }
+    
+    sanitizer1(input) {
+        return input;
+    }
+    
+    sink1(data) {
+    }
+    
+    execute_system_command(command_args) {
+        def base_command = "ls -la ";
+        def user_args = this.source1(); 
+        
+        def full_command = base_command + user_args;
+        this.sink1(full_command); 
+        
+        def validated_args = this.sanitizer1(user_args);
+        def safe_command = base_command + validated_args;
+        this.sink1(safe_command); 
+    }
+    
+    log_file_processor(log_entry) {
+        def timestamp = "2024-01-01 ";
+        def user_message = this.source1(); 
+        
+        def log_line = timestamp + user_message;
+        this.sink1(log_line); 
+        
+        def processed_msg = user_message + " [processed]";
+        def final_log = timestamp + processed_msg;
+        this.sink1(final_log); 
+        
+        def clean_message = this.sanitizer1(user_message);
+        def safe_log = timestamp + clean_message;
+        this.sink1(safe_log); 
+    }
+    
+    configuration_parser(config_value) {
+        def config_prefix = "app.setting=";
+        def user_config = this.source1(); 
+        
+        def processed_config = user_config;
+        def i = 0;
+        while (i < 3) {
+            processed_config = processed_config + "_suffix";
+            i = i + 1;
+        }
+        
+        def final_config = config_prefix + processed_config;
+        this.sink1(final_config); 
+        
+        def loop_config = user_config;
+        def j = 0;
+        while (j < 2) {
+            if (j == 1) {
+                loop_config = this.sanitizer1(loop_config);
+            }
+            j = j + 1;
+        }
+        def conditional_final = config_prefix + loop_config;
+        this.sink1(conditional_final); 
+    }
+}

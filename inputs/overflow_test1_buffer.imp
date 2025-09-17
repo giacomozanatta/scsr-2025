@@ -1,0 +1,22 @@
+class overflow_test1_buffer {
+    
+    calculate_buffer_size(num_packets, packet_size) {
+
+        def total_size = num_packets * packet_size;
+        
+        def overhead = total_size / 10;
+        def final_buffer = total_size + overhead;
+        
+        def safety_factor = 2;
+        def allocated_buffer = final_buffer * safety_factor;
+    }
+    
+    process_image_data() {
+
+        def width = 256;
+        def height = 256;
+        def bytes_per_pixel = 3;
+        
+        def image_size = width * height * bytes_per_pixel;
+    }
+}

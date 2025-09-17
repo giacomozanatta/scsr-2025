@@ -13,6 +13,7 @@ import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
+import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.cfg.CFG;
@@ -23,11 +24,12 @@ import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
-public class DivisionByZeroChecker implements
+public class DivisionByZeroChecker<V extends ValueDomain<V>> implements
 SemanticCheck<
-		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+		SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>>> {
 	
 	
 	private NumericalSize size;
@@ -38,7 +40,7 @@ SemanticCheck<
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
 		
 		if( node instanceof Division)
@@ -50,13 +52,13 @@ SemanticCheck<
 	}
 
 	private void checkDivision(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Division div) {
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
+		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, V,
 				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 			AnalysisState<
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
+			SimpleAbstractState<PointBasedHeap, V,
 					TypeEnvironment<InferredTypes>>> state = result.getAnalysisStateAfter(div.getRight());
 			
 			Set<SymbolicExpression> reachableIds = new HashSet<>();
@@ -81,9 +83,7 @@ SemanticCheck<
 							if (!isNumerical && !types.isEmpty())
 								continue;
 			
-							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
-							
-							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
+							Intervals intervalAbstractValue = extractAndEvalIntervals(state.getState().getValueState(), (ValueExpression) s, div, state.getState());
 							
 							if (intervalAbstractValue != null && !intervalAbstractValue.isBottom()) {
 								if (intervalAbstractValue.interval != null && 
@@ -105,7 +105,7 @@ SemanticCheck<
 
 	// compute possible dynamic types / runtime types
 	private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div,
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state) throws SemanticException {
+			SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>> state) throws SemanticException {
 		
 		Set<Type> possibleDynamicTypes = new HashSet<>();
 		Type dynamicTypes = state.getDynamicTypeOf(s, div, state);
@@ -121,6 +121,17 @@ SemanticCheck<
 		return possibleDynamicTypes;
 	
 	}
-	
+
+	@SuppressWarnings("unchecked")
+	private Intervals extractAndEvalIntervals(V valueState, ValueExpression expr, Division div, SimpleAbstractState<PointBasedHeap, V, TypeEnvironment<InferredTypes>> state) throws SemanticException {
+		if (valueState instanceof ValueEnvironment) {
+			ValueEnvironment<Intervals> env = (ValueEnvironment<Intervals>) valueState;
+			return env.eval(expr, div, state);
+		} else if (valueState instanceof Pentagons) {
+			Pentagons pentagons = (Pentagons) valueState;
+			return pentagons.getIntervals().eval(expr, div, state);
+		}
+		return new Intervals().bottom();
+	}
 
 }

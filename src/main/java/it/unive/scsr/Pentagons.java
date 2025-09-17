@@ -289,6 +289,10 @@ public class Pentagons
 		return new Pentagons(newBounds, intervals);
 	}
 
+	public ValueEnvironment<Intervals> getIntervals() {
+		return intervals;
+	}
+
 	
 	
 

@@ -20,19 +20,27 @@ import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 public class DivByZeroTest {
 	
 
+	// Network monitoring calculations
 	@Test
-	public void testDivByZeroInterval() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-divbyzero");
+	public void testDivByZeroNetwork() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/divbyzero_test1_network.imp", new ValueEnvironment<>(new Intervals()), "network");
 	}
 	
+	// IoT sensor data processing
 	@Test
-	public void testtestDivByZeroPentagons() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.UINT8, "intervals-pentagons");
+	public void testDivByZeroSensor() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/divbyzero_test2_sensor.imp", new Pentagons(), "sensor");
 	}
 	
-	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
+	// Mathematical/algorithmic computations
+	@Test
+	public void testDivByZeroAlgorithm() throws ParsingException, AnalysisException {
+		runAnalysis("inputs/divbyzero_test3_algorithm.imp", new ValueEnvironment<>(new Intervals()), "algorithm");
+	}
+	
+	private <V extends ValueDomain<V>> void runAnalysis(String inputFile, V valueEnv, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/divbyzero.imp");
+		Program program = IMPFrontend.processFile(inputFile);
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
@@ -57,7 +65,7 @@ public class DivByZeroTest {
 		conf.interproceduralAnalysis = new ContextBasedAnalysis<>(FullStackToken.getSingleton());
 		 
 		// the OverflowChecker is executed after the numerical analysis and it checks if a abstract numerical value leads to an overflow/underflow
-		conf.semanticChecks.add(new DivisionByZeroChecker(size));
+		conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.INT16));
 		 
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);

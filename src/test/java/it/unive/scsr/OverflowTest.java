@@ -22,19 +22,19 @@ public class OverflowTest {
 	// Buffer management scenarios
 	@Test
 	public void testOverflowBuffer() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/overflow_test1_buffer.imp", new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "buffer");
+		runAnalysis("inputs/908883-overflow_test1_buffer.imp", new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "buffer");
 	}
 	
 	// Counter/timer overflows
 	@Test
 	public void testOverflowCounter() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/overflow_test2_counter.imp", new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "counter");
+		runAnalysis("inputs/908883-overflow_test2_counter.imp", new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "counter");
 	}
 	
 	// Financial calculations
 	@Test
 	public void testOverflowFinancial() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/overflow_test3_financial.imp", new Pentagons(), NumericalSize.INT32, "financial");
+		runAnalysis("inputs/908883-overflow_test3_financial.imp", new Pentagons(), NumericalSize.INT32, "financial");
 	}
 	
 	private <V extends ValueDomain<V>> void runAnalysis(String inputFile, V valueEnv, NumericalSize size, String path) throws ParsingException{

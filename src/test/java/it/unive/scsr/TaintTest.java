@@ -32,19 +32,19 @@ public class TaintTest {
 	// Web security (SQL injection, XSS)
 	@Test
 	public void testTaintWeb() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/taint_test1_web.imp", "web");
+		runAnalysis("inputs/908883-taint_test1_web.imp", "web");
 	}
 	
 	// System security (command injection)
 	@Test
 	public void testTaintSystem() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/taint_test2_system.imp", "system");
+		runAnalysis("inputs/908883-taint_test2_system.imp", "system");
 	}
 	
 	// Data processing (serialization attacks)
 	@Test
 	public void testTaintData() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/taint_test3_data.imp", "data");
+		runAnalysis("inputs/908883-taint_test3_data.imp", "data");
 	}
 	
 	private void runAnalysis(String inputFile, String path) throws ParsingException, AnalysisException {

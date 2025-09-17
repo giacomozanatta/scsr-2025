@@ -23,19 +23,19 @@ public class DivByZeroTest {
 	// Network monitoring calculations
 	@Test
 	public void testDivByZeroNetwork() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/divbyzero_test1_network.imp", new ValueEnvironment<>(new Intervals()), "network");
+		runAnalysis("inputs/908883-divbyzero_test1_network.imp", new ValueEnvironment<>(new Intervals()), "network");
 	}
 	
 	// IoT sensor data processing
 	@Test
 	public void testDivByZeroSensor() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/divbyzero_test2_sensor.imp", new Pentagons(), "sensor");
+		runAnalysis("inputs/908883-divbyzero_test2_sensor.imp", new Pentagons(), "sensor");
 	}
 	
 	// Mathematical/algorithmic computations
 	@Test
 	public void testDivByZeroAlgorithm() throws ParsingException, AnalysisException {
-		runAnalysis("inputs/divbyzero_test3_algorithm.imp", new ValueEnvironment<>(new Intervals()), "algorithm");
+		runAnalysis("inputs/908883-divbyzero_test3_algorithm.imp", new ValueEnvironment<>(new Intervals()), "algorithm");
 	}
 	
 	private <V extends ValueDomain<V>> void runAnalysis(String inputFile, V valueEnv, String path) throws ParsingException{

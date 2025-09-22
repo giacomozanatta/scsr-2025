@@ -1,0 +1,47 @@
+class divbyzero {
+
+
+	f0() {
+		def a = 1/0;
+	}
+	
+	f1() {
+		def a = 1;
+		def b = 0;
+		def c = a/b;
+	}
+
+	f2(b) {
+		def x = 0;
+		if(b)
+           	x = 1;
+       	else
+           	x = 2;
+           	
+        def r = 1/x;
+    }
+    
+	f3(i) {
+		def x = 1 / i;
+    }  
+    
+	f4(a) {	
+		if(a > 0) {
+			def c = 1/a;
+		}
+		def d = 1/a;
+	}
+	
+	f5(a) {	
+		def b = 0;
+		if(a > b) {
+			def c = 1/a;
+		}
+	}
+	
+	f6() {	
+		def a = 1 - 1 + 1 * 0;
+		def c = 1/a;
+	}
+	
+}

@@ -1,5 +1,7 @@
 package it.unive.scsr;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import it.unive.lisa.analysis.Lattice;
@@ -8,14 +10,13 @@ import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.program.cfg.ProgramPoint;
+import it.unive.lisa.program.cfg.statement.comparison.*;
 import it.unive.lisa.symbolic.value.Constant;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
-import it.unive.lisa.symbolic.value.operator.AdditionOperator;
-import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
-import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.NumericNegation;
-import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
-import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
+import it.unive.lisa.symbolic.value.operator.*;
+import it.unive.lisa.symbolic.value.operator.binary.*;
+import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.numeric.IntInterval;
 import it.unive.lisa.util.numeric.MathNumber;
@@ -100,8 +101,8 @@ public class Intervals
 		
 		// TODO: The semantics of negation should be implemented here! 
 		
-		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
-			
+		if (operator instanceof NumericNegation) {
+            return new Intervals(interval.mul(new IntInterval(-1, -1)));
 		}
 		
 		return top();
@@ -187,7 +188,7 @@ public class Intervals
 		if(this.isBottom())
 			return Lattice.bottomRepresentation();
 		
-		return new StringRepresentation("["+this.interval.getLow()+","+this.interval.getHigh()+"]");
+		return new StringRepresentation("["+this.interval.getLow()+", "+this.interval.getHigh()+"]");
 	}
 
 	@Override
@@ -211,10 +212,8 @@ public class Intervals
 	@Override
 	public Intervals evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		if(constant.getValue() instanceof Integer) {
-			Integer i = (Integer) constant.getValue();
-			Intervals singletonInterval = new Intervals(i,i);
-			return singletonInterval;
+		if(constant.getValue() instanceof Integer i) {
+            return new Intervals(i,i);
 		}
 		
 		return top();
@@ -223,36 +222,49 @@ public class Intervals
 	@Override
 	public Intervals evalBinaryExpression(BinaryOperator operator, Intervals left, Intervals right, ProgramPoint pp,
 			SemanticOracle oracle) throws SemanticException {
-		
-		
-		if(left.isBottom() || right.isBottom())
-			return bottom();
-		
 		IntInterval a = left.interval;
 		IntInterval b = right.interval;
-		
+
+        MathNumber lA = a.getLow();
+        MathNumber lB = b.getLow();
+
+        MathNumber uA = a.getHigh();
+        MathNumber uB = b.getHigh();
+
 		if(operator instanceof AdditionOperator)  {
-			
-			MathNumber lA = a.getLow();
-			MathNumber lB = b.getLow();
-			
-			MathNumber uA = a.getHigh();
-			MathNumber uB = b.getHigh();
-			
 			return new Intervals(lA.add(lB), uA.add(uB));
 			
 		} else 
 			
 		// TODO: The semantics of other binary mathematical operations should be implemented here!
 			
-		if( operator instanceof SubtractionOperator) {
-			
-		} else if( operator instanceof MultiplicationOperator) {
-			
-			
-		}
-			
-		return top();
+		if (operator instanceof SubtractionOperator) {
+            return new Intervals(lA.subtract(uB), uA.subtract(lB));
+		} else if (operator instanceof MultiplicationOperator) {
+			final var products = List.of(
+                    lA.multiply(lB),
+                    lA.multiply(uB),
+                    uA.multiply(lB),
+                    uA.multiply(uB)
+            );
+            return new Intervals(
+                    products.stream().reduce(MathNumber::min).get(),
+                    products.stream().reduce(MathNumber::max).get()
+            );
+        } else if (operator instanceof DivisionOperator) {
+            final var products = List.of(
+                    lA.divide(lB),
+                    lA.divide(uB),
+                    uA.divide(lB),
+                    uA.divide(uB)
+            );
+            return new Intervals(
+                    products.stream().reduce(MathNumber::min).get(),
+                    products.stream().reduce(MathNumber::max).get()
+            );
+        }
+
+        return top();
 	}
 
 	@Override
@@ -311,12 +323,67 @@ public class Intervals
 	public ValueEnvironment<Intervals> assumeBinaryExpression(ValueEnvironment<Intervals> environment,
 			BinaryOperator operator, ValueExpression left, ValueExpression right, ProgramPoint src, ProgramPoint dest,
 			SemanticOracle oracle) throws SemanticException {
-		
-		// Any assumptions should be implemented here!
-		
-		return BaseNonRelationalValueDomain.super.assumeBinaryExpression(environment, operator, left, right, src, dest, oracle);
-	}
-	
 
-	
+
+        System.err.printf("assumeBinaryExpression:%s %s %s", left, operator, right);
+        if (left instanceof Identifier leftId && right instanceof Constant rightConst) {
+            System.err.print(":ID OP CONST");
+            if (!(rightConst.getValue() instanceof Integer rightInt)) {
+                System.err.println(":CONST is not int");
+                return environment;
+            }
+            MathNumber bound = new MathNumber(rightInt);
+            final Intervals opInterval;
+            if (operator instanceof ComparisonGe) {
+                opInterval = new Intervals(bound, MathNumber.PLUS_INFINITY);
+            } else if (operator instanceof ComparisonGt) {
+                opInterval = new Intervals(bound.add(MathNumber.ONE), MathNumber.PLUS_INFINITY);
+            } else if (operator instanceof ComparisonLe) {
+                opInterval = new Intervals(MathNumber.MINUS_INFINITY, bound);
+            } else if (operator instanceof ComparisonLt) {
+                opInterval = new Intervals(MathNumber.MINUS_INFINITY, bound.subtract(MathNumber.ONE));
+            } else if (operator instanceof ComparisonEq) {
+                opInterval = new Intervals(bound, bound);
+            } else {
+                System.err.printf(":operator %s ignored\n", operator);
+                return environment; // unchanged
+            }
+
+            final Intervals current = environment.getState(leftId);
+            final Intervals newState = current.glb(opInterval);
+            System.err.printf(":old %s:bound %s:new %s\n", current.representation(), opInterval.representation(), newState.representation());
+            return environment.putState(leftId, newState);
+        }
+        if (left instanceof Constant leftConst && right instanceof Identifier rightId) {
+            System.err.print(":CONST OP ID");
+            if (!(leftConst.getValue() instanceof Integer leftInt)) {
+                System.err.println(":CONST is not int");
+                return environment; // unchanged
+            }
+            final MathNumber bound = new MathNumber(leftInt);
+            final Intervals opInterval;
+            if (operator instanceof ComparisonGe) {
+                opInterval = new Intervals(MathNumber.MINUS_INFINITY, bound);
+            } else if (operator instanceof ComparisonGt) {
+                opInterval = new Intervals(MathNumber.MINUS_INFINITY, bound.subtract(MathNumber.ONE));
+            } else if (operator instanceof ComparisonLe) {
+                opInterval = new Intervals(bound, MathNumber.PLUS_INFINITY);
+            } else if (operator instanceof ComparisonLt) {
+                opInterval = new Intervals(bound.add(MathNumber.ONE), MathNumber.PLUS_INFINITY);
+            } else if (operator instanceof ComparisonEq) {
+                opInterval = new Intervals(bound, bound);
+            } else {
+                System.err.printf(":operator %s ignored\n", operator);
+                return environment; // unchanged
+            }
+
+            final Intervals current = environment.getState(rightId);
+            final Intervals newState = current.glb(opInterval);
+            System.err.printf(":old %s:bound %s:new %s\n", current.representation(), opInterval.representation(), newState.representation());
+            return environment.putState(rightId, newState);
+        }
+        System.err.println(":ignored");
+
+        return environment; // unchanged
+	}
 }

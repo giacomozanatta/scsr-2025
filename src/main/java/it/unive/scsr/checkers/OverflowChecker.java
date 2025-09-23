@@ -34,9 +34,9 @@ public class OverflowChecker<V extends ValueDomain<V>> implements SemanticCheck<
 		UINT8,  // unsigned 8-bit
 		UINT16, // unsigned 16-bit
 		UINT32, // unsigned 32-bit
-		FLOAT8,   // float 8-bit (non gestito qui)
-		FLOAT16,  // float 16-bit (non gestito qui)
-		FLOAT32   // float 32-bit (non gestito qui)
+		FLOAT8,   // float 8-bit (not handled)
+		FLOAT16,  // float 16-bit (not handled)
+		FLOAT32   // float 32-bit (not handled)
 	}
 
 	private final NumericalSize size;
@@ -129,16 +129,16 @@ public class OverflowChecker<V extends ValueDomain<V>> implements SemanticCheck<
 				long high = iv.interval.getHigh().toLong();
 
 				if (high < min) {
-					tool.warnOn(target, "Underflow certo per " + size + " ([" + low + "," + high + "] < " + min + ")");
+					tool.warnOn(target, "Underflow for " + size + " ([" + low + "," + high + "] < " + min + ")");
 				} else if (low > max) {
-					tool.warnOn(target, "Overflow certo per " + size + " ([" + low + "," + high + "] > " + max + ")");
+					tool.warnOn(target, "Overflow for " + size + " ([" + low + "," + high + "] > " + max + ")");
 				} else {
 					boolean underPart = low < min;
 					boolean overPart  = high > max;
 					if (underPart || overPart) {
 						String which = (underPart && overPart) ? "underflow/overflow"
 								: (underPart ? "underflow" : "overflow");
-						tool.warnOn(target, "Possibile " + which + " per " + size +
+						tool.warnOn(target, "Possible " + which + " for " + size +
 								" ([" + low + "," + high + "] ∉ [" + min + "," + max + "])");
 					}
 				}
@@ -150,9 +150,9 @@ public class OverflowChecker<V extends ValueDomain<V>> implements SemanticCheck<
 				} catch (Exception ignored) {}
 
 				if (minusInf || plusInf) {
-					tool.warnOn(target, "Possibile overflow/underflow per " + size + " (intervallo non finito)");
+					tool.warnOn(target, "Possible overflow/underflow for " + size + " (interval not defined)");
 				} else {
-					tool.warnOn(target, "Possibile overflow/underflow per " + size + " (bound non interpretabili)");
+					tool.warnOn(target, "Possible overflow/underflow for " + size + " (bound not interpretable)");
 				}
 			}
 		}

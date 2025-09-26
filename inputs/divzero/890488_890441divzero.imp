@@ -1,0 +1,35 @@
+class DivisionDiagnostics {
+
+	average_consumption() {
+		def energy_mWh = 5000;
+		def time_h     = 0;
+
+		def avg_power = energy_mWh / time_h;    // avg_power = verified division by 0
+		return avg_power;
+	}
+
+	efficiency_estimation() {
+		def output_energy = 3000;
+		def input_energy  = 0;
+
+		if (output_energy > 1000) {
+			input_energy = 500;
+		}
+
+		def efficiency = output_energy / input_energy;  // efficiency = [division by 0 se input_energy remain 0]
+		return efficiency;
+	}
+
+	voltage_normalization() {
+		def voltage_raw = 3700;
+		def scale       = 0;
+
+		if (voltage_raw > 3500) {
+			scale = scale + 1000;               // scale = [0, 1000]
+		}
+
+		def voltage_norm = voltage_raw / scale; // voltage_norm = [TOP] if scale = 0 possible division by zero
+		return voltage_norm;
+	}
+
+}

@@ -1,0 +1,75 @@
+/*
+    Script designed to test the Overflow/Underflow analysis.
+
+    Description: The proposed algorithm solves the following problem:
+                 find the first prime numbers such that the reverse of the number is also prime.
+                 E.g. The reverse of 13 is 31 — both are prime. So these numbers satisfy the condition.
+
+    Author: Andrea Da Lio - 884046
+    Version: 1.0
+*/
+class Main{
+
+    //Prints a text on the screen
+    print(s){
+
+    }
+
+    //Function that reverses the digits of a number (n)
+    reverse(n) {
+        def rev = 0;
+        while (n > 0) {
+            rev = rev * 10 + n % 10;
+            n = n / 10;
+        }
+        return rev;
+    }
+
+    //Function that checks if the given number (n) is prime
+    is_prime(n) {
+        if (n < 2) {
+            return false;
+        }else if (n % 2 == 0) {
+            return n == 2;
+        }else if (n % 3 == 0) {
+            return n == 3;
+        }else{
+            def p = 5;
+            def exit = false;
+            while (p * p <= n && !exit) {
+                if (n % p == 0) {
+                    exit = true;
+                }
+                p = p + 2;
+                if (n % p == 0) {
+                     exit = true;
+                }
+                p = p + 4;
+            }
+            if(exit) {
+                return false;
+            }else{
+                return true;
+            }
+
+        }
+    }
+
+    //Main function
+    main() {
+        def count = 0;
+        def n = 1;
+        while (n < 500) {
+            if (this.is_prime(n) && this.is_prime(this.reverse(n))) {
+                this.print(n);
+                count = count + 1;
+            }
+            n = n + 1;
+        }
+        this.print("Found: ");
+        this.print(count);
+    }
+
+
+}
+

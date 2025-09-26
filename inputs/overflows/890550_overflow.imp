@@ -1,0 +1,61 @@
+class overflow {
+    testOverflow() {
+        def x = 30000;           // FLOAT8, UINT8: Error
+        def flag = 1;
+        if (flag == 1) {
+          x = x * 5000;          // FLOAT8, UINT8, INT16: Error
+        }
+
+        def y = 100;
+        def i = 0;
+        while (i < 10) {
+          y = y * 2;
+          i = i + 1;
+        }
+        x = x + y;              // FLOAT8, UINT8, INT16: Error
+    }
+
+    testUnderflow() {
+        def a = 32000;          // FLOAT8, UINT8: Error
+        def b = -1000;          // FLOAT8, UINT8: Error
+        def c = a + b;          // FLOAT8, UINT8: Error
+
+        a = -32000;             // FLOAT8, UINT8: Error
+        b = 1000;               // FLOAT8, UINT8: Error
+        c = a+b;                // FLOAT8, UINT8: Error
+    }
+
+    testExpression() {
+        def a = 199;
+        def b = 1.2;
+        def c = a * 2.0;        // FLOAT8, UINT8: Error
+
+        c = a * b;
+    }
+
+    testExternalFunction() {
+        def res = this.returnLarge(1);
+        def val = res + 1;       // FLOAT8: Error
+
+        res = this.returnLarge(0);
+        val = res - 2147483647;   // FLOAT8, UINT8, INT16: Error
+    }
+
+    returnLarge(flag) {
+        def r = 0;
+        if (flag == 1)             // INFINITE VALUE
+          r = 240;
+
+        return r;
+    }
+
+    testCases() {
+        def a = -128;            // UINT8: Error
+        def b = -1;              // UINT8: Error
+        def c = a + b;           // UINT8: Error
+
+        a = 0;
+        b = 255;                  // FLOAT8: Error
+        c = a + b;                // FLOAT8: Error
+    }
+}

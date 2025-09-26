@@ -1,0 +1,59 @@
+class crono{
+    add_time(t,split){
+        def time= t +split;
+        return time;
+    }
+    add_km(km,split){
+        km= km +split;
+        return km;
+    }
+    modify_time(t,action,amount){
+        if(action==1){
+            t=amount;
+        }else{
+            t=t-amount;
+        }
+        return t;
+    }
+
+    get_pace(time,km){
+        def ret=time/km;
+        return ret;
+    }
+    main0(){
+        def t=6/0.0;  //error
+        def t1=2+2+2+2+2/0;  //error
+        def t3=2/(1.0-1.0); //error
+    }
+    main1(){
+
+        def time=0;
+        def km=0.0;
+        def x=this.add_time(time,100);
+        def x1=this.modify_time(time,1,100);
+        def x2=this.get_pace(time,km);  //error
+    }
+    main2(){
+        def time=3;
+        time=this.modify_time(time,2,3);
+        def x1=100/time;   //error
+    }
+
+    main3(){
+        def arr = new int[2];
+        arr[0] = -1;
+        arr[1] = 1;
+        def x=arr[0]+arr[1];
+        def x2=79/x; // error
+    }
+    div(x,y){
+        return x/y;
+    }
+    main4(){
+        def g=this.div(1,1);  //safe
+        def f=this.div(1,0); // definitely error
+        def j=this.modify(2,2,2);
+        def k=this.div(g,j);  // possible error
+    }
+
+}

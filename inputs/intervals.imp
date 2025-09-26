@@ -10,6 +10,15 @@ class intervals {
 //      def l = -i;
 	}
 
+      test() {
+        def x = 10;
+        def y = x + 5;
+        def z = y / 2;
+        return z;
+      }
+
+
+
 	branches(b) {
 		def x = 0;
 		if (b)
@@ -21,11 +30,11 @@ class intervals {
 
 	loop(b) {
 			def c = 1;
-			
+
 			while (b < 3) {
 				c = c + 1;
-				b = b + 1; 
+				b = b + 1;
 			}
-			return c; 
+			return c;
 	}
 }

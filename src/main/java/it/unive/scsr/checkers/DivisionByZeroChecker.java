@@ -1,6 +1,5 @@
 package it.unive.scsr.checkers;
 
-
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -20,18 +19,18 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.numeric.Division;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 public class DivisionByZeroChecker implements
-SemanticCheck<
-		SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
-	
-	
+		SemanticCheck<
+				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+
 	private NumericalSize size;
-	
+
 	public DivisionByZeroChecker(NumericalSize size) {
 		this.size = size;
 	}
@@ -40,13 +39,11 @@ SemanticCheck<
 	public boolean visit(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
-		
-		if( node instanceof Division)
+
+		if (node instanceof Division)
 			checkDivision(tool, graph, (Division) node);
 
-		
 		return true;
-		
 	}
 
 	private void checkDivision(
@@ -55,59 +52,74 @@ SemanticCheck<
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
 				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
+
 			AnalysisState<
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-					TypeEnvironment<InferredTypes>>> state = result.getAnalysisStateAfter(div.getRight());
-			
+					SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
+							TypeEnvironment<InferredTypes>>> state =
+					result.getAnalysisStateAfter(div.getRight());
+
 			Set<SymbolicExpression> reachableIds = new HashSet<>();
 			Iterator<SymbolicExpression> comExprIterator = state.getComputedExpressions().iterator();
-			if(comExprIterator.hasNext()) {
-				SymbolicExpression divisor = comExprIterator.next();
-					try {
-						reachableIds
-								.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
-						
-						for (SymbolicExpression s : reachableIds) {
-							
-							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
-						
-			
-							// TODO: implement type checks, it is required a numerical type
-			
-							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
-							
-							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
-							
-							// TODO: add checks for division by zero
-						}
-					} catch (SemanticException e) {
-						e.printStackTrace();
-					}
-	
 
+			if (comExprIterator.hasNext()) {
+				SymbolicExpression divisor = comExprIterator.next();
+				try {
+					reachableIds.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
+
+					for (SymbolicExpression s : reachableIds) {
+						Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
+
+						// TODO: implement type checks, it is required a numerical type
+						boolean isNumeric = types.stream().anyMatch(t -> t instanceof NumericType);
+						if (!isNumeric)
+							continue;
+
+						ValueEnvironment<Intervals> valueState = state.getState().getValueState();
+						Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
+
+						// TODO: add checks for division by zero
+						Double low = null, high = null;
+						try {
+							if (intervalAbstractValue.interval.getLow() != null)
+								low = Double.parseDouble(intervalAbstractValue.interval.getLow().toString());
+							if (intervalAbstractValue.interval.getHigh() != null)
+								high = Double.parseDouble(intervalAbstractValue.interval.getHigh().toString());
+						} catch (NumberFormatException e) {
+							// ignore non-numeric values
+						}
+
+						if (low != null && high != null) {
+							if (low == 0.0 && high == 0.0) {
+								tool.warn("Definite division by zero at " + div.getLocation());
+							} else if (low <= 0.0 && high >= 0.0) {
+								tool.warn("Possible division by zero at " + div.getLocation()
+										+ " with interval [" + low + ", " + high + "]");
+							}
+						}
+					}
+				} catch (SemanticException e) {
+					e.printStackTrace();
+				}
 			}
 		}
-		
 	}
 
 	// compute possible dynamic types / runtime types
 	private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div,
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state) throws SemanticException {
-		
+											  SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state)
+			throws SemanticException {
+
 		Set<Type> possibleDynamicTypes = new HashSet<>();
 		Type dynamicTypes = state.getDynamicTypeOf(s, div, state);
-		if(dynamicTypes != null && !dynamicTypes.isUntyped()) {
+		if (dynamicTypes != null && !dynamicTypes.isUntyped()) {
 			possibleDynamicTypes.add(dynamicTypes);
-		} else if(dynamicTypes.isUntyped()){
+		} else if (dynamicTypes.isUntyped()) {
 			Set<Type> runtimeTypes = state.getRuntimeTypesOf(s, div, state);
-			if(runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
-				for( Type t : runtimeTypes)
+			if (runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
+				for (Type t : runtimeTypes)
 					possibleDynamicTypes.add(t);
 		}
-		
-		return possibleDynamicTypes;
-	
-	}
-	
 
+		return possibleDynamicTypes;
+	}
 }

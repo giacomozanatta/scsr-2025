@@ -1,0 +1,10 @@
+program divisionbyzero {
+    void main() {
+        int numerator = 100;
+        int denominator = 0;
+        int result = numerator / denominator;  // intentional division by zero for testing
+        print(result);
+    }
+}
+
+

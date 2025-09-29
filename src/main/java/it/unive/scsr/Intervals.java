@@ -14,7 +14,6 @@ import it.unive.lisa.symbolic.value.operator.AdditionOperator;
 import it.unive.lisa.symbolic.value.operator.DivisionOperator;
 import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
 import it.unive.lisa.symbolic.value.operator.NegatableOperator;
-import it.unive.lisa.symbolic.value.operator.NumericNegation;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.symbolic.value.operator.unary.NumericNegation;
@@ -97,30 +96,21 @@ public class Intervals
 		this(IntInterval.INFINITY);
 	}
 
-	@Override
-	public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
-			throws SemanticException {
-<<<<<<< HEAD
-
-		if (operator == NumericNegation.INSTANCE) {
-			if (arg.isTop()) {
-				return top();
-			} else {
-				return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
+		@Override
+		public Intervals evalUnaryExpression(UnaryOperator operator, Intervals arg, ProgramPoint pp, SemanticOracle oracle)
+				throws SemanticException {
+			if (operator == NumericNegation.INSTANCE) {
+				if (arg.isTop()) {
+					return top();
+				} else {
+					return new Intervals(arg.interval.mul(IntInterval.MINUS_ONE));
+				}
+			} else if (operator instanceof NegatableOperator) {
+				return new Intervals(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
 			}
-		} else if (operator instanceof NegatableOperator) {
-			return new Intervals(MathNumber.ZERO, MathNumber.PLUS_INFINITY);
-=======
-		
-		// TODO: The semantics of negation should be implemented here! 
-		
-		if(operator instanceof NegatableOperator || operator instanceof NumericNegation) {
-			
->>>>>>> master
-		}
 
-		return top();
-	}
+			return top();
+		}
 
 	@Override
 	public Intervals glbAux(Intervals other) throws SemanticException {
@@ -228,6 +218,14 @@ public class Intervals
 			Integer i = (Integer) constant.getValue();
 			Intervals singletonInterval = new Intervals(i, i);
 			return singletonInterval;
+		} else if (constant.getValue() instanceof Double) {
+			Double d = (Double) constant.getValue();
+			Intervals singletonInterval = new Intervals(new MathNumber(d), new MathNumber(d));
+			return singletonInterval;
+		} else if (constant.getValue() instanceof Float) {
+			Float f = (Float) constant.getValue();
+			Intervals singletonInterval = new Intervals(new MathNumber(f), new MathNumber(f));
+			return singletonInterval;
 		}
 
 		return top();
@@ -288,7 +286,7 @@ public class Intervals
 		return top();
 	}
 
-	// da qui fine
+	// debug: end
 
 	@Override
 	public int hashCode() {

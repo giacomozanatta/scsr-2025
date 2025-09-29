@@ -1,0 +1,21 @@
+// This program implements meter-to-inch conversion logic using INT8 range (-128 to 127)
+// The inches_to_meters method contains a division that could fail if the conversion_factor becomes 0.
+
+// **DEVELOPED FOR INT8**
+
+class unit_converter {
+
+    // Convert meters to inches using multiplication
+    meters_to_inches(meters) {
+        def inches = meters * 39; // 1 meter ≈ 39.37 inches, using 39 for INT8 safety
+        return inches;
+    }
+
+    // Convert inches to meters using division
+    inches_to_meters(inches) {
+        def conversion_factor = 39; // Conversion factor (approximated for INT8)
+        def meters = inches / conversion_factor; // POTENTIAL DIVISION BY ZERO: if conversion_factor becomes 0
+        return meters;
+    }
+
+}

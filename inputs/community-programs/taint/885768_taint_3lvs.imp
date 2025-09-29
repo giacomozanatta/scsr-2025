@@ -1,0 +1,71 @@
+// 	sources = {"source1", "source2"};
+// 	sanitizers = {"sanitizer1", "sanitizer2"};
+// 	sinks = {"sink1"};
+class taint {
+
+	source1(){
+		return "/n";
+	}
+
+	source2(){
+	    return "ls -al; rm -rf";
+	}
+
+    // remove the substr
+	sanitizer1(stringline){
+	    def dangerous = "/n";
+	    def cleaned = stringline;
+
+	    if ( strcon(stringline, dangerous) ){
+           cleaned = strrep(stringline, dangerous, " "); // replace the dangerous one with " "
+	    }
+
+	    return cleaned;
+	}
+
+    // remove shell commands like dangerous ";"
+    sanitizer2(stringline) {
+        def dangerous = ";rm -rf /";
+        def cleaned = stringline;
+
+        if (strcon(stringline, dangerous)) {
+            cleaned = strrep(stringline, dangerous, " "); // replace the dangerous one with " "
+        }
+
+        return cleaned;
+    }
+
+
+	sink1(shell_command){
+	    // shell execution
+	}
+
+
+	test_shell1() {
+		def command = "ls -al";
+		this.sink(command); // ok
+	}
+
+	test_shell2() {
+		def t = this.source1();
+		this.sink1(t); // a tainted value flows in a sink!
+	}
+
+	test_sanitization1() {
+		def command = this.source1();
+		def safe = this.sanitizer1(command);
+		this.sink1(safe);  // the value is clean due to sanitization
+	}
+	test_sanitization2() {
+		def command = this.source2();
+		def safe = this.sanitizer2(command);
+		this.sink1(safe);
+	}
+
+    test_combined() {
+        def raw = this.source1() + this.source2();
+        def step1 = this.sanitizer1(raw);
+        def safe = this.sanitizer2(step1);
+        this.sink1(safe);
+    }
+}

@@ -4,12 +4,23 @@ import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.taint.BaseTaint;
+import it.unive.lisa.program.annotations.Annotation;
 import it.unive.lisa.program.cfg.ProgramPoint;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
 public class TaintThreeLevels extends BaseTaint<TaintThreeLevels> {
+
+	/**
+	 * Tainted annotation.
+	 */
+	public static final Annotation TAINTED_ANNOTATION = new Annotation("lisa.taint.Tainted");
+
+	/**
+	 * Clean annotation.
+	 */
+	public static final Annotation CLEAN_ANNOTATION = new Annotation("lisa.taint.Clean");
 
 	/*
 	 * Lattice of Taint Domain with three level

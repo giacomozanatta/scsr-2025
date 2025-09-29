@@ -1,0 +1,91 @@
+// This program implements the Euclidean algorithm for GCD.
+ 
+// **Supported Sizes:**
+// - INT8: -128 to 127
+// - INT16: -32,768 to 32,767
+// - INT32: -2,147,483,648 to 2,147,483,647 (default)
+// - UINT8: 0 to 255
+// - UINT16: 0 to 65,535
+// - UINT32: 0 to 4,294,967,295
+
+// **Current Implementation:** Uses INT32 range by default
+// **Adaptation:** Modify the large number constants in test_gcd() for other sizes
+
+
+class gcd_calculator {
+
+    // Recursive implementation of Euclidean algorithm for GCD
+    gcd_recursive(a, b) {
+        if (b == 0) {
+            return a;
+        } else {
+            return this.gcd_recursive(b, a % b); // Potential overflow here: a % b could overflow for large a,b
+        }
+    }
+
+    // Iterative implementation of Euclidean algorithm for GCD
+    gcd_iterative(a, b) {
+        while (b != 0) {
+            def temp = b;
+            b = a % b; // Potential overflow here: a % b could overflow for large a,b
+            a = temp;
+        }
+        return a;
+    }
+
+    // GCD for three numbers
+    gcd_three(a, b, c) {
+        def gcd_ab = this.gcd_recursive(a, b); // Potential overflow in recursive call
+        return this.gcd_recursive(gcd_ab, c); // Potential overflow in recursive call
+    }
+
+// YOU MAY COMMENT THIS SECTION: it's a real case scenario with overflow testing for different sizes
+
+    test_gcd() {
+        def result1 = this.gcd_recursive(48, 18); // should be 6
+        def result2 = this.gcd_iterative(100, 75); // should be 25
+        def result3 = this.gcd_three(24, 36, 48); // should be 12
+
+        // Test with edge cases
+        def result4 = this.gcd_recursive(0, 5); // should be 5
+        def result5 = this.gcd_recursive(5, 0); // should be 5
+        def result6 = this.gcd_recursive(1, 1); // should be 1
+
+        // ===== OVERFLOW TEST CASES FOR DIFFERENT SIZES =====
+
+        // INT32 overflow cases (current default)
+        def int32_max = 2147483647; // INT32_MAX
+        def int32_max_minus_1 = 2147483646; // INT32_MAX - 1
+        def result7 = this.gcd_recursive(int32_max, int32_max_minus_1); // should be 1, but modulo could overflow
+
+        // INT16 overflow cases
+        def int16_max = 32767; // INT16_MAX
+        def int16_max_minus_1 = 32766; // INT16_MAX - 1
+        def result8 = this.gcd_iterative(int16_max, int16_max_minus_1); // should be 1
+
+        // INT8 overflow cases
+        def int8_max = 127; // INT8_MAX
+        def int8_max_minus_1 = 126; // INT8_MAX - 1
+        def result9 = this.gcd_recursive(int8_max, int8_max_minus_1); // should be 1
+
+        // UINT32 overflow cases
+        def uint32_max = 4294967295; // UINT32_MAX
+        def uint32_max_minus_1 = 4294967294; // UINT32_MAX - 1
+        def result10 = this.gcd_iterative(uint32_max, uint32_max_minus_1); // should be 1
+
+        // UINT16 overflow cases
+        def uint16_max = 65535; // UINT16_MAX
+        def uint16_max_minus_1 = 65534; // UINT16_MAX - 1
+        def result11 = this.gcd_recursive(uint16_max, uint16_max_minus_1); // should be 1
+
+        // UINT8 overflow cases
+        def uint8_max = 255; // UINT8_MAX
+        def uint8_max_minus_1 = 254; // UINT8_MAX - 1
+        def result12 = this.gcd_iterative(uint8_max, uint8_max_minus_1); // should be 1
+
+        // Test with negative numbers (could cause issues in some implementations)
+        def result13 = this.gcd_recursive(-48, 18); // should handle negative inputs
+        def result14 = this.gcd_recursive(48, -18);
+    }
+
+}

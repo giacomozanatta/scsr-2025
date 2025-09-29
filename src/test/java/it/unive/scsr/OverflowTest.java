@@ -20,45 +20,135 @@ import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 public class OverflowTest {
 	
 
-	@Test
-	public void testOverflowIntervalsUINT8() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-uint8");
-	}
+	// @Test
+	// public void testOverflowIntervalsUINT8() throws ParsingException, AnalysisException {
+	// 	runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-uint8");
+	// }
+	
+	// @Test
+	// public void testOverflowIntervalsINT16() throws ParsingException, AnalysisException {
+	// 	runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "intervals-int16");
+	// }
+	
+	// @Test
+	// public void testOverflowIntervalsFLOAT8() throws ParsingException, AnalysisException {
+	// 	runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT8, "intervals-float8");
+	// }
+	
+	// @Test
+	// public void testOverflowPentagonsUINT8() throws ParsingException, AnalysisException {
+	// 	runAnalysis(new Pentagons(), NumericalSize.UINT8, "pentagons-uint8");
+	// }
+	
+	// @Test
+	// public void testOverflowPentagonsINT16() throws ParsingException, AnalysisException {
+	// 	runAnalysis(new Pentagons(), NumericalSize.INT16, "pentagons-int16");
+	// }
+	
+	// @Test
+	// public void testOverflowPentagonsFLOAT8() throws ParsingException, AnalysisException {
+	// 	runAnalysis(new Pentagons(), NumericalSize.FLOAT8, "pentagons-float8");
+	// }
 	
 	@Test
-	public void testOverflowIntervalsINT16() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "intervals-int16");
+	public void testOverflowPentagonsINT8() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.INT8, "pentagons-int8");
 	}
-	
-	@Test
-	public void testOverflowIntervalsFLOAT8() throws ParsingException, AnalysisException {
-		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT8, "intervals-float8");
-	}
-	
-	@Test
-	public void testOverflowPentagonsUINT8() throws ParsingException, AnalysisException {
-		runAnalysis(new Pentagons(), NumericalSize.UINT8, "pentagons-uint8");
-	}
-	
+
 	@Test
 	public void testOverflowPentagonsINT16() throws ParsingException, AnalysisException {
 		runAnalysis(new Pentagons(), NumericalSize.INT16, "pentagons-int16");
 	}
-	
+
+	@Test
+	public void testOverflowPentagonsINT32() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.INT32, "pentagons-int32");
+	}
+
+	@Test
+	public void testOverflowPentagonsUINT8() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.UINT8, "pentagons-uint8");
+	}
+
+	@Test
+	public void testOverflowPentagonsUINT16() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.UINT16, "pentagons-uint16");
+	}
+
+	@Test
+	public void testOverflowPentagonsUINT32() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.UINT32, "pentagons-uint32");
+	}
+
 	@Test
 	public void testOverflowPentagonsFLOAT8() throws ParsingException, AnalysisException {
 		runAnalysis(new Pentagons(), NumericalSize.FLOAT8, "pentagons-float8");
 	}
-	
+
+		@Test
+	public void testOverflowPentagonsFLOAT16() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.FLOAT16, "pentagons-float16");
+	}
+
+	@Test
+	public void testOverflowPentagonsFLOAT32() throws ParsingException, AnalysisException {
+		runAnalysis(new Pentagons(), NumericalSize.FLOAT32, "pentagons-float32");
+	}
+
+	@Test
+	public void testOverflowIntervalsINT8() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT8, "intervals-int8");
+	}
+	@Test
+	public void testOverflowIntervalsINT16() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT16, "intervals-int16");
+	}
+
+	@Test
+	public void testOverflowIntervalsINT32() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.INT32, "intervals-int32");
+	}
+
+	@Test
+	public void testOverflowIntervalsUINT8() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT8, "intervals-uint8");
+	}
+	@Test
+	public void testOverflowIntervalsUINT16() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT16, "intervals-uint16");
+	}
+
+	@Test
+	public void testOverflowIntervalsUINT32() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.UINT32, "intervals-uint32");
+	}
+
+	@Test
+	public void testOverflowIntervalsFLOAT8() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT8, "intervals-float8");
+	}
+
+	@Test
+	public void testOverflowIntervalsFLOAT16() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT16, "intervals-float16");
+	}
+
+	@Test
+	public void testOverflowIntervalsFLOAT32() throws ParsingException, AnalysisException {
+		runAnalysis(new ValueEnvironment<>(new Intervals()), NumericalSize.FLOAT32, "intervals-float32");
+	}
+
+
+
 	private <V extends ValueDomain<V>> void runAnalysis(V valueEnv, NumericalSize size, String path) throws ParsingException{
 		// we parse the program to get the CFG representation of the code in it
-		Program program = IMPFrontend.processFile("inputs/overflow.imp");
+		Program program = IMPFrontend.processFile("inputs/community-programs/overflow/889536-overflow.imp");
 
 		// we build a new configuration for the analysis
 		LiSAConfiguration conf = new DefaultConfiguration();
 
 		// we specify where we want files to be generated
-		conf.workdir = "outputs/overflow/"+path;
+		conf.workdir = "outputs/community-programs/overflow/889536-overflow/"+path;
 
 		// we specify the visual format of the analysis results
 		conf.analysisGraphs = GraphType.HTML;

@@ -1,0 +1,23 @@
+// Academic year 2024/2025
+// 879899 - basic benchmark for evaluating division by zero.
+
+class Test {
+
+    benchmark() {
+
+        def just_one = 23 * 3 + 12 - 7 + (1 + 25 / 7 * 2) - 80;  // Simple expression that resolves to one.
+
+        // A simple while loop that will execute only once.
+        while (just_one > 0) {
+            just_one = just_one - 1;
+        }
+
+        // Simulation of an error where branches should be reversed. If the analysis is accurate enough, a warning
+        // should be displayed.
+        if (just_one != 0) {
+            def just_one_is_zero = 1 / 5.0;
+        } else {
+            def just_one_is_not_zero = 1 / just_one;
+        }
+    }
+}

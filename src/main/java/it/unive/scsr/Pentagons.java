@@ -117,17 +117,24 @@ public class Pentagons
 
 		for (Entry<Identifier, UpperBounds> entry : other.upperbounds) {
 			Set<Identifier> closure = new HashSet<>();
-			for (Identifier bound : entry.getValue())
-				if (intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(intervals.getState(bound).interval.getLow()) < 0)
+			for (Identifier bound : entry.getValue()) {
+				Intervals entryState = intervals.getState(entry.getKey());
+				Intervals boundState = intervals.getState(bound);
+				// skip if either state is bottom (null interval)
+				if (entryState.isBottom() || boundState.isBottom()) {
+					continue;
+				}
+				if (entryState.interval.getHigh()
+						.compareTo(boundState.interval.getLow()) < 0)
 					closure.add(bound);
+			}
 			if (!closure.isEmpty())
 				// glb is the union
 				newBounds = newBounds.putState(entry.getKey(),
 						newBounds.getState(entry.getKey()).glb(new UpperBounds(closure)));
 		}
 
-		return new Pentagons(newBounds, intervals.lub(other.intervals));
+		return new Pentagons(newBounds, intervals.lub(other.intervals)).closure();
 	}
 
 	@Override
@@ -139,9 +146,15 @@ public class Pentagons
 		
 		for(Entry<Identifier, UpperBounds> entry : other.upperbounds) {
 			for(Identifier bound : entry.getValue()) {
+				Intervals thisEntryState = this.intervals.getState(entry.getKey());
+				Intervals thisBoundState = this.intervals.getState(bound);
+				// Skip if either state is bottom (null interval)
+				if (thisEntryState.isBottom() || thisBoundState.isBottom()) {
+					continue;
+				}
 				if(!(this.upperbounds.getState(entry.getKey()).contains(bound)
-						|| this.intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(this.intervals.getState(bound).interval.getLow()) < 0)) {
+						|| thisEntryState.interval.getHigh()
+						.compareTo(thisBoundState.interval.getLow()) < 0)) {
 					return false;
 				}
 				
@@ -270,16 +283,27 @@ public class Pentagons
 		return intervals.knowsIdentifier(id) || upperbounds.knowsIdentifier(id);
 	}
 
+	public ValueEnvironment<Intervals> getIntervals() {
+		return intervals;
+	}
+
 	private Pentagons closure() throws SemanticException {
 		ValueEnvironment<UpperBounds> newBounds = new ValueEnvironment<UpperBounds>(upperbounds.lattice, upperbounds.getMap());
 
 		for (Identifier id1 : intervals.getKeys()) {
 			Set<Identifier> closure = new HashSet<>();
 			for (Identifier id2 : intervals.getKeys())
-				if (!id1.equals(id2))
-					if (intervals.getState(id1).interval.getHigh()
-							.compareTo(intervals.getState(id2).interval.getLow()) < 0)
+				if (!id1.equals(id2)) {
+					Intervals state1 = intervals.getState(id1);
+					Intervals state2 = intervals.getState(id2);
+					// skip if either state is bottom (null interval)
+					if (state1.isBottom() || state2.isBottom()) {
+						continue;
+					}
+					if (state1.interval.getHigh()
+							.compareTo(state2.interval.getLow()) < 0)
 						closure.add(id2);
+				}
 			if (!closure.isEmpty())
 				// glb is the union
 				newBounds = newBounds.putState(id1,

@@ -18,8 +18,6 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
-import it.unive.lisa.type.Type;
-import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
 
 public class OverflowChecker implements
@@ -30,12 +28,6 @@ public class OverflowChecker implements
 		INT8, INT16, INT32,
 		UINT8, UINT16, UINT32,
 		FLOAT8, FLOAT16, FLOAT32,
-	}
-
-	private final NumericalSize size;
-
-	public OverflowChecker(NumericalSize size) {
-		this.size = size;
 	}
 
 	@Override
@@ -65,7 +57,7 @@ public class OverflowChecker implements
 				&& ((Assignment) varRef.getParentStatement()).getLeft() == varRef)
 				? varRef.getParentStatement() : node;
 
-		// Collect results for grouping
+		// Map category -> sizes triggered
 		Map<String, List<String>> groupedReports = new LinkedHashMap<>();
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> result
@@ -97,10 +89,10 @@ public class OverflowChecker implements
 						(lowMinusInf ? "-Inf" : minBd.stripTrailingZeros().toPlainString()) + "," +
 						(highPlusInf ? "+Inf" : maxBd.stripTrailingZeros().toPlainString()) + "]";
 
-				// Classify once for each size
+				// Check for all sizes
 				for (NumericalSize ns : NumericalSize.values()) {
 					String category = classifyForSize(ns, minBd, maxBd, lowMinusInf, highPlusInf, varRef, intervalText);
-					if (category != null && !category.startsWith("[SAFE]")) {
+					if (category != null && !category.equals("[SAFE]")) {
 						groupedReports.computeIfAbsent(category, k -> new ArrayList<>()).add(ns.name());
 					}
 				}
@@ -110,7 +102,7 @@ public class OverflowChecker implements
 			}
 		}
 
-		// Emit grouped warnings
+		// Emit grouped warnings (sizes joined by /)
 		for (Map.Entry<String, List<String>> entry : groupedReports.entrySet()) {
 			String category = entry.getKey();
 			String labels = String.join("/", entry.getValue());
@@ -182,7 +174,7 @@ public class OverflowChecker implements
 				(minIsNegInf || (minBd != null && minBd.compareTo(high) <= 0)))
 			return "[POSSIBLE_OVERFLOW] possible overflow: variable " + varRef.getName() + " range " + intervalText;
 
-		return "[SAFE]"; // filtered later
+		return "[SAFE]";
 	}
 
 	private String classifyFloat(BigDecimal minBd, BigDecimal maxBd, boolean minIsNegInf, boolean maxIsPosInf,
@@ -203,6 +195,6 @@ public class OverflowChecker implements
 		if (maxVal < -Math.abs(high))
 			return "[UNDERFLOW] definite underflow: variable " + varRef.getName() + " range " + intervalText;
 
-		return "[SAFE]"; // filtered later
+		return "[SAFE]";
 	}
 }

@@ -69,6 +69,14 @@ public class DivisionByZeroChecker implements
 
 					for (SymbolicExpression s : reachableIds) {
 
+						/* Minimal safety: some symbolic expressions are heap accesses (AccessChild, etc.)
+						   and are not instances of ValueExpression. Trying to cast them causes
+						   ClassCastException at runtime. Skip non-ValueExpression entries. */
+						if (!(s instanceof ValueExpression)) {
+							// skip non-value symbolic expressions (not directly evaluable by value domain)
+							continue;
+						}
+
 						Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
 
 
@@ -81,6 +89,7 @@ public class DivisionByZeroChecker implements
 
 						ValueEnvironment<Intervals> valueState = state.getState().getValueState();
 
+						// safe cast now after instanceof check
 						Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
 
 						// TODO: add checks for division by zero

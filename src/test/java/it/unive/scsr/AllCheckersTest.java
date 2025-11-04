@@ -11,10 +11,8 @@ import it.unive.lisa.imp.ParsingException;
 import it.unive.lisa.program.Program;
 import it.unive.scsr.checkers.DivisionByZeroChecker;
 import it.unive.scsr.checkers.OverflowChecker;
-import it.unive.scsr.checkers.DivisionByZeroChecker;
 import it.unive.scsr.checkers.TaintThreeLevelsChecker;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
-import it.unive.scsr.checkers.TaintThreeLevelsChecker;
 import org.junit.Test;
 
 import java.io.File;
@@ -56,14 +54,11 @@ public class AllCheckersTest {
         // Add correct checker(s) based on folder name
         switch (folderName.toLowerCase()) {
             case "overflows":
-                for (NumericalSize ns : NumericalSize.values()) {
-                    conf.semanticChecks.add(new OverflowChecker(ns));
-                }
+                conf.semanticChecks.add(new OverflowChecker());
                 break;
             case "divzero":
-                for (NumericalSize ns : NumericalSize.values()) {
-                    conf.semanticChecks.add(new DivisionByZeroChecker(ns));
-                }
+                // Now requires a NumericalSize argument
+                conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.INT32));
                 break;
             case "taintthree":
                 conf.semanticChecks.add(new TaintThreeLevelsChecker());

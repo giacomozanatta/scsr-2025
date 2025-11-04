@@ -1,0 +1,35 @@
+class overflows {
+
+    sensorBuffer() {
+        def buffer = 250;
+        def reading = 20;
+        buffer = buffer + reading;     // DEFINITE overflow for UINT8
+        return buffer;
+    }
+
+    negativeDrop() {
+        def packets = 0;
+        packets = packets - 5;         // DEFINITE underflow for UINT8
+        return packets;
+    }
+
+    accumulator() {
+        def sum = 1000;
+        def burst = 50000;
+        sum = sum + burst;             // POSSIBLE overflow for INT16
+        return sum;
+    }
+
+    alternating() {
+        def z = -128;
+        def w = -129;
+        def total = z + w;             // DEFINITE underflow for INT8
+        return total;
+    }
+
+    safeCounter() {
+        def counter = 100;
+        counter = counter + 20;        // SAFE for INT16
+        return counter;
+    }
+}

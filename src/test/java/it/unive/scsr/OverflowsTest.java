@@ -9,26 +9,25 @@ import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.imp.IMPFrontend;
 import it.unive.lisa.imp.ParsingException;
 import it.unive.lisa.program.Program;
-import it.unive.scsr.checkers.DivisionByZeroChecker;
-import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
+import it.unive.scsr.checkers.OverflowChecker;
 import org.junit.Test;
 
-public class DivisionByZeroTest {
+public class OverflowsTest {
 
     @Test
-    public void testDivisionByZero() throws ParsingException, AnalysisException {
+    public void testAllOverflows() throws ParsingException, AnalysisException {
         runAnalysis(new ValueEnvironment<>(new Intervals()));
     }
 
     private void runAnalysis(ValueEnvironment<Intervals> valueEnv)
             throws ParsingException, AnalysisException {
 
-        // Parse the IMP program
-        Program program = IMPFrontend.processFile("inputs/divzero.imp");
+        // Parse the IMP program with overflow cases
+        Program program = IMPFrontend.processFile("inputs/overflows.imp");
 
         // Build configuration
         LiSAConfiguration conf = new DefaultConfiguration();
-        conf.workdir = "outputs/divzero";
+        conf.workdir = "outputs/mainoverflows";   // ✅ single folder for all overflow results
         conf.analysisGraphs = GraphType.HTML;
         conf.jsonOutput = true;
         conf.serializeResults = true;
@@ -39,8 +38,8 @@ public class DivisionByZeroTest {
                 valueEnv,
                 DefaultConfiguration.defaultTypeDomain());
 
-        // Add DivisionByZeroChecker (now requires NumericalSize)
-        conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.INT32));
+        // ✅ Add only one checker: it now handles ALL sizes internally
+        conf.semanticChecks.add(new OverflowChecker());
 
         // Run analysis
         LiSA lisa = new LiSA(conf);

@@ -1,0 +1,44 @@
+class divzero {
+
+    averageBalance() {
+        def totalBalance = 300;
+        def accounts = 3;
+
+        if (totalBalance == 0) {
+            accounts = accounts - 3;        // accounts = 0
+        }
+
+        def avg = totalBalance / accounts;  // POSSIBLE div-by-zero
+        return avg;
+    }
+
+    fees() {
+        def amount = 100;
+        def divisor = amount - amount;      // always 0
+        def fee = 100 / divisor;            // DEFINITE div-by-zero
+        return fee;
+    }
+
+    payout() {
+        def balance = 200;
+        def users = 0;
+        def payout = balance / users;       // DEFINITE div-by-zero
+        return payout;
+    }
+
+    ratio() {
+        def deposits = 50;
+        def withdrawals = 50;
+        def diff = deposits - withdrawals;  // diff = 0
+        def ratio = deposits / diff;        // DEFINITE div-by-zero
+        return ratio;
+    }
+
+    interest() {
+        def principal = 500;
+        def years = 10;
+        def rate = 0;
+        def compound = (principal * years) / rate; // DEFINITE div-by-zero
+        return compound;
+    }
+}

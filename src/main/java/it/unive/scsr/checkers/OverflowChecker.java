@@ -57,7 +57,6 @@ public class OverflowChecker implements
 				&& ((Assignment) varRef.getParentStatement()).getLeft() == varRef)
 				? varRef.getParentStatement() : node;
 
-		// Map category -> sizes triggered
 		Map<String, List<String>> groupedReports = new LinkedHashMap<>();
 
 		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> result
@@ -89,7 +88,6 @@ public class OverflowChecker implements
 						(lowMinusInf ? "-Inf" : minBd.stripTrailingZeros().toPlainString()) + "," +
 						(highPlusInf ? "+Inf" : maxBd.stripTrailingZeros().toPlainString()) + "]";
 
-				// Check for all sizes
 				for (NumericalSize ns : NumericalSize.values()) {
 					String category = classifyForSize(ns, minBd, maxBd, lowMinusInf, highPlusInf, varRef, intervalText);
 					if (category != null && !category.equals("[SAFE]")) {
@@ -102,7 +100,6 @@ public class OverflowChecker implements
 			}
 		}
 
-		// Emit grouped warnings (sizes joined by /)
 		for (Map.Entry<String, List<String>> entry : groupedReports.entrySet()) {
 			String category = entry.getKey();
 			String labels = String.join("/", entry.getValue());
@@ -144,14 +141,11 @@ public class OverflowChecker implements
 				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
 						BigDecimal.ZERO, new BigDecimal("4294967295"), varRef, intervalText);
 			case FLOAT8:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						-Float.MAX_VALUE, Float.MAX_VALUE, varRef, intervalText);
+				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf, 8, varRef, intervalText);
 			case FLOAT16:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						-65504.0, 65504.0, varRef, intervalText);
+				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf, 16, varRef, intervalText);
 			case FLOAT32:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						-Float.MAX_VALUE, Float.MAX_VALUE, varRef, intervalText);
+				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf, 32, varRef, intervalText);
 			default:
 				return null;
 		}
@@ -177,23 +171,42 @@ public class OverflowChecker implements
 		return "[SAFE]";
 	}
 
-	private String classifyFloat(BigDecimal minBd, BigDecimal maxBd, boolean minIsNegInf, boolean maxIsPosInf,
-								 double low, double high,
-								 VariableRef varRef, String intervalText) {
-		if (minIsNegInf || maxIsPosInf)
-			return "[POSSIBLE_OVERFLOW] possible overflow/underflow: variable " + varRef.getName() +
-					" range " + intervalText;
+	// ✅ Option A: improved float handling without new imports
+	private String classifyFloat(
+			BigDecimal minBd, BigDecimal maxBd,
+			boolean minIsNegInf, boolean maxIsPosInf,
+			int floatBits,
+			VariableRef var, String intervalText) {
 
-		if (minBd == null || maxBd == null)
-			return "[UNKNOWN] unknown bounds for variable " + varRef.getName() + " range " + intervalText;
+		double min = minIsNegInf ? Double.NEGATIVE_INFINITY : minBd.doubleValue();
+		double max = maxIsPosInf ? Double.POSITIVE_INFINITY : maxBd.doubleValue();
 
-		double minVal = minBd.doubleValue();
-		double maxVal = maxBd.doubleValue();
+		double absMax = Math.max(Math.abs(min), Math.abs(max));
 
-		if (minVal > high)
-			return "[OVERFLOW] definite overflow: variable " + varRef.getName() + " range " + intervalText;
-		if (maxVal < -Math.abs(high))
-			return "[UNDERFLOW] definite underflow: variable " + varRef.getName() + " range " + intervalText;
+		double threshold;
+		switch (floatBits) {
+			case 8:
+				threshold = 240.0; // approx range for 8-bit float
+				break;
+			case 16:
+				threshold = 65504.0; // IEEE half
+				break;
+			case 32:
+			default:
+				threshold = Float.MAX_VALUE;
+				break;
+		}
+
+		if (Double.isInfinite(min) || Double.isInfinite(max))
+			return "[POSSIBLE_OVERFLOW] unbounded range " + intervalText + " for " + var.getName();
+
+		if (absMax > threshold)
+			return "[DEFINITE_OVERFLOW] range exceeds float precision (" + floatBits + " bits): "
+					+ intervalText + " for " + var.getName();
+
+		if (absMax > threshold * 0.9)
+			return "[POSSIBLE_OVERFLOW] near float limit (" + floatBits + " bits): "
+					+ intervalText + " for " + var.getName();
 
 		return "[SAFE]";
 	}

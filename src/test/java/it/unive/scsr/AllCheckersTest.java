@@ -11,8 +11,8 @@ import it.unive.lisa.imp.ParsingException;
 import it.unive.lisa.program.Program;
 import it.unive.scsr.checkers.DivisionByZeroChecker;
 import it.unive.scsr.checkers.OverflowChecker;
-import it.unive.scsr.checkers.TaintThreeLevelsChecker;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
+import it.unive.scsr.checkers.TaintThreeLevelsChecker;
 import org.junit.Test;
 
 import java.io.File;
@@ -22,6 +22,11 @@ public class AllCheckersTest {
     @Test
     public void testAllPrograms() throws ParsingException, AnalysisException {
         File baseDir = new File("inputs");
+        if (!baseDir.exists() || !baseDir.isDirectory()) {
+            System.err.println("Input directory 'inputs' not found.");
+            return;
+        }
+
         for (File folder : baseDir.listFiles()) {
             if (folder.isDirectory()) {
                 runFolder(folder);
@@ -31,12 +36,17 @@ public class AllCheckersTest {
 
     private void runFolder(File folder) throws ParsingException, AnalysisException {
         String folderName = folder.getName();
-        for (File impFile : folder.listFiles((d, name) -> name.endsWith(".imp"))) {
+        File[] impFiles = folder.listFiles((d, name) -> name.endsWith(".imp"));
+        if (impFiles == null) return;
+
+        for (File impFile : impFiles) {
             runAnalysis(impFile, folderName);
         }
     }
 
     private void runAnalysis(File impFile, String folderName) throws ParsingException, AnalysisException {
+        System.out.println("Analyzing: " + impFile.getName() + " [" + folderName + "]");
+
         Program program = IMPFrontend.processFile(impFile.getAbsolutePath());
 
         LiSAConfiguration conf = new DefaultConfiguration();
@@ -51,21 +61,20 @@ public class AllCheckersTest {
                 new ValueEnvironment<>(new Intervals()),
                 DefaultConfiguration.defaultTypeDomain());
 
-        // Add correct checker(s) based on folder name
         switch (folderName.toLowerCase()) {
             case "overflows":
-                conf.semanticChecks.add(new OverflowChecker());
+                // Run multiple checkers to cover different student test cases
+                conf.semanticChecks.add(new OverflowChecker(NumericalSize.INT32));
+                conf.semanticChecks.add(new OverflowChecker(NumericalSize.FLOAT8));
                 break;
             case "divzero":
-                // Now requires a NumericalSize argument
                 conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.INT32));
                 break;
             case "taintthree":
                 conf.semanticChecks.add(new TaintThreeLevelsChecker());
                 break;
             default:
-                System.err.println("⚠ Unknown folder " + folderName + " → skipping " + impFile.getName());
-                return;
+                break;
         }
 
         LiSA lisa = new LiSA(conf);

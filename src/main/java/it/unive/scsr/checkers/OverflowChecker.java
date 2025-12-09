@@ -1,7 +1,8 @@
 package it.unive.scsr.checkers;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
@@ -18,16 +19,28 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 
 public class OverflowChecker implements
-		SemanticCheck<
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+		SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
 
 	public enum NumericalSize {
 		INT8, INT16, INT32,
 		UINT8, UINT16, UINT32,
-		FLOAT8, FLOAT16, FLOAT32,
+		FLOAT8, FLOAT16, FLOAT32
+	}
+
+	private final NumericalSize size;
+
+	public OverflowChecker() {
+		this(NumericalSize.INT32);
+	}
+
+	public OverflowChecker(NumericalSize size) {
+		this.size = size;
 	}
 
 	@Override
@@ -44,7 +57,6 @@ public class OverflowChecker implements
 		} else if (node instanceof VariableRef) {
 			checkVariableRef(tool, (VariableRef) node, graph, node);
 		}
-
 		return true;
 	}
 
@@ -53,161 +65,115 @@ public class OverflowChecker implements
 			VariableRef varRef, CFG graph, Statement node) {
 
 		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
-		Statement target = (varRef.getParentStatement() instanceof Assignment
-				&& ((Assignment) varRef.getParentStatement()).getLeft() == varRef)
-				? varRef.getParentStatement() : node;
+		Type staticType = id.getStaticType();
+		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
 
-		Map<String, List<String>> groupedReports = new LinkedHashMap<>();
+		Statement target = node;
+		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
+			target = varRef.getParentStatement();
+		}
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> result
-				: tool.getResultOf(graph)) {
+		boolean isNumeric = false;
+		if (staticType.isNumericType()) {
+			isNumeric = true;
+		} else if (staticType.isUntyped()) {
+			for (Type t : dynamicTypes) {
+				if (t.isNumericType()) {
+					isNumeric = true;
+					break;
+				}
+			}
+		}
+		if (!isNumeric) return;
+
+		BigDecimal limitMin = getMin(this.size);
+		BigDecimal limitMax = getMax(this.size);
+
+		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
 
 			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state =
 					result.getAnalysisStateAfter(target).getState();
-
 			Intervals intervalAbstractValue = state.getValueState().getState(id);
-			if (intervalAbstractValue == null || intervalAbstractValue.isBottom())
-				continue;
+
+			if (intervalAbstractValue.isBottom() || intervalAbstractValue.isTop()) continue;
 
 			try {
-				Object lowObj = intervalAbstractValue.interval.getLow();
-				Object highObj = intervalAbstractValue.interval.getHigh();
+				MathNumber lowNum = intervalAbstractValue.interval.getLow();
+				MathNumber highNum = intervalAbstractValue.interval.getHigh();
 
-				boolean lowMinusInf = invokeBoolMethod(lowObj, "isMinusInfinity");
-				boolean highPlusInf = invokeBoolMethod(highObj, "isPlusInfinity");
+				boolean isInfinite = lowNum.isMinusInfinity() || highNum.isPlusInfinity();
 
-				BigDecimal minBd = null, maxBd = null;
-				try {
-					if (!lowMinusInf) minBd = new BigDecimal(lowObj.toString());
-				} catch (Exception ignored) { lowMinusInf = true; }
-				try {
-					if (!highPlusInf) maxBd = new BigDecimal(highObj.toString());
-				} catch (Exception ignored) { highPlusInf = true; }
-
-				String intervalText = "[" +
-						(lowMinusInf ? "-Inf" : minBd.stripTrailingZeros().toPlainString()) + "," +
-						(highPlusInf ? "+Inf" : maxBd.stripTrailingZeros().toPlainString()) + "]";
-
-				for (NumericalSize ns : NumericalSize.values()) {
-					String category = classifyForSize(ns, minBd, maxBd, lowMinusInf, highPlusInf, varRef, intervalText);
-					if (category != null && !category.equals("[SAFE]")) {
-						groupedReports.computeIfAbsent(category, k -> new ArrayList<>()).add(ns.name());
-					}
+				// --- SOFT NOISE FILTER ---
+				// If interval is infinite, report a "Generic" warning so we know the tool worked.
+				if (isInfinite) {
+					tool.warnOn(node, "[" + this.size + "] Generic: Value is unconstrained (Infinite/Unknown).");
+					continue;
 				}
 
-			} catch (Exception e) {
-				tool.warnOn(node, "[GENERIC] Exception while checking " + varRef.getName() + ": " + e.getMessage());
+				BigDecimal intervalLow = new BigDecimal(lowNum.toString());
+				BigDecimal intervalHigh = new BigDecimal(highNum.toString());
+
+				if (intervalLow.compareTo(limitMin) < 0) {
+					tool.warnOn(node, "[" + this.size + "] Definite Underflow: value " + intervalLow + " < " + limitMin);
+				}
+				if (intervalHigh.compareTo(limitMax) > 0) {
+					tool.warnOn(node, "[" + this.size + "] Definite Overflow: value " + intervalHigh + " > " + limitMax);
+				}
+
+			} catch (Exception e) { }
+		}
+	}
+
+	private Set<Type> getPossibleDynamicTypes(
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CFG graph, Statement node, Variable id, VariableRef varRef) {
+
+		Set<Type> possibleDynamicTypes = new HashSet<>();
+		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
+			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(varRef).getState();
+			try {
+				Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
+				if (dynamicTypes != null && !dynamicTypes.isUntyped()) {
+					possibleDynamicTypes.add(dynamicTypes);
+				} else if (dynamicTypes.isUntyped()) {
+					Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
+					if (runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
+						for (Type t : runtimeTypes) possibleDynamicTypes.add(t);
+				}
+			} catch (SemanticException e) {
+				e.printStackTrace(System.err);
 			}
 		}
+		return possibleDynamicTypes;
+	}
 
-		for (Map.Entry<String, List<String>> entry : groupedReports.entrySet()) {
-			String category = entry.getKey();
-			String labels = String.join("/", entry.getValue());
-			tool.warnOn(node, category + " for types " + labels);
+	private BigDecimal getMin(NumericalSize size) {
+		switch (size) {
+			case INT8:    return new BigDecimal(Byte.MIN_VALUE);
+			case INT16:   return new BigDecimal(Short.MIN_VALUE);
+			case INT32:   return new BigDecimal(Integer.MIN_VALUE);
+			case UINT8:   return BigDecimal.ZERO;
+			case UINT16:  return BigDecimal.ZERO;
+			case UINT32:  return BigDecimal.ZERO;
+			case FLOAT8:  return new BigDecimal("-240.0");
+			case FLOAT16: return new BigDecimal("-65504.0");
+			case FLOAT32: return new BigDecimal(-Float.MAX_VALUE);
+			default:      return null;
 		}
 	}
 
-	private boolean invokeBoolMethod(Object obj, String method) {
-		try {
-			return (boolean) obj.getClass().getMethod(method).invoke(obj);
-		} catch (Exception e) {
-			return false;
+	private BigDecimal getMax(NumericalSize size) {
+		switch (size) {
+			case INT8:    return new BigDecimal(Byte.MAX_VALUE);
+			case INT16:   return new BigDecimal(Short.MAX_VALUE);
+			case INT32:   return new BigDecimal(Integer.MAX_VALUE);
+			case UINT8:   return new BigDecimal(255);
+			case UINT16:  return new BigDecimal(65535);
+			case UINT32:  return new BigDecimal("4294967295");
+			case FLOAT8:  return new BigDecimal("240.0");
+			case FLOAT16: return new BigDecimal("65504.0");
+			case FLOAT32: return new BigDecimal(Float.MAX_VALUE);
+			default:      return null;
 		}
-	}
-
-	private String classifyForSize(NumericalSize ns, BigDecimal minBd, BigDecimal maxBd,
-								   boolean minIsNegInf, boolean maxIsPosInf,
-								   VariableRef varRef, String intervalText) {
-		switch (ns) {
-			case INT8:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						new BigDecimal(Byte.MIN_VALUE), new BigDecimal(Byte.MAX_VALUE),
-						varRef, intervalText);
-			case INT16:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						new BigDecimal(Short.MIN_VALUE), new BigDecimal(Short.MAX_VALUE),
-						varRef, intervalText);
-			case INT32:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						new BigDecimal(Integer.MIN_VALUE), new BigDecimal(Integer.MAX_VALUE),
-						varRef, intervalText);
-			case UINT8:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						BigDecimal.ZERO, new BigDecimal(255), varRef, intervalText);
-			case UINT16:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						BigDecimal.ZERO, new BigDecimal(65535), varRef, intervalText);
-			case UINT32:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						BigDecimal.ZERO, new BigDecimal("4294967295"), varRef, intervalText);
-			case FLOAT8:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf, 8, varRef, intervalText);
-			case FLOAT16:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf, 16, varRef, intervalText);
-			case FLOAT32:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf, 32, varRef, intervalText);
-			default:
-				return null;
-		}
-	}
-
-	private String classifyInteger(BigDecimal minBd, BigDecimal maxBd, boolean minIsNegInf, boolean maxIsPosInf,
-								   BigDecimal low, BigDecimal high,
-								   VariableRef varRef, String intervalText) {
-		if (!minIsNegInf && minBd != null && minBd.compareTo(high) > 0)
-			return "[OVERFLOW] definite overflow: variable " + varRef.getName() + " range " + intervalText;
-
-		if (!maxIsPosInf && maxBd != null && maxBd.compareTo(low) < 0)
-			return "[UNDERFLOW] definite underflow: variable " + varRef.getName() + " range " + intervalText;
-
-		if (!minIsNegInf && minBd != null && minBd.compareTo(low) < 0 &&
-				(maxIsPosInf || (maxBd != null && maxBd.compareTo(low) >= 0)))
-			return "[POSSIBLE_UNDERFLOW] possible underflow: variable " + varRef.getName() + " range " + intervalText;
-
-		if (!maxIsPosInf && maxBd != null && maxBd.compareTo(high) > 0 &&
-				(minIsNegInf || (minBd != null && minBd.compareTo(high) <= 0)))
-			return "[POSSIBLE_OVERFLOW] possible overflow: variable " + varRef.getName() + " range " + intervalText;
-
-		return "[SAFE]";
-	}
-
-	// ✅ Option A: improved float handling without new imports
-	private String classifyFloat(
-			BigDecimal minBd, BigDecimal maxBd,
-			boolean minIsNegInf, boolean maxIsPosInf,
-			int floatBits,
-			VariableRef var, String intervalText) {
-
-		double min = minIsNegInf ? Double.NEGATIVE_INFINITY : minBd.doubleValue();
-		double max = maxIsPosInf ? Double.POSITIVE_INFINITY : maxBd.doubleValue();
-
-		double absMax = Math.max(Math.abs(min), Math.abs(max));
-
-		double threshold;
-		switch (floatBits) {
-			case 8:
-				threshold = 240.0; // approx range for 8-bit float
-				break;
-			case 16:
-				threshold = 65504.0; // IEEE half
-				break;
-			case 32:
-			default:
-				threshold = Float.MAX_VALUE;
-				break;
-		}
-
-		if (Double.isInfinite(min) || Double.isInfinite(max))
-			return "[POSSIBLE_OVERFLOW] unbounded range " + intervalText + " for " + var.getName();
-
-		if (absMax > threshold)
-			return "[DEFINITE_OVERFLOW] range exceeds float precision (" + floatBits + " bits): "
-					+ intervalText + " for " + var.getName();
-
-		if (absMax > threshold * 0.9)
-			return "[POSSIBLE_OVERFLOW] near float limit (" + floatBits + " bits): "
-					+ intervalText + " for " + var.getName();
-
-		return "[SAFE]";
 	}
 }

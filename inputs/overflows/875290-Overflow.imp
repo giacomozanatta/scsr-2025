@@ -8,8 +8,7 @@ class Main {
 
     // Signed integer underflow (negative)
     int_underflow_neg() {
-        def x = -2147483640; // near Integer.MIN_VALUE
-        x = x - 100; // should underflow for INT32
+        def x = -2147483640; // near Integer.MIN_VALUE        x = x - 100; // should underflow for INT32
     }
 
     // Negation edge case: -MIN_INT

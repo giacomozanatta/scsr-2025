@@ -39,7 +39,10 @@ public class OverflowsTest {
                 DefaultConfiguration.defaultTypeDomain());
 
         // ✅ Add only one checker: it now handles ALL sizes internally
-        conf.semanticChecks.add(new OverflowChecker());
+        // You need to import NumericalSize if it's not already imported:
+// import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
+
+        conf.semanticChecks.add(new OverflowChecker(OverflowChecker.NumericalSize.INT32));
 
         // Run analysis
         LiSA lisa = new LiSA(conf);

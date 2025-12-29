@@ -1,0 +1,1 @@
+{"name":"untyped taint::sink1(taint* this, untyped v)","description":null,"nodes":[{"id":0,"text":"ret"}],"edges":[],"descriptions":[{"nodeId":0,"description":{"expressions":["skip"],"state":{"heap":"monolith","type":{"this":["taint*"],"v":"#TOP#"},"value":{"v":"#TOP#"}}}}]}

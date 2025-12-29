@@ -24,6 +24,8 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
+import it.unive.lisa.util.numeric.MathNumber;
+
 
 public class DivisionByZeroChecker implements
 SemanticCheck<
@@ -70,15 +72,71 @@ SemanticCheck<
 						for (SymbolicExpression s : reachableIds) {
 							
 							Set<Type> types = getPossibleDynamicTypes(s, div, state.getState());
-						
-			
-							// TODO: implement type checks, it is required a numerical type
-			
-							ValueEnvironment<Intervals> valueState = state.getState().getValueState();
-							
-							Intervals intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState());
-							
-							// TODO: add checks for division by zero
+
+// TODO: implement type checks, it is required a numerical type
+boolean numeric = false;
+
+// 1) prova col tipo statico dell'espressione
+Type staticType = s.getStaticType();
+if (staticType != null && !staticType.isUntyped()) {
+	String name = staticType.toString().toLowerCase();
+	numeric = name.contains("int") || name.contains("float") || name.contains("double")
+			|| name.contains("short") || name.contains("long") || name.contains("byte")
+			|| name.contains("uint");
+} else {
+	// 2) altrimenti usa i possibili tipi dinamici
+	for (Type t : types) {
+		if (t != null && !t.isUntyped()) {
+			String name = t.toString().toLowerCase();
+			if (name.contains("int") || name.contains("float") || name.contains("double")
+					|| name.contains("short") || name.contains("long") || name.contains("byte")
+					|| name.contains("uint")) {
+				numeric = true;
+				break;
+			}
+		}
+	}
+}
+
+if (!numeric)
+	continue;
+
+ValueEnvironment<Intervals> valueState = state.getState().getValueState();
+
+Intervals intervalAbstractValue;
+try {
+	intervalAbstractValue = valueState.eval((ValueExpression) s, div, state.getState()); 
+} catch (ClassCastException cce) {
+	// non valutabile come ValueExpression
+	continue;
+}
+
+// TODO: add checks for division by zero
+if (intervalAbstractValue == null)
+	continue;
+
+if (intervalAbstractValue.isBottom())
+	continue;
+
+// TOP => potrebbe essere 0
+if (intervalAbstractValue.isTop()) {
+	tool.warnOn(div, "[DivisionByZeroChecker-" + size + "] Possible division by zero (divisor is TOP/unknown).");
+	continue;
+}
+
+MathNumber lo = intervalAbstractValue.getLowerBound();
+MathNumber hi = intervalAbstractValue.getUpperBound();
+
+if (lo == null || hi == null) {
+	tool.warnOn(div, "[DivisionByZeroChecker-" + size + "] Possible division by zero (cannot read divisor bounds).");
+	continue;
+}
+
+// 0 ∈ [lo, hi] ?
+if (lo.compareTo(MathNumber.ZERO) <= 0 && hi.compareTo(MathNumber.ZERO) >= 0) {
+	tool.warnOn(div, "[DivisionByZeroChecker-" + size + "] Possible division by zero (divisor may be 0).");
+}
+
 						}
 					} catch (SemanticException e) {
 						e.printStackTrace();

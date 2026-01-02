@@ -3,321 +3,343 @@ package it.unive.scsr;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 
-import it.unive.lisa.analysis.nonrelational.value.NonRelationalValueDomain;
-import it.unive.lisa.symbolic.SymbolicExpression;
-import org.apache.commons.collections4.CollectionUtils;
-
-import it.unive.lisa.analysis.BaseLattice;
-import it.unive.lisa.analysis.Lattice;
-import it.unive.lisa.analysis.ScopeToken;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
 import it.unive.lisa.analysis.lattices.Satisfiability;
+import it.unive.lisa.analysis.nonrelational.value.BaseNonRelationalValueDomain;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
-import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.program.cfg.ProgramPoint;
-import it.unive.lisa.symbolic.value.BinaryExpression;
 import it.unive.lisa.symbolic.value.Constant;
 import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.ValueExpression;
+import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.symbolic.value.operator.AdditionOperator;
+import it.unive.lisa.symbolic.value.operator.ComparisonOperator;
+import it.unive.lisa.symbolic.value.operator.MultiplicationOperator;
+import it.unive.lisa.symbolic.value.operator.NegatableOperator;
 import it.unive.lisa.symbolic.value.operator.SubtractionOperator;
 import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
-import it.unive.lisa.util.numeric.MathNumber;
-import it.unive.lisa.util.representation.MapRepresentation;
+import it.unive.lisa.symbolic.value.operator.unary.UnaryOperator;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
-public class Pentagons
-		implements ValueDomain<Pentagons>, BaseLattice<Pentagons>, NonRelationalValueDomain<Pentagons> {
+public class Pentagons implements BaseNonRelationalValueDomain<Pentagons> {
 
-	// a value environment is basically a mapping between variables (identifiers) and the corresponding vale state
-	ValueEnvironment<UpperBounds> upperbounds;
-	ValueEnvironment<Intervals> intervals;
+	private final ValueEnvironment<Intervals> intervals;
+	private final Map<VariablePair, Number> constraints;
+
+	public static final Pentagons TOP = new Pentagons();
+	public static final Pentagons BOTTOM = new Pentagons(null);
 
 	public Pentagons() {
-		this.upperbounds = new ValueEnvironment<UpperBounds>(new UpperBounds(true)).top();
-		this.intervals = new ValueEnvironment<Intervals>(new Intervals()).top();
+		this.intervals = new ValueEnvironment<>(new Intervals()).top();
+		this.constraints = new HashMap<>();
 	}
 
-	public Pentagons(ValueEnvironment<UpperBounds> upperbounds, ValueEnvironment<Intervals> intervals) {
-		this.upperbounds = upperbounds != null ? upperbounds : new ValueEnvironment<UpperBounds>(new UpperBounds(true)).top();
-		this.intervals = intervals != null ? intervals : new ValueEnvironment<Intervals>(new Intervals()).top();
+	public Pentagons(ValueEnvironment<Intervals> intervals, Map<VariablePair, Number> constraints) {
+		this.intervals = intervals;
+		this.constraints = constraints;
+	}
+
+	private Pentagons(Void dummy) {
+		this.intervals = null;
+		this.constraints = null;
+	}
+
+	public static class VariablePair {
+		private final Variable x;
+		private final Variable y;
+
+		public VariablePair(Variable x, Variable y) {
+			this.x = x;
+			this.y = y;
+		}
+
+		@Override
+		public int hashCode() {
+			return x.hashCode() * 31 + y.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) return true;
+			if (obj == null) return false;
+			if (getClass() != obj.getClass()) return false;
+			VariablePair other = (VariablePair) obj;
+			return x.equals(other.x) && y.equals(other.y);
+		}
 	}
 
 	@Override
 	public Pentagons top() {
-		return new Pentagons(upperbounds.top(), intervals.top());
+		return TOP;
 	}
 
 	@Override
 	public boolean isTop() {
-		return upperbounds.isTop() && intervals.isTop();
+		return intervals != null && intervals.isTop() && constraints.isEmpty();
 	}
 
 	@Override
 	public Pentagons bottom() {
-		return new Pentagons(upperbounds.bottom(), intervals.bottom());
+		return BOTTOM;
 	}
 
 	@Override
 	public boolean isBottom() {
-		return upperbounds.isBottom() && intervals.isBottom();
-	}
-
-	@Override
-	public Pentagons smallStepSemantics(ValueExpression expression, ProgramPoint pp, SemanticOracle oracle)
-			throws SemanticException {
-		return new Pentagons(upperbounds.smallStepSemantics(expression, pp, oracle), intervals.smallStepSemantics(expression, pp, oracle));
-	}
-
-	@Override
-	public Pentagons assume(ValueExpression expression, ProgramPoint src, ProgramPoint dest, SemanticOracle oracle)
-			throws SemanticException {
-		// Add null checks
-		if (expression == null || src == null || dest == null || oracle == null) {
-			return this;
-		}
-
-		ValueEnvironment<UpperBounds> newUpperbounds = upperbounds.assume(expression, src, dest, oracle);
-		ValueEnvironment<Intervals> newIntervals = intervals.assume(expression, src, dest, oracle);
-
-		// Check for null results
-		if (newUpperbounds == null) {
-			newUpperbounds = upperbounds;
-		}
-		if (newIntervals == null) {
-			newIntervals = intervals;
-		}
-
-		return new Pentagons(newUpperbounds, newIntervals);
-	}
-
-	@Override
-	public Pentagons wideningAux(Pentagons other) throws SemanticException {
-		if (other == null) {
-			return this;
-		}
-		return new Pentagons(upperbounds.wideningAux(other.upperbounds), intervals.widening(other.intervals));
-	}
-
-	@Override
-	public Pentagons lubAux(Pentagons other) throws SemanticException {
-		if (other == null) {
-			return this;
-		}
-
-		ValueEnvironment<UpperBounds> newBounds = upperbounds.lub(other.upperbounds);
-		for (Entry<Identifier, UpperBounds> entry : upperbounds) {
-			Set<Identifier> closure = new HashSet<>();
-			for (Identifier bound : entry.getValue()) {
-				Intervals intervalState = other.intervals.getState(entry.getKey());
-				Intervals boundIntervalState = other.intervals.getState(bound);
-				if (!intervalState.isBottom() && !boundIntervalState.isBottom() && intervalState.interval.getHigh()
-						.compareTo(boundIntervalState.interval.getLow()) < 0)
-					closure.add(bound);
-			}
-			if (!closure.isEmpty())
-				// glb is the union
-				newBounds = newBounds.putState(entry.getKey(),
-						newBounds.getState(entry.getKey()).glb(new UpperBounds(closure)));
-		}
-
-		for (Entry<Identifier, UpperBounds> entry : other.upperbounds) {
-			Set<Identifier> closure = new HashSet<>();
-			for (Identifier bound : entry.getValue())
-				if (intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(intervals.getState(bound).interval.getLow()) < 0)
-					closure.add(bound);
-			if (!closure.isEmpty())
-				// glb is the union
-				newBounds = newBounds.putState(entry.getKey(),
-						newBounds.getState(entry.getKey()).glb(new UpperBounds(closure)));
-		}
-
-		return new Pentagons(newBounds, intervals.lub(other.intervals));
-	}
-
-	@Override
-	public boolean lessOrEqualAux(Pentagons other) throws SemanticException {
-		if (other == null) {
-			return false;
-		}
-
-		if (!this.intervals.lessOrEqual(other.intervals)) {
-			return false;
-		}
-
-		for (Entry<Identifier, UpperBounds> entry : other.upperbounds) {
-			for (Identifier bound : entry.getValue()) {
-				if (!(this.upperbounds.getState(entry.getKey()).contains(bound)
-						|| this.intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(this.intervals.getState(bound).interval.getLow()) < 0)) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	@Override
-	public Pentagons assign(Identifier id, ValueExpression expression, ProgramPoint pp, SemanticOracle oracle)
-			throws SemanticException {
-
-		ValueEnvironment<UpperBounds> newBounds = upperbounds.assign(id, expression, pp, oracle);
-		ValueEnvironment<Intervals> newIntervals = intervals.assign(id, expression, pp, oracle);
-
-		if (expression instanceof BinaryExpression) {
-			BinaryExpression be = (BinaryExpression) expression;
-			BinaryOperator op = be.getOperator();
-
-			if (op instanceof SubtractionOperator) {
-				if (be.getLeft() instanceof Identifier) {
-					Identifier x = (Identifier) be.getLeft();
-
-					if (be.getRight() instanceof Identifier) {
-						// r = x - y
-						Identifier y = (Identifier) be.getRight();
-						if (newBounds.getState(y).contains(x)) {
-							newIntervals = newIntervals.putState(id, newIntervals.getState(id)
-									.glb(new Intervals(MathNumber.ONE, MathNumber.PLUS_INFINITY)));
-						}
-					} else if (be.getRight() instanceof Constant)
-						// r = x + 2 (where 2 is the constant)
-						newBounds = newBounds.putState(id, upperbounds.getState(x).add(x));
-				}
-			}
-		}
-
-		return new Pentagons(newBounds, newIntervals).closure();
-	}
-
-	@Override
-	public Pentagons forgetIdentifier(Identifier id) throws SemanticException {
-		return new Pentagons(
-				upperbounds.forgetIdentifier(id), intervals.forgetIdentifier(id));
-	}
-
-	@Override
-	public Pentagons forgetIdentifiersIf(Predicate<Identifier> test) throws SemanticException {
-		return new Pentagons(
-				upperbounds.forgetIdentifiersIf(test),
-				intervals.forgetIdentifiersIf(test));
-	}
-
-	@Override
-	public Satisfiability satisfies(ValueExpression expression, ProgramPoint pp, SemanticOracle oracle)
-			throws SemanticException {
-		return intervals.satisfies(expression, pp, oracle).glb(upperbounds.satisfies(expression, pp, oracle));
-	}
-
-	@Override
-	public Pentagons pushScope(ScopeToken token) throws SemanticException {
-		return new Pentagons(upperbounds.pushScope(token), intervals.pushScope(token));
-	}
-
-	@Override
-	public Pentagons popScope(ScopeToken token) throws SemanticException {
-		return new Pentagons(upperbounds.popScope(token), intervals.popScope(token));
+		return intervals == null;
 	}
 
 	@Override
 	public StructuredRepresentation representation() {
-		if (isTop())
-			return Lattice.topRepresentation();
-		if (isBottom())
-			return Lattice.bottomRepresentation();
-		Map<StructuredRepresentation, StructuredRepresentation> mapping = new HashMap<>();
-		for (Identifier id : CollectionUtils.union(intervals.getKeys(), upperbounds.getKeys()))
-			mapping.put(new StringRepresentation(id),
-					new StringRepresentation(intervals.getState(id).representation() + ", " +
-							upperbounds.getState(id).representation()));
-		return new MapRepresentation(mapping);
+		if (isBottom()) return new StringRepresentation("⊥");
+		if (isTop()) return new StringRepresentation("⊤");
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("Intervals: ").append(intervals.representation());
+		if (!constraints.isEmpty()) {
+			sb.append(", Constraints: {");
+			boolean first = true;
+			for (Map.Entry<VariablePair, Number> entry : constraints.entrySet()) {
+				if (!first) sb.append(", ");
+				first = false;
+				VariablePair pair = entry.getKey();
+				sb.append(pair.x.getName()).append(" <= ").append(pair.y.getName()).append(" + ").append(entry.getValue());
+			}
+			sb.append("}");
+		}
+		return new StringRepresentation(sb.toString());
+	}
+
+	@Override
+	public Pentagons lubAux(Pentagons other) throws SemanticException {
+		if (isBottom()) return other;
+		if (other.isBottom()) return this;
+
+		ValueEnvironment<Intervals> joinedIntervals = intervals.lub(other.intervals);
+		Map<VariablePair, Number> joinedConstraints = new HashMap<>();
+
+		for (Map.Entry<VariablePair, Number> entry : constraints.entrySet()) {
+			VariablePair pair = entry.getKey();
+			Number c1 = entry.getValue();
+			Number c2 = other.constraints.get(pair);
+			if (c2 != null) {
+				joinedConstraints.put(pair, Math.max(c1.doubleValue(), c2.doubleValue()));
+			}
+		}
+
+		return new Pentagons(joinedIntervals, joinedConstraints);
+	}
+
+	@Override
+	public Pentagons glbAux(Pentagons other) throws SemanticException {
+		if (isBottom() || other.isBottom()) return bottom();
+
+		ValueEnvironment<Intervals> metIntervals = intervals.glb(other.intervals);
+		if (metIntervals.isBottom()) return bottom();
+
+		Map<VariablePair, Number> metConstraints = new HashMap<>(constraints);
+		for (Map.Entry<VariablePair, Number> entry : other.constraints.entrySet()) {
+			VariablePair pair = entry.getKey();
+			Number c1 = metConstraints.get(pair);
+			Number c2 = entry.getValue();
+			if (c1 == null || c2.doubleValue() < c1.doubleValue()) {
+				metConstraints.put(pair, c2);
+			}
+		}
+
+		if (checkInconsistency(metIntervals, metConstraints)) return bottom();
+		return new Pentagons(metIntervals, metConstraints);
+	}
+
+	private boolean checkInconsistency(ValueEnvironment<Intervals> intervals, Map<VariablePair, Number> constraints) {
+		for (Map.Entry<VariablePair, Number> entry : constraints.entrySet()) {
+			VariablePair pair = entry.getKey();
+			Number constant = entry.getValue();
+
+			Intervals xInterval = intervals.getState(pair.x);
+			Intervals yInterval = intervals.getState(pair.y);
+
+			if (xInterval != null && yInterval != null) {
+				Number xLow = xInterval.getLow();
+				Number yHigh = yInterval.getHigh();
+
+				if (xLow != null && yHigh != null) {
+					if (xLow.doubleValue() > yHigh.doubleValue() + constant.doubleValue()) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public boolean lessOrEqualAux(Pentagons other) throws SemanticException {
+		if (isBottom()) return true;
+		if (other.isBottom()) return false;
+
+		if (!intervals.lessOrEqual(other.intervals)) return false;
+
+		for (Map.Entry<VariablePair, Number> entry : constraints.entrySet()) {
+			VariablePair pair = entry.getKey();
+			Number c1 = entry.getValue();
+			Number c2 = other.constraints.get(pair);
+
+			if (c2 == null || c1.doubleValue() > c2.doubleValue()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	@Override
+	public Pentagons evalNonNullConstant(Constant constant, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {
+		if (isBottom()) return bottom();
+
+		Intervals interval = new Intervals().evalNonNullConstant(constant, pp, oracle);
+		ValueEnvironment<Intervals> newIntervals = new ValueEnvironment<>(interval).top();
+		return new Pentagons(newIntervals, new HashMap<>());
+	}
+
+	@Override
+	public Pentagons evalUnaryExpression(UnaryOperator operator, Pentagons arg, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {
+		if (arg.isBottom()) return bottom();
+
+		ValueEnvironment<Intervals> newIntervals = new ValueEnvironment<>(new Intervals()).top();
+		return new Pentagons(newIntervals, new HashMap<>());
+	}
+
+	@Override
+	public Pentagons evalBinaryExpression(BinaryOperator operator, Pentagons left, Pentagons right, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {
+		if (left.isBottom() || right.isBottom()) return bottom();
+
+		ValueEnvironment<Intervals> newIntervals = new ValueEnvironment<>(new Intervals()).top();
+		return new Pentagons(newIntervals, new HashMap<>());
+	}
+
+	public Pentagons evalIdentifier(Identifier id, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {
+		if (isBottom()) return bottom();
+
+		ValueEnvironment<Intervals> newIntervals = new ValueEnvironment<>(new Intervals()).top();
+		if (id instanceof Variable) {
+			Variable var = (Variable) id;
+			Intervals varInterval = intervals.getState(var);
+			if (varInterval != null) {
+				newIntervals = newIntervals.putState(var, varInterval);
+			}
+		}
+
+		Map<VariablePair, Number> newConstraints = new HashMap<>();
+		if (id instanceof Variable) {
+			Variable var = (Variable) id;
+			for (Map.Entry<VariablePair, Number> entry : constraints.entrySet()) {
+				VariablePair pair = entry.getKey();
+				if (pair.x.equals(var) || pair.y.equals(var)) {
+					newConstraints.put(pair, entry.getValue());
+				}
+			}
+		}
+
+		return new Pentagons(newIntervals, newConstraints);
+	}
+
+	// NO @Override annotation here - this is a custom method
+	public Satisfiability satisfiesBinaryExpression(BinaryOperator operator, Pentagons left, Pentagons right, ProgramPoint pp, SemanticOracle oracle) throws SemanticException {
+		if (left.isBottom() || right.isBottom()) return Satisfiability.BOTTOM;
+		if (operator instanceof ComparisonOperator) return Satisfiability.UNKNOWN;
+		return Satisfiability.UNKNOWN;
+	}
+
+	@Override
+	public ValueEnvironment<Pentagons> assumeBinaryExpression(ValueEnvironment<Pentagons> environment, BinaryOperator operator, ValueExpression left, ValueExpression right, ProgramPoint src, ProgramPoint dest, SemanticOracle oracle) throws SemanticException {
+		if (environment.isBottom()) return environment.bottom();
+		return environment;
+	}
+
+	// NO @Override annotation here - this is a custom method
+	public Pentagons variableCreation(Identifier id, ProgramPoint pp) throws SemanticException {
+		if (isBottom()) return bottom();
+		ValueEnvironment<Intervals> newIntervals = intervals.putState((Variable) id, new Intervals().top());
+		return new Pentagons(newIntervals, constraints);
+	}
+
+	// NO @Override annotation here - this is a custom method
+	public Pentagons variableAssignement(Identifier id, Pentagons value, ProgramPoint pp) throws SemanticException {
+		if (isBottom() || value.isBottom()) return bottom();
+		if (!(id instanceof Variable)) return this;
+
+		Variable var = (Variable) id;
+		ValueEnvironment<Intervals> newIntervals = intervals.putState(var, value.intervals.getState(var));
+		Map<VariablePair, Number> newConstraints = new HashMap<>(constraints);
+		newConstraints.entrySet().removeIf(entry -> entry.getKey().x.equals(var) || entry.getKey().y.equals(var));
+		newConstraints.putAll(value.constraints);
+		return new Pentagons(newIntervals, newConstraints);
+	}
+
+	@Override
+	public Pentagons wideningAux(Pentagons other) throws SemanticException {
+		if (isBottom()) return other;
+		if (other.isBottom()) return this;
+
+		ValueEnvironment<Intervals> widenedIntervals = intervals.widening(other.intervals);
+		Map<VariablePair, Number> widenedConstraints = new HashMap<>();
+
+		for (Map.Entry<VariablePair, Number> entry : constraints.entrySet()) {
+			VariablePair pair = entry.getKey();
+			Number c1 = entry.getValue();
+			Number c2 = other.constraints.get(pair);
+			if (c2 != null) {
+				widenedConstraints.put(pair, Math.max(c1.doubleValue(), c2.doubleValue()));
+			}
+		}
+
+		return new Pentagons(widenedIntervals, widenedConstraints);
+	}
+
+	@Override
+	public Pentagons narrowingAux(Pentagons other) throws SemanticException {
+		if (isBottom() || other.isBottom()) return bottom();
+
+		ValueEnvironment<Intervals> narrowedIntervals = intervals.narrowing(other.intervals);
+		Map<VariablePair, Number> narrowedConstraints = new HashMap<>();
+
+		for (Map.Entry<VariablePair, Number> entry : constraints.entrySet()) {
+			VariablePair pair = entry.getKey();
+			Number c1 = entry.getValue();
+			Number c2 = other.constraints.get(pair);
+			if (c2 != null) {
+				narrowedConstraints.put(pair, Math.min(c1.doubleValue(), c2.doubleValue()));
+			}
+		}
+
+		return new Pentagons(narrowedIntervals, narrowedConstraints);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(intervals, upperbounds);
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((constraints == null) ? 0 : constraints.hashCode());
+		result = prime * result + ((intervals == null) ? 0 : intervals.hashCode());
+		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
 		Pentagons other = (Pentagons) obj;
-		return Objects.equals(intervals, other.intervals) && Objects.equals(upperbounds, other.upperbounds);
-	}
-
-	@Override
-	public String toString() {
-		return representation().toString();
-	}
-
-	@Override
-	public boolean knowsIdentifier(Identifier id) {
-		return intervals.knowsIdentifier(id) || upperbounds.knowsIdentifier(id);
-	}
-
-	private Pentagons closure() throws SemanticException {
-		ValueEnvironment<UpperBounds> newBounds = new ValueEnvironment<UpperBounds>(upperbounds.lattice, upperbounds.getMap());
-
-		for (Identifier id1 : intervals.getKeys()) {
-			Set<Identifier> closure = new HashSet<>();
-			for (Identifier id2 : intervals.getKeys())
-				if (!id1.equals(id2))
-					if (intervals.getState(id1).interval.getHigh()
-							.compareTo(intervals.getState(id2).interval.getLow()) < 0)
-						closure.add(id2);
-			if (!closure.isEmpty())
-				// glb is the union
-				newBounds = newBounds.putState(id1,
-						newBounds.getState(id1).glb(new UpperBounds(closure)));
-		}
-
-		return new Pentagons(newBounds, intervals);
-	}
-
-	// Fixed NonRelationalValueDomain methods
-	@Override
-	public Pentagons eval(ValueExpression valueExpression, ValueEnvironment<Pentagons> entries, ProgramPoint programPoint, SemanticOracle semanticOracle) throws SemanticException {
-		// For NonRelationalValueDomain, this should delegate to the main eval methods
-		// Since Pentagons is a combination of two domains, we combine their results
-		if (valueExpression == null) {
-			return bottom();
-		}
-
-		// Use the existing smallStepSemantics which is the main evaluation method
-		return smallStepSemantics(valueExpression, programPoint, semanticOracle);
-	}
-
-	@Override
-	public Satisfiability satisfies(ValueExpression valueExpression, ValueEnvironment<Pentagons> entries, ProgramPoint programPoint, SemanticOracle semanticOracle) throws SemanticException {
-		// Delegate to the main satisfies method
-		return satisfies(valueExpression, programPoint, semanticOracle);
-	}
-
-	@Override
-	public ValueEnvironment<Pentagons> assume(ValueEnvironment<Pentagons> entries, ValueExpression valueExpression, ProgramPoint src, ProgramPoint dest, SemanticOracle semanticOracle) throws SemanticException {
-		// This method should return the environment after assumption
-		// For non-relational domains, we typically don't modify the environment structure
-		if (entries == null) {
-			return new ValueEnvironment<>(this);
-		}
-		return entries;
-	}
-
-	@Override
-	public boolean canProcess(SymbolicExpression symbolicExpression, ProgramPoint programPoint, SemanticOracle semanticOracle) {
-		// Return true for expressions that this domain can handle
-		// Pentagons should be able to handle most numeric expressions
-		return symbolicExpression instanceof ValueExpression;
+		if (constraints == null) {
+			if (other.constraints != null) return false;
+		} else if (!constraints.equals(other.constraints)) return false;
+		if (intervals == null) {
+			if (other.intervals != null) return false;
+		} else if (!intervals.equals(other.intervals)) return false;
+		return true;
 	}
 }

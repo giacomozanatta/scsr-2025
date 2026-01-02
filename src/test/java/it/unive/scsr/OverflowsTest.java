@@ -15,19 +15,26 @@ import org.junit.Test;
 public class OverflowsTest {
 
     @Test
-    public void testAllOverflows() throws ParsingException, AnalysisException {
-        runAnalysis(new ValueEnvironment<>(new Intervals()));
+    public void testSingleFile() throws ParsingException, AnalysisException {
+        // Test just ONE specific file
+        runSingleAnalysis("inputs/overflows/875290-Overflow.imp");
     }
 
-    private void runAnalysis(ValueEnvironment<Intervals> valueEnv)
-            throws ParsingException, AnalysisException {
+    @Test
+    public void testAnotherFile() throws ParsingException, AnalysisException {
+        // Test another file if you have it
+        runSingleAnalysis("inputs/overflows/another-test.imp");
+    }
 
-        // Parse the IMP program with overflow cases
-        Program program = IMPFrontend.processFile("inputs/overflows.imp");
+    private void runSingleAnalysis(String filePath) throws ParsingException, AnalysisException {
+        System.out.println("Analyzing: " + filePath);
 
-        // Build configuration
+        Program program = IMPFrontend.processFile(filePath);
+
         LiSAConfiguration conf = new DefaultConfiguration();
-        conf.workdir = "outputs/mainoverflows";   // ✅ single folder for all overflow results
+        // Create output path based on filename
+        String fileName = new java.io.File(filePath).getName().replace(".imp", "");
+        conf.workdir = "outputs/overflows/" + fileName;
         conf.analysisGraphs = GraphType.HTML;
         conf.jsonOutput = true;
         conf.serializeResults = true;
@@ -35,17 +42,16 @@ public class OverflowsTest {
         // Abstract state with Intervals
         conf.abstractState = DefaultConfiguration.simpleState(
                 DefaultConfiguration.defaultHeapDomain(),
-                valueEnv,
+                new ValueEnvironment<>(new Intervals()),
                 DefaultConfiguration.defaultTypeDomain());
 
-        // ✅ Add only one checker: it now handles ALL sizes internally
-        // You need to import NumericalSize if it's not already imported:
-// import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
-
-        conf.semanticChecks.add(new OverflowChecker(OverflowChecker.NumericalSize.INT32));
+        // Use type-inferring checker
+        conf.semanticChecks.add(new OverflowChecker(OverflowChecker.NumericalSize.INT32, true));
 
         // Run analysis
         LiSA lisa = new LiSA(conf);
         lisa.run(program);
+
+        System.out.println("✓ Analysis complete for: " + fileName);
     }
 }

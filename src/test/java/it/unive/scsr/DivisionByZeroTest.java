@@ -17,13 +17,11 @@ public class DivisionByZeroTest {
 
     @Test
     public void testDivisionByZero() throws ParsingException, AnalysisException {
-        runAnalysis(new ValueEnvironment<>(new Intervals()));
+        runAnalysis();
     }
 
-    private void runAnalysis(ValueEnvironment<Intervals> valueEnv)
-            throws ParsingException, AnalysisException {
-
-        // Parse the IMP program
+    private void runAnalysis() throws ParsingException, AnalysisException {
+        // Parse the IMP program with division cases
         Program program = IMPFrontend.processFile("inputs/divzero.imp");
 
         // Build configuration
@@ -36,11 +34,11 @@ public class DivisionByZeroTest {
         // Abstract state with Intervals
         conf.abstractState = DefaultConfiguration.simpleState(
                 DefaultConfiguration.defaultHeapDomain(),
-                valueEnv,
+                new ValueEnvironment<>(new Intervals()),
                 DefaultConfiguration.defaultTypeDomain());
 
-        // Add DivisionByZeroChecker (now requires NumericalSize)
-        conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.INT32));
+        // Add division by zero checker
+        conf.semanticChecks.add(new DivisionByZeroChecker());
 
         // Run analysis
         LiSA lisa = new LiSA(conf);

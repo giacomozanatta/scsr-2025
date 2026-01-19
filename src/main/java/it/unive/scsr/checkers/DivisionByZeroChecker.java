@@ -1,173 +1,170 @@
 package it.unive.scsr.checkers;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
-import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
 import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.statement.Assignment;
-import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
-import it.unive.lisa.program.cfg.statement.VariableRef;
-import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.program.cfg.statement.numeric.Division;
+import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.symbolic.value.ValueExpression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
+import it.unive.scsr.UpperBounds;
+import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
-public class DivisionByZeroChecker implements
-		SemanticCheck<
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+public class DivisionByZeroChecker implements SemanticCheck <SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> {
 
-	private int warningsFound = 0;
+private NumericalSize size;
+private Set<String> warnedLocations; // Track warned locations to avoid duplicates
 
-	// No-argument constructor
-	public DivisionByZeroChecker() {
-		// default constructor
-	}
+public DivisionByZeroChecker(NumericalSize size) {
+	this.size = size;
+	this.warnedLocations = new HashSet<>();
+}
 
-	// Constructor with NumericalSize (optional)
-	public DivisionByZeroChecker(OverflowChecker.NumericalSize size) {
-		// you can store size if needed
-	}
+@Override
+public boolean visit(
+		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
+		CFG graph, Statement node) {
 
-	@Override
-	public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
-		// This method is called after the analysis is complete
-		if (warningsFound == 0) {
-			// Print informational message when no division by zero detected
-			System.out.println("[DivisionByZeroChecker] No division by zero issues detected");
-		} else {
-			System.out.println("[DivisionByZeroChecker] Found " + warningsFound + " potential division by zero issue(s)");
-		}
-	}
+	if (node instanceof Division)
+		checkDivision(tool, graph, (Division) node);
 
-	@Override
-	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node) {
+	return true;
+}
 
-		if (node instanceof Assignment) {
-			Assignment assignment = (Assignment) node;
-			Expression leftExpression = assignment.getLeft();
+private void checkDivision(
+		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
+		CFG graph, Division div) {
 
-			// Checking if each variable reference is dividing by zero
-			if (leftExpression instanceof VariableRef) {
-				checkVariableRef(tool, (VariableRef) leftExpression, graph, node);
-			}
+	for (var result : tool.getResultOf(graph)) {
+		// Takes the result of the expression on the divisor, like in expr1 / expr2 it takes expr2
+		var state = result.getAnalysisStateAfter(div.getRight());
 
-		} else {
-
-			// Checking if each variable reference is dividing by zero
-			if (node instanceof VariableRef) {
-				checkVariableRef(tool, (VariableRef) node, graph, node);
-			}
-		}
-
-		return true;
-
-	}
-
-	private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node ) {
-		Variable id = new Variable(((VariableRef) varRef).getStaticType(), ((VariableRef) varRef).getName(), ((VariableRef) varRef).getLocation());
-
-		Type staticType = id.getStaticType();
-		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
-
-		Statement target = node;
-
-		// Check if the type is numeric
-		boolean isNumeric = false;
-
-		// First check static type
-		if (staticType != null && !staticType.isUntyped()) {
-			String typeName = staticType.toString().toLowerCase();
-			if (typeName.contains("int") || typeName.contains("float") ||
-					typeName.contains("uint") || typeName.contains("numeric")) {
-				isNumeric = true;
-			}
-		}
-		// If static type is untyped, check dynamic types
-		else if (staticType == null || staticType.isUntyped()) {
-			for (Type dynType : dynamicTypes) {
-				String typeName = dynType.toString().toLowerCase();
-				if (typeName.contains("int") || typeName.contains("float") ||
-						typeName.contains("uint") || typeName.contains("numeric")) {
-					isNumeric = true;
-					break;
-				}
-			}
-		}
-
-		// If not numeric, no need to check for division by zero
-		if (!isNumeric) {
-			return;
-		}
-
-		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
-			target = varRef.getParentStatement();
-		}
-
-
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(target).getState();
-			Intervals intervalAbstractValue = state.getValueState().getState(id);
-
-			if (intervalAbstractValue != null) {
-				// Check if interval contains zero
-
-				Number lowNum = intervalAbstractValue.getLow();
-				Number highNum = intervalAbstractValue.getHigh();
-
-				if (lowNum != null && highNum != null) {
-					double low = lowNum.doubleValue();
-					double high = highNum.doubleValue();
-
-					// Check if zero is within the interval [low, high]
-					if (low <= 0 && high >= 0) {
-						tool.warnOn(node, "Possible division by zero detected for variable: " +
-								id.getName() + " with interval [" + low + ", " + high + "]");
-						warningsFound++;
-					}
-				}
-			}
-		}
-	}
-
-	// compute possible dynamic types / runtime types
-	private Set<Type> getPossibleDynamicTypes(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node, Variable id, VariableRef varRef) {
-
-		Set<Type> possibleDynamicTypes = new HashSet<>();
-		for (AnalyzedCFG<
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-						TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(varRef).getState();
+		Set<SymbolicExpression> reachableIds = new HashSet<>();
+		Iterator<SymbolicExpression> comExprIterator = state.getComputedExpressions().iterator();
+		if (comExprIterator.hasNext()) {
+			SymbolicExpression divisor = comExprIterator.next();
 			try {
-				Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
-				if(dynamicTypes != null && !dynamicTypes.isUntyped()) {
-					possibleDynamicTypes.add(dynamicTypes);
-				} else if(dynamicTypes.isUntyped()){
-					Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
-					if(runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
-						for( Type t : runtimeTypes)
-							possibleDynamicTypes.add(t);
+				reachableIds
+						.addAll(state.getState().reachableFrom(divisor, div, state.getState()).elements);
+
+				for (SymbolicExpression s : reachableIds) {
+					Type staticType = s.getStaticType();
+					Set<Type> dynamicTypes = getPossibleDynamicTypes(s, div, state.getState());
+
+					// It's a different type, ignore
+					if (!staticType.isNumericType() && !staticType.isUntyped())
+						return;
+
+					// Handle dynamic types
+					if (staticType.isUntyped()) {
+						boolean found = false;
+						for (Type type : dynamicTypes) {
+							if (type.isNumericType()) {
+								found = true;
+								break;
+							}
+						}
+
+						// Even the dynamic type is not numeric
+						if (!found)
+							return;
+					}
+
+					Pentagons valueState = state.getState().getValueState();
+
+					Intervals intervalAbstractValue = valueState.getIntervals().eval((ValueExpression) s, div,
+							state.getState());
+					UpperBounds upperboundsAbstractValue = valueState.getUpperbounds().eval((ValueExpression) s,
+							div, state.getState());
+
+					// TODO: implement division by zero check using intervals
+					// We can't check a bottom value
+					if (intervalAbstractValue.isBottom())
+						continue;
+
+					// Skip completely unbounded intervals (no useful information)
+					MathNumber low = intervalAbstractValue.interval.getLow();
+					MathNumber high = intervalAbstractValue.interval.getHigh();
+
+					if (low.isMinusInfinity() && high.isPlusInfinity()) {
+						continue;
+					}
+
+					// TODO: Check if the interval contains zero (interval.includes(Intervals.ZERO.interval))
+					if (intervalAbstractValue.interval.includes(Intervals.ZERO.interval)) {
+						String locationKey = div.getLocation().toString();
+
+						// Avoid duplicate warnings
+						if (!warnedLocations.contains(locationKey)) {
+							warnedLocations.add(locationKey);
+
+							// TODO: If it contains zero, check if it's exactly zero or possibly zero
+							if (intervalAbstractValue.equals(Intervals.ZERO)) {
+								// Divisor is exactly zero - CRITICAL
+								tool.warn(String.format(
+										"[CRITICAL] Division by zero detected at %s. " +
+												"The divisor '%s' is exactly zero: %s, Upper bounds: %s",
+										div.getLocation(),
+										divisor,
+										intervalAbstractValue.representation(),
+										upperboundsAbstractValue.representation()));
+							} else {
+								// Divisor may include zero - WARNING
+								tool.warn(String.format(
+										"[WARNING] Possible division by zero detected at %s. " +
+												"The divisor '%s' may include zero: %s, Upper bounds: %s",
+										div.getLocation(),
+										divisor,
+										intervalAbstractValue.representation(),
+										upperboundsAbstractValue.representation()));
+							}
+						}
+					}
+
+					// TODO: Report appropriate warnings using tool.warn()
+					// (Already implemented above)
 				}
 			} catch (SemanticException e) {
-				System.err.println("Cannot check " + node);
-				e.printStackTrace(System.err);
+				e.printStackTrace();
 			}
 
 		}
-		return possibleDynamicTypes;
 	}
+
+}
+
+// compute possible dynamic types / runtime types
+private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div,
+										  SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>> state)
+		throws SemanticException {
+
+	Set<Type> possibleDynamicTypes = new HashSet<>();
+	Type dynamicTypes = state.getDynamicTypeOf(s, div, state);
+	if (dynamicTypes != null && !dynamicTypes.isUntyped()) {
+		possibleDynamicTypes.add(dynamicTypes);
+	} else if (dynamicTypes.isUntyped()) {
+		Set<Type> runtimeTypes = state.getRuntimeTypesOf(s, div, state);
+		if (runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
+			for (Type t : runtimeTypes)
+				possibleDynamicTypes.add(t);
+	}
+
+	return possibleDynamicTypes;
+
+}
+
 }

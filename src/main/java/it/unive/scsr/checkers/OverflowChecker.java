@@ -8,7 +8,6 @@ import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
@@ -20,208 +19,224 @@ import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.symbolic.value.Variable;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
+import it.unive.scsr.UpperBounds;
 
-public class OverflowChecker implements
-		SemanticCheck<
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+public class OverflowChecker implements SemanticCheck <SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> {
 
-	public enum NumericalSize {
-		INT8,  // signed integer 8-bit
-		INT16, // signed integer 16-bit
-		INT32, // signed integer 32-bit
-		UINT8,  // unsigned integer 8-bit
-		UINT16, // unsigned integer 16-bit
-		UINT32, // unsigned integer 32-bit
-		FLOAT8, // signed float 8-bit
-		FLOAT16, // signed float 16-bit
-		FLOAT32, // signed float 32-bit
-	}
+public enum NumericalSize {
+	INT8,   // signed integer 8-bit: -128 to 127
+	INT16,  // signed integer 16-bit: -32768 to 32767
+	INT32,  // signed integer 32-bit: -2147483648 to 2147483647
+	UINT8,  // unsigned integer 8-bit: 0 to 255
+	UINT16, // unsigned integer 16-bit: 0 to 65535
+	UINT32, // unsigned integer 32-bit: 0 to 4294967295
+	FLOAT8, // signed float 8-bit (simplified)
+	FLOAT16, // signed float 16-bit
+	FLOAT32, // signed float 32-bit
+}
 
-	private NumericalSize size;
-	private int warningsFound = 0;
+private NumericalSize size;
+private Set<String> warnedLocations; // Track warned locations to avoid duplicates
 
-	public OverflowChecker(NumericalSize size) {
-		this.size = size;
-	}
+public OverflowChecker(NumericalSize size) {
+	this.size = size;
+	this.warnedLocations = new HashSet<>();
+}
 
-	// Add constructor with boolean parameter for your tests
-	public OverflowChecker(NumericalSize size, boolean inferTypes) {
-		this.size = size;
-	}
+@Override
+public boolean visit(
+		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
+		CFG graph, Statement node) {
 
-	@Override
-	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node) {
+	if (node instanceof Assignment) {
+		Assignment assignment = (Assignment) node;
+		Expression leftExpression = assignment.getLeft();
 
-		if (node instanceof Assignment) {
-			Assignment assignment = (Assignment) node;
-			Expression leftExpression = assignment.getLeft();
-
-			// Checking if each variable reference is over/under-flowing
-			if (leftExpression instanceof VariableRef) {
-				checkVariableRef(tool, (VariableRef) leftExpression, graph, node);
-			}
-
-		} else {
-
-			// Checking if each variable reference is over/under-flowing
-			if (node instanceof VariableRef) {
-				checkVariableRef(tool, (VariableRef) node, graph, node);
-			}
+		// Checking if each variable reference is over/under-flowing
+		if (leftExpression instanceof VariableRef) {
+			checkVariableRef(tool, (VariableRef) leftExpression, graph, node);
 		}
 
-		return true;
-
-	}
-
-	@Override
-	public void afterExecution(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool) {
-		if (warningsFound == 0) {
-			System.out.println("[OverflowChecker] No overflow/underflow issues detected for " + size);
-		} else {
-			System.out.println("[OverflowChecker] Found " + warningsFound + " potential overflow/underflow issue(s) for " + size);
+	} else {
+		// Checking if each variable reference is over/under-flowing
+		if (node instanceof VariableRef) {
+			checkVariableRef(tool, (VariableRef) node, graph, node);
 		}
 	}
 
-	private void checkVariableRef(CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool, VariableRef varRef, CFG graph, Statement node ) {
-		Variable id = new Variable(((VariableRef) varRef).getStaticType(), ((VariableRef) varRef).getName(), ((VariableRef) varRef).getLocation());
+	return true;
+}
 
-		Type staticType = id.getStaticType();
-		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
+private void checkVariableRef(
+		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
+		VariableRef varRef, CFG graph, Statement node) {
+	Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 
-		Statement target = node;
+	Type staticType = id.getStaticType();
+	Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
 
-		// TODO: implement type checks, it is required a numerical type
-		// hint: if staticType.isUntyped() == true, then should be checked possible dynamic types
+	// It's a different type, ignore
+	if (!staticType.isNumericType() && !staticType.isUntyped())
+		return;
 
-		// Check if the type is numeric
-		boolean isNumeric = false;
-
-		// First check static type
-		if (staticType != null && !staticType.isUntyped()) {
-			// Check if it's a numeric type
-			String typeName = staticType.toString().toLowerCase();
-			if (typeName.contains("int") || typeName.contains("float") ||
-					typeName.contains("uint") || typeName.contains("numeric") ||
-					typeName.contains("number")) {
-				isNumeric = true;
-			}
-		}
-		// If static type is untyped, check possible dynamic types
-		else if (staticType == null || staticType.isUntyped()) {
-			for (Type dynType : dynamicTypes) {
-				String typeName = dynType.toString().toLowerCase();
-				if (typeName.contains("int") || typeName.contains("float") ||
-						typeName.contains("uint") || typeName.contains("numeric") ||
-						typeName.contains("number")) {
-					isNumeric = true;
-					break;
-				}
+	// Handle dynamic types
+	if (staticType.isUntyped()) {
+		boolean found = false;
+		for (Type type : dynamicTypes) {
+			if (type.isNumericType()) {
+				found = true;
+				break;
 			}
 		}
 
-		// If not numeric, no need to check for overflow/underflow
-		if (!isNumeric) {
+		// Even the dynamic type is not numeric
+		if (!found)
 			return;
-		}
-
-		if (varRef.getParentStatement() instanceof Assignment && ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
-			target = varRef.getParentStatement();
-		}
-
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(target).getState();
-			Intervals intervalAbstractValue = state.getValueState().getState(id);
-
-			// TODO: implement logic for overflow/underflow checks
-			// hint: it depends to the NumericalSize size
-			if (intervalAbstractValue != null && !intervalAbstractValue.isBottom()) {
-				Number low = intervalAbstractValue.getLow();
-				Number high = intervalAbstractValue.getHigh();
-				boolean isFloat = intervalAbstractValue.isFloat();
-
-				if (low != null && high != null) {
-					// Check for overflow/underflow based on the numerical size
-					if (checkOverflowUnderflow(low, high, isFloat)) {
-						tool.warnOn(node, "Possible overflow/underflow detected for variable: " +
-								id.getName() + " with interval [" + low + ", " + high + "] " +
-								"(size: " + size + ")");
-						warningsFound++;
-					}
-				}
-			}
-		}
 	}
 
-	private boolean checkOverflowUnderflow(Number low, Number high, boolean isFloat) {
-		double lowValue = low.doubleValue();
-		double highValue = high.doubleValue();
+	for (var result : tool.getResultOf(graph)) {
+		var state = result.getAnalysisStateAfter(node).getState();
+		Pentagons pentagonsValueState = state.getValueState();
+		Intervals intervalAbstractValue = pentagonsValueState.getIntervals().getState(id);
+		UpperBounds upperboundsAbstractValue = pentagonsValueState.getUpperbounds().getState(id);
 
-		if (isFloat) {
-			// Check float overflow/underflow
-			switch (size) {
-				case FLOAT8:
-					// Approximate float8 bounds
-					return lowValue < -3.4e38 || highValue > 3.4e38;
-				case FLOAT16:
-					return lowValue < -65504.0 || highValue > 65504.0;
-				case FLOAT32:
-					return lowValue < -Float.MAX_VALUE || highValue > Float.MAX_VALUE;
-				default:
-					// For float variables with integer size specifier, use float32
-					return lowValue < -Float.MAX_VALUE || highValue > Float.MAX_VALUE;
-			}
-		} else {
-			// Check integer overflow/underflow
-			switch (size) {
-				case INT8:
-					return lowValue < -128 || highValue > 127;
-				case UINT8:
-					return lowValue < 0 || highValue > 255;
-				case INT16:
-					return lowValue < -32768 || highValue > 32767;
-				case UINT16:
-					return lowValue < 0 || highValue > 65535;
-				case INT32:
-					return lowValue < -2147483648 || highValue > 2147483647;
-				case UINT32:
-					return lowValue < 0 || highValue > 4294967295L;
-				default:
-					// Default to INT32
-					return lowValue < -2147483648 || highValue > 2147483647;
+		// TODO: implement overflow/underflow check using intervals and bounds from NumericalSize
+		// We can't check a bottom value
+		if (intervalAbstractValue.isBottom())
+			continue;
+
+		// TODO: Get the bounds for the current NumericalSize
+		Bounds bounds = getBoundsForSize(size);
+
+		MathNumber low = intervalAbstractValue.interval.getLow();
+		MathNumber high = intervalAbstractValue.interval.getHigh();
+
+		// Skip completely unbounded intervals (no useful information)
+		if (low.isMinusInfinity() && high.isPlusInfinity()) {
+			continue;
+		}
+
+		// Create unique key for this location and variable to avoid duplicate warnings
+		String locationKey = node.getLocation().toString() + ":" + varRef.getName();
+
+		// TODO: Check if the interval exceeds the upper bound (overflow)
+		if (high.compareTo(bounds.upper) > 0) {
+			String overflowKey = locationKey + ":OVERFLOW";
+
+			if (!warnedLocations.contains(overflowKey)) {
+				warnedLocations.add(overflowKey);
+
+				tool.warn(String.format(
+						"Potential overflow detected for variable '%s' at %s. " +
+								"Interval: %s, Max allowed: %s (type: %s), Upper bounds: %s",
+						varRef.getName(),
+						node.getLocation(),
+						intervalAbstractValue.representation(),
+						bounds.upper,
+						size,
+						upperboundsAbstractValue.representation()));
 			}
 		}
-	}
 
-	// compute possible dynamic types / runtime types
-	private Set<Type> getPossibleDynamicTypes(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node, Variable id, VariableRef varRef) {
+		// TODO: Check if the interval goes below the lower bound (underflow)
+		if (low.compareTo(bounds.lower) < 0) {
+			String underflowKey = locationKey + ":UNDERFLOW";
 
-		Set<Type> possibleDynamicTypes = new HashSet<>();
-		for (AnalyzedCFG<
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-						TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state = result.getAnalysisStateAfter(varRef).getState();
-			try {
-				Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
-				if(dynamicTypes != null && !dynamicTypes.isUntyped()) {
-					possibleDynamicTypes.add(dynamicTypes);
-				} else if(dynamicTypes.isUntyped()){
-					Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
-					if(runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
-						for( Type t : runtimeTypes)
-							possibleDynamicTypes.add(t);
-				}
-			} catch (SemanticException e) {
-				System.err.println("Cannot check " + node);
-				e.printStackTrace(System.err);
+			if (!warnedLocations.contains(underflowKey)) {
+				warnedLocations.add(underflowKey);
+
+				tool.warn(String.format(
+						"Potential underflow detected for variable '%s' at %s. " +
+								"Interval: %s, Min allowed: %s (type: %s), Upper bounds: %s",
+						varRef.getName(),
+						node.getLocation(),
+						intervalAbstractValue.representation(),
+						bounds.lower,
+						size,
+						upperboundsAbstractValue.representation()));
 			}
-
 		}
-		return possibleDynamicTypes;
+
+		// TODO: Report warnings using tool.warn() or tool.warnOn()
+		// (Already implemented above in the overflow/underflow checks)
 	}
+}
+
+// Helper class to store bounds
+private static class Bounds {
+	MathNumber lower;
+	MathNumber upper;
+
+	Bounds(long lower, long upper) {
+		this.lower = new MathNumber(lower);
+		this.upper = new MathNumber(upper);
+	}
+
+	Bounds(MathNumber lower, MathNumber upper) {
+		this.lower = lower;
+		this.upper = upper;
+	}
+}
+
+// Get bounds based on numerical size
+private Bounds getBoundsForSize(NumericalSize size) {
+	switch (size) {
+		case INT8:
+			return new Bounds(-128, 127);
+		case INT16:
+			return new Bounds(-32768, 32767);
+		case INT32:
+			return new Bounds(-2147483648L, 2147483647L);
+		case UINT8:
+			return new Bounds(0, 255);
+		case UINT16:
+			return new Bounds(0, 65535);
+		case UINT32:
+			return new Bounds(0, 4294967295L);
+		case FLOAT8:
+			// Simplified float bounds
+			return new Bounds(-128, 127);
+		case FLOAT16:
+			// IEEE 754 half precision approximate range
+			return new Bounds(-65504, 65504);
+		case FLOAT32:
+			// IEEE 754 single precision approximate range
+			return new Bounds(new MathNumber(-3.4e38), new MathNumber(3.4e38));
+		default:
+			// Default to INT32 bounds
+			return new Bounds(-2147483648L, 2147483647L);
+	}
+}
+
+// compute possible dynamic types / runtime types
+private Set<Type> getPossibleDynamicTypes(
+		CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
+		CFG graph, Statement node, Variable id, VariableRef varRef) {
+
+	Set<Type> possibleDynamicTypes = new HashSet<>();
+	for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> result : tool
+			.getResultOf(graph)) {
+		SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>> state = result
+				.getAnalysisStateAfter(varRef).getState();
+		try {
+			Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
+			if (dynamicTypes != null && !dynamicTypes.isUntyped()) {
+				possibleDynamicTypes.add(dynamicTypes);
+			} else if (dynamicTypes.isUntyped()) {
+				Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
+				if (runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
+					for (Type t : runtimeTypes)
+						possibleDynamicTypes.add(t);
+			}
+		} catch (SemanticException e) {
+			System.err.println("Cannot check " + node);
+			e.printStackTrace(System.err);
+		}
+
+	}
+	return possibleDynamicTypes;
+}
 }

@@ -5,7 +5,7 @@ import org.junit.Test;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.DefaultConfiguration;
 import it.unive.lisa.LiSA;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+
 import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.imp.IMPFrontend;
@@ -29,10 +29,10 @@ public class PentagonsTest {
 		conf.analysisGraphs = GraphType.HTML;
 
 		// we specify the analysis that we want to execute
-		// Pentagons needs to be wrapped in a ValueEnvironment
+
 		conf.abstractState = DefaultConfiguration.simpleState(
 				DefaultConfiguration.defaultHeapDomain(),
-				new ValueEnvironment<>(new Pentagons()),  // Wrap Pentagons in ValueEnvironment
+				new Pentagons(),
 				DefaultConfiguration.defaultTypeDomain());
 
 		// we instantiate LiSA with our configuration

@@ -1,5 +1,16 @@
 package it.unive.scsr;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+import it.unive.scsr.checkers.TaintThreeLevelsChecker;
+import org.junit.Test;
+
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.DefaultConfiguration;
 import it.unive.lisa.LiSA;
@@ -12,328 +23,143 @@ import it.unive.lisa.program.Program;
 import it.unive.scsr.checkers.DivisionByZeroChecker;
 import it.unive.scsr.checkers.OverflowChecker;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
-import org.junit.Test;
-
-import java.io.File;
 
 public class AllCheckersTest {
 
     @Test
-    public void testAllPrograms() throws ParsingException, AnalysisException {
-        File baseDir = new File("inputs");
-        if (!baseDir.exists() || !baseDir.isDirectory()) {
-            System.err.println("Input directory 'inputs' not found.");
+    public void testAllOverflowFiles() throws IOException {
+        System.out.println("=== Analyzing Overflow Files ===");
+        analyzeDirectory("inputs/overflows", "outputs/overflows", AnalysisType.OVERFLOW);
+    }
+
+    @Test
+    public void testAllDivisionFiles() throws IOException {
+        System.out.println("=== Analyzing Division By Zero Files ===");
+        analyzeDirectory("inputs/divzero", "outputs/divzero", AnalysisType.DIVISION);
+    }
+
+    @Test
+    public void testAllTaintFiles() throws IOException {
+        System.out.println("=== Analyzing Taint Files ===");
+        analyzeDirectory("inputs/taintthree", "outputs/taintthree", AnalysisType.TAINT);
+    }
+
+    @Test
+    public void testAllFiles() throws IOException {
+        System.out.println("=== Analyzing All Files ===");
+        testAllOverflowFiles();
+        testAllDivisionFiles();
+        testAllTaintFiles();
+    }
+
+    private enum AnalysisType {
+        OVERFLOW, DIVISION, TAINT
+    }
+
+    /**
+     * Analyze all .imp files in a directory
+     */
+    private void analyzeDirectory(String inputDir, String outputBaseDir, AnalysisType analysisType) throws IOException {
+        File directory = new File(inputDir);
+
+        if (!directory.exists() || !directory.isDirectory()) {
+            System.err.println("Directory does not exist: " + inputDir);
             return;
         }
 
-        int totalFiles = 0;
-        int filesWithIssues = 0;
+        List<File> impFiles = findImpFiles(directory);
 
-        System.out.println("=== STARTING ANALYSIS OF ALL PROGRAMS ===\n");
-
-        for (File folder : baseDir.listFiles()) {
-            if (folder.isDirectory()) {
-                System.out.println("\n--- Analyzing folder: " + folder.getName() + " ---");
-                int[] results = runFolderWithSummary(folder);
-                totalFiles += results[0];
-                filesWithIssues += results[1];
-            }
+        if (impFiles.isEmpty()) {
+            System.out.println("No .imp files found in: " + inputDir);
+            return;
         }
 
-        // Print final summary
-        System.out.println("\n" + "=".repeat(60));
-        System.out.println("FINAL ANALYSIS SUMMARY");
-        System.out.println("=".repeat(60));
-        System.out.println("Total files analyzed: " + totalFiles);
-        System.out.println("Files with issues detected: " + filesWithIssues);
-        System.out.println("Files without issues: " + (totalFiles - filesWithIssues));
-        System.out.println("=".repeat(60));
-    }
+        System.out.println("Found " + impFiles.size() + " files in " + inputDir);
 
-    private int[] runFolderWithSummary(File folder) throws ParsingException, AnalysisException {
-        String folderName = folder.getName();
-        File[] impFiles = folder.listFiles((d, name) -> name.toLowerCase().endsWith(".imp"));
-        if (impFiles == null || impFiles.length == 0) {
-            System.out.println("No .imp files found in folder: " + folderName);
-            return new int[]{0, 0};
-        }
-
-        int filesWithIssues = 0;
+        int successCount = 0;
+        int failCount = 0;
 
         for (File impFile : impFiles) {
+            String fileName = impFile.getName();
+            String fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+            String outputDir = outputBaseDir + "/" + fileNameWithoutExt;
+
+            System.out.println("\nAnalyzing: " + impFile.getPath());
+
             try {
-                boolean hasIssues = runAnalysisWithTracking(impFile, folderName);
-                if (hasIssues) {
-                    filesWithIssues++;
-                }
+                analyzeFile(impFile.getPath(), outputDir, analysisType);
+                successCount++;
+                System.out.println("✓ Success: " + fileName);
             } catch (Exception e) {
-                System.err.println("Error analyzing " + impFile.getName() + ": " + e.getMessage());
+                failCount++;
+                System.err.println("✗ Failed: " + fileName);
+                System.err.println("  Error: " + e.getMessage());
+                // Continue with next file
             }
         }
 
-        System.out.println("Folder " + folderName + ": " + impFiles.length + " files, " +
-                filesWithIssues + " with issues");
-
-        return new int[]{impFiles.length, filesWithIssues};
+        System.out.println("\n=== Summary for " + inputDir + " ===");
+        System.out.println("Total files: " + impFiles.size());
+        System.out.println("Successful: " + successCount);
+        System.out.println("Failed: " + failCount);
     }
 
-    private boolean runAnalysisWithTracking(File impFile, String folderName) throws ParsingException, AnalysisException {
-        System.out.println("\nAnalyzing: " + impFile.getName() + " [" + folderName + "]");
+    /**
+     * Find all .imp files in a directory (non-recursive)
+     */
+    private List<File> findImpFiles(File directory) {
+        List<File> impFiles = new ArrayList<>();
+        File[] files = directory.listFiles();
 
-        Program program = IMPFrontend.processFile(impFile.getAbsolutePath());
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.getName().endsWith(".imp")) {
+                    impFiles.add(file);
+                }
+            }
+        }
 
+        return impFiles;
+    }
+
+    /**
+     * Analyze a single file with the appropriate checker
+     */
+    private void analyzeFile(String inputFile, String outputDir, AnalysisType analysisType)
+            throws ParsingException, AnalysisException {
+
+        // Parse the program
+        Program program = IMPFrontend.processFile(inputFile);
+
+        // Build configuration
         LiSAConfiguration conf = new DefaultConfiguration();
-
-        // Create output directory
-        String outputDir = "outputs/" + folderName + "/" + impFile.getName().replace(".imp", "");
-        new File(outputDir).mkdirs();
-
         conf.workdir = outputDir;
         conf.analysisGraphs = GraphType.HTML;
         conf.jsonOutput = true;
-        conf.serializeResults = true;
 
-        // Abstract state with Intervals
+        // Set up the abstract state
         conf.abstractState = DefaultConfiguration.simpleState(
                 DefaultConfiguration.defaultHeapDomain(),
-                new ValueEnvironment<>(new Intervals()),
+                new Pentagons(),
                 DefaultConfiguration.defaultTypeDomain());
 
-        // Clear any previous checkers
-        conf.semanticChecks.clear();
-
-        // Track which checker to use
-        String checkerType = "";
-        switch (folderName.toLowerCase()) {
-            case "overflows":
-                checkerType = "OverflowChecker";
+        // Add the appropriate checker based on analysis type
+        switch (analysisType) {
+            case OVERFLOW:
                 conf.semanticChecks.add(new OverflowChecker(NumericalSize.INT32));
-                conf.semanticChecks.add(new OverflowChecker(NumericalSize.FLOAT32));
                 break;
-            case "division-by-zero":
-            case "divzero":
-                checkerType = "DivisionByZeroChecker";
-                conf.semanticChecks.add(new DivisionByZeroChecker());
+            case DIVISION:
+                conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.INT32));
                 break;
-            default:
-                System.out.println("Warning: Unknown folder type '" + folderName + "'. Skipping.");
-                return false;
+            case TAINT:
+                // TODO: Add your taint checker here when implemented
+                 conf.semanticChecks.add(new TaintThreeLevelsChecker());
+                System.out.println("  Note: Taint checker not yet implemented");
+                break;
         }
 
+        // Run the analysis
         LiSA lisa = new LiSA(conf);
         lisa.run(program);
-
-        // Check if warnings were generated by looking at the report file
-        File reportFile = new File(outputDir + "/report.json");
-        boolean hasWarnings = checkReportForWarnings(reportFile, checkerType, impFile.getName());
-
-        if (hasWarnings) {
-            System.out.println("✓ " + impFile.getName() + ": Issues detected");
-            return true;
-        } else {
-            System.out.println("✓ " + impFile.getName() + ": No issues detected");
-            return false;
-        }
-    }
-
-    private boolean checkReportForWarnings(File reportFile, String checkerType, String fileName) {
-        if (!reportFile.exists()) {
-            System.out.println("  Warning: Report file not found for " + fileName);
-            return false;
-        }
-
-        try {
-            // Simple check - you could parse the JSON properly if needed
-            java.nio.file.Files.lines(reportFile.toPath())
-                    .filter(line -> line.contains("\"warnings\" : [") || line.contains("\"warnings\":["))
-                    .findFirst()
-                    .ifPresent(line -> {
-                        if (line.contains("\"warnings\" : [ ]") || line.contains("\"warnings\":[]")) {
-                            System.out.println("  [" + checkerType + "] No warnings in report for " + fileName);
-                        } else if (line.contains("\"warnings\" : [") && !line.contains("[ ]")) {
-                            System.out.println("  [" + checkerType + "] Warnings found in report for " + fileName);
-                        }
-                    });
-
-            // For simplicity, we'll check if "warnings" array is empty
-            String content = new String(java.nio.file.Files.readAllBytes(reportFile.toPath()));
-            return !content.contains("\"warnings\" : [ ]") && !content.contains("\"warnings\":[]");
-
-        } catch (Exception e) {
-            System.err.println("  Error reading report for " + fileName + ": " + e.getMessage());
-            return false;
-        }
-    }
-
-    // Add a simple test to check all reports
-    @Test
-    public void generateAllReportsSummary() {
-        System.out.println("\n=== GENERATING ALL REPORTS SUMMARY ===\n");
-
-        File outputsDir = new File("outputs");
-        if (!outputsDir.exists()) {
-            System.out.println("No outputs directory found. Run tests first.");
-            return;
-        }
-
-        for (File folder : outputsDir.listFiles()) {
-            if (folder.isDirectory() &&
-                    (folder.getName().equals("overflows") ||
-                            folder.getName().equals("division-by-zero") ||
-                            folder.getName().equals("divzero"))) {
-
-                System.out.println("\n--- Folder: " + folder.getName() + " ---");
-                checkOutputFolder(folder);
-            }
-        }
-    }
-
-    private void checkOutputFolder(File folder) {
-        File[] subdirs = folder.listFiles(File::isDirectory);
-        if (subdirs == null || subdirs.length == 0) {
-            System.out.println("  No analyzed programs found");
-            return;
-        }
-
-        int total = 0;
-        int withWarnings = 0;
-        int withoutWarnings = 0;
-
-        for (File subdir : subdirs) {
-            total++;
-            File reportFile = new File(subdir, "report.json");
-            if (reportFile.exists()) {
-                try {
-                    String content = new String(java.nio.file.Files.readAllBytes(reportFile.toPath()));
-                    if (content.contains("\"warnings\" : [ ]") || content.contains("\"warnings\":[]")) {
-                        System.out.println("  ✗ " + subdir.getName() + ": No warnings");
-                        withoutWarnings++;
-                    } else if (content.contains("\"warnings\" : [") || content.contains("\"warnings\":[")) {
-                        System.out.println("  ✓ " + subdir.getName() + ": Has warnings");
-                        withWarnings++;
-                    }
-                } catch (Exception e) {
-                    System.out.println("  ? " + subdir.getName() + ": Error reading report");
-                }
-            } else {
-                System.out.println("  ? " + subdir.getName() + ": No report file");
-            }
-        }
-
-        System.out.println("\n  Summary: " + total + " programs, " +
-                withWarnings + " with warnings, " +
-                withoutWarnings + " without warnings");
-    }
-
-    // Test specific folders individually
-    @Test
-    public void testOnlyOverflows() throws ParsingException, AnalysisException {
-        System.out.println("=== TESTING OVERFLOWS ONLY ===");
-        File folder = new File("inputs/overflows");
-        if (!folder.exists() || !folder.isDirectory()) {
-            System.err.println("Overflows folder not found: inputs/overflows");
-            return;
-        }
-        runOverflowsFolder(folder);
-    }
-
-    @Test
-    public void testOnlyDivisionByZero() throws ParsingException, AnalysisException {
-        System.out.println("=== TESTING DIVISION BY ZERO ONLY ===");
-        File folder = new File("inputs/division-by-zero");
-        if (!folder.exists() || !folder.isDirectory()) {
-            System.err.println("Division by zero folder not found: inputs/division-by-zero");
-            return;
-        }
-        runDivisionByZeroFolder(folder);
-    }
-
-    private void runOverflowsFolder(File folder) throws ParsingException, AnalysisException {
-        String folderName = folder.getName();
-        File[] impFiles = folder.listFiles((d, name) -> name.toLowerCase().endsWith(".imp"));
-        if (impFiles == null || impFiles.length == 0) {
-            System.out.println("No .imp files found in overflows folder");
-            return;
-        }
-
-        System.out.println("Found " + impFiles.length + " overflow test files");
-
-        for (File impFile : impFiles) {
-            try {
-                System.out.println("\nAnalyzing overflow file: " + impFile.getName());
-
-                Program program = IMPFrontend.processFile(impFile.getAbsolutePath());
-
-                LiSAConfiguration conf = new DefaultConfiguration();
-                String outputDir = "outputs/overflows-only/" + impFile.getName().replace(".imp", "");
-                new File(outputDir).mkdirs();
-
-                conf.workdir = outputDir;
-                conf.analysisGraphs = GraphType.HTML;
-                conf.jsonOutput = true;
-                conf.serializeResults = true;
-
-                conf.abstractState = DefaultConfiguration.simpleState(
-                        DefaultConfiguration.defaultHeapDomain(),
-                        new ValueEnvironment<>(new Intervals()),
-                        DefaultConfiguration.defaultTypeDomain());
-
-                // ONLY overflow checker - no division by zero checker
-                conf.semanticChecks.add(new OverflowChecker(NumericalSize.INT32));
-                conf.semanticChecks.add(new OverflowChecker(NumericalSize.FLOAT32));
-
-                LiSA lisa = new LiSA(conf);
-                lisa.run(program);
-
-                System.out.println("✓ Overflow analysis completed: " + impFile.getName());
-
-            } catch (Exception e) {
-                System.err.println("Error analyzing overflow file " + impFile.getName() + ": " + e.getMessage());
-            }
-        }
-    }
-
-    private void runDivisionByZeroFolder(File folder) throws ParsingException, AnalysisException {
-        String folderName = folder.getName();
-        File[] impFiles = folder.listFiles((d, name) -> name.toLowerCase().endsWith(".imp"));
-        if (impFiles == null || impFiles.length == 0) {
-            System.out.println("No .imp files found in division by zero folder");
-            return;
-        }
-
-        System.out.println("Found " + impFiles.length + " division by zero test files");
-
-        for (File impFile : impFiles) {
-            try {
-                System.out.println("\nAnalyzing division by zero file: " + impFile.getName());
-
-                Program program = IMPFrontend.processFile(impFile.getAbsolutePath());
-
-                LiSAConfiguration conf = new DefaultConfiguration();
-                String outputDir = "outputs/divzero-only/" + impFile.getName().replace(".imp", "");
-                new File(outputDir).mkdirs();
-
-                conf.workdir = outputDir;
-                conf.analysisGraphs = GraphType.HTML;
-                conf.jsonOutput = true;
-                conf.serializeResults = true;
-
-                conf.abstractState = DefaultConfiguration.simpleState(
-                        DefaultConfiguration.defaultHeapDomain(),
-                        new ValueEnvironment<>(new Intervals()),
-                        DefaultConfiguration.defaultTypeDomain());
-
-                // ONLY division by zero checker - no overflow checker
-                conf.semanticChecks.add(new DivisionByZeroChecker());
-
-                LiSA lisa = new LiSA(conf);
-                lisa.run(program);
-
-                System.out.println("✓ Division by zero analysis completed: " + impFile.getName());
-
-            } catch (Exception e) {
-                System.err.println("Error analyzing division by zero file " + impFile.getName() + ": " + e.getMessage());
-            }
-        }
     }
 }

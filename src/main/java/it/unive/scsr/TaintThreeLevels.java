@@ -1,5 +1,6 @@
 package it.unive.scsr;
 
+
 import it.unive.lisa.analysis.Lattice;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SemanticOracle;
@@ -9,41 +10,63 @@ import it.unive.lisa.symbolic.value.operator.binary.BinaryOperator;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
-public class TaintThreeLevels extends BaseTaint<TaintThreeLevels> {
 
+public class TaintThreeLevels extends BaseTaint<TaintThreeLevels>  {
 
-	private static final TaintThreeLevels TOP = new TaintThreeLevels(null);  // May be tainted or clean
-	private static final TaintThreeLevels TAINT = new TaintThreeLevels(true); // Definitely tainted
-	private static final TaintThreeLevels CLEAN = new TaintThreeLevels(false); // Definitely clean
-	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels(null); // Error state
+	/*
+	 * Lattice of Taint Domain with three level
+	 *
+	 * 	  TOP
+	 * 	/  	   \
+	 * TAINT	CLEAN
+	 *  \      /
+	 *   BOTTOM
+	 *
+	 *
+	 *   Element meanings:
+	 *   - TOP: might be tainted or clean
+	 *   - TAINT: definitly tainted
+	 *   - CLEAN: definitly clean
+	 *   - BOTTOM: error state
+	 *
+	 */
 
-	private final Boolean isTainted;
+	private static final TaintThreeLevels BOTTOM = new TaintThreeLevels(0);
+	private static final TaintThreeLevels TAINT = new TaintThreeLevels(1);
+	private static final TaintThreeLevels CLEAN = new TaintThreeLevels(2);
+	private static final TaintThreeLevels TOP = new TaintThreeLevels(3);
 
-
-	private TaintThreeLevels(Boolean isTainted) {
-		this.isTainted = isTainted;
-	}
-
+	private int taintLevel; // encoding: 0 == "bottom", 1 == "tainted", 2 == "clean", 3 == "top"
 
 	public TaintThreeLevels() {
-		this(null);
+		this(3);
+	}
+
+	public TaintThreeLevels(int taintLevel) {
+		if (taintLevel < 0 || taintLevel > 3)
+			throw new IllegalArgumentException("Taint level must be between 0 and 3");
+		this.taintLevel = taintLevel;
 	}
 
 	@Override
 	public TaintThreeLevels lubAux(TaintThreeLevels other) throws SemanticException {
-		if (this == BOTTOM) return other;
-		if (other == BOTTOM) return this;
-		if (this == TOP || other == TOP) return TOP;
-		if (this != other) return TOP;
-		return this;
+		if (this.equals(other))
+			return this;
+
+		if (this.equals(BOTTOM) && other.equals(BOTTOM))
+			return BOTTOM;
+
+		return TOP;
 	}
 
 	@Override
 	public boolean lessOrEqualAux(TaintThreeLevels other) throws SemanticException {
-		if (this == other) return true; // Equal elements
-		if (this == BOTTOM) return true; // BOTTOM is less than or equal to anything
-		if (other == TOP) return true;
-		return false;
+		if (other == TOP)
+			return true;
+		if (this == BOTTOM)
+			return true;
+
+		return this.equals(other);
 	}
 
 	@Override
@@ -68,12 +91,12 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels> {
 
 	@Override
 	public boolean isAlwaysTainted() {
-		return this == TAINT;
+		return this.equals(TAINT);
 	}
 
 	@Override
 	public boolean isPossiblyTainted() {
-		return this == TAINT || this == TOP;
+		return this.equals(TOP);
 	}
 
 	public TaintThreeLevels evalBinaryExpression(
@@ -81,43 +104,36 @@ public class TaintThreeLevels extends BaseTaint<TaintThreeLevels> {
 			TaintThreeLevels left,
 			TaintThreeLevels right,
 			ProgramPoint pp,
-			SemanticOracle oracle) throws SemanticException {
-		if (left == BOTTOM || right == BOTTOM)
-			return BOTTOM;
+			SemanticOracle oracle)
+			throws SemanticException {
+		// TODO: to check
 
-		if (left == TAINT || right == TAINT)
-			return TAINT;
-
-		if (left == CLEAN && right == CLEAN)
-			return CLEAN;
+		if (left.equals(right))
+			return left;
 
 		return TOP;
 	}
 
 	@Override
-	public TaintThreeLevels wideningAux(TaintThreeLevels other) throws SemanticException {
-		return lubAux(other);
+	public TaintThreeLevels wideningAux(
+			TaintThreeLevels other)
+			throws SemanticException {
+		return TOP;
 	}
+
+
+	// IMPLEMENTATION NOTE:
+	// the code below is outside of the scope of the course. You can uncomment
+	// it to get your code to compile. Be aware that the code is written
+	// expecting that you have constants for identifying top, bottom, even and
+	// odd elements as we saw for the sign domain: if you name them differently,
+	// change also the code below to make it work by just using the name of your
+	// choice. If you use methods instead of constants, change == with the
+	// invocation of the corresponding method
 
 	@Override
 	public StructuredRepresentation representation() {
-		if (this == BOTTOM) return Lattice.bottomRepresentation();
-		if (this == TOP) return Lattice.topRepresentation();
-		if (this == CLEAN) return new StringRepresentation("_");
-		if (this == TAINT) return new StringRepresentation("#");
-		return new StringRepresentation("?");
+		return this == BOTTOM ? Lattice.bottomRepresentation() : this == TOP ? Lattice.topRepresentation() : this == CLEAN ? new StringRepresentation("_") : new StringRepresentation("#");
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) return true;
-		if (obj == null || getClass() != obj.getClass()) return false;
-		TaintThreeLevels other = (TaintThreeLevels) obj;
-		return this.isTainted == other.isTainted;
-	}
-
-	@Override
-	public int hashCode() {
-		return isTainted != null ? isTainted.hashCode() : 0;
-	}
 }

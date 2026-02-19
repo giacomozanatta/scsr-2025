@@ -30,62 +30,66 @@ import it.unive.lisa.util.representation.MapRepresentation;
 import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
-public class Pentagons 
-		implements ValueDomain<Pentagons>, BaseLattice<Pentagons>  
-{
+public class Pentagons
+		implements ValueDomain<Pentagons>, BaseLattice<Pentagons> {
 
-	
-	// a value environment is basically a mapping between variables (identifiers) and the corresponding vale state
+	// a value environment is basically a mapping between variables (identifiers)
+	// and the corresponding vale state
 	ValueEnvironment<UpperBounds> upperbounds;
 	ValueEnvironment<Intervals> intervals;
-	
-	
+
 	public Pentagons() {
-		this.upperbounds = new ValueEnvironment<UpperBounds>(new UpperBounds(true)).top();
-		this.intervals = new ValueEnvironment<Intervals>(new Intervals()).top();
+		this.upperbounds = new ValueEnvironment<>(new UpperBounds(true)).top();
+		this.intervals = new ValueEnvironment<>(new Intervals()).top();
 	}
-	
+
 	public Pentagons(ValueEnvironment<UpperBounds> upperbounds, ValueEnvironment<Intervals> intervals) {
 		this.upperbounds = upperbounds;
 		this.intervals = intervals;
 	}
-	
-	
+
+	public ValueEnvironment<Intervals> getInterval() {
+		return intervals;
+	}
+
+	public ValueEnvironment<UpperBounds> getUpperBounds() {
+		return upperbounds;
+	}
+
 	@Override
 	public Pentagons top() {
-		
-		return new Pentagons(upperbounds.top(),intervals.top());
+		return new Pentagons(upperbounds.top(), intervals.top());
 	}
-	
+
 	@Override
 	public boolean isTop() {
 		return upperbounds.isTop() && intervals.isTop();
 	}
-	
 
 	@Override
 	public Pentagons bottom() {
-		return new Pentagons(upperbounds.bottom(),intervals.bottom());
+		return new Pentagons(upperbounds.bottom(), intervals.bottom());
 	}
-	
+
 	@Override
 	public boolean isBottom() {
 		return upperbounds.isBottom() && intervals.isBottom();
 	}
-	
+
 	@Override
 	public Pentagons smallStepSemantics(ValueExpression expression, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		return new Pentagons(upperbounds.smallStepSemantics(expression, pp, oracle),intervals.smallStepSemantics(expression, pp, oracle));
+		return new Pentagons(upperbounds.smallStepSemantics(expression, pp, oracle),
+				intervals.smallStepSemantics(expression, pp, oracle));
 	}
 
 	@Override
 	public Pentagons assume(ValueExpression expression, ProgramPoint src, ProgramPoint dest, SemanticOracle oracle)
 			throws SemanticException {
-		return new Pentagons(upperbounds.assume(expression, src, dest, oracle), intervals.assume(expression, src, dest, oracle));
+		return new Pentagons(upperbounds.assume(expression, src, dest, oracle),
+				intervals.assume(expression, src, dest, oracle));
 	}
-	
-	
+
 	@Override
 	public Pentagons wideningAux(
 			Pentagons other)
@@ -93,7 +97,6 @@ public class Pentagons
 		return new Pentagons(upperbounds.wideningAux(other.upperbounds), intervals.widening(other.intervals));
 
 	}
-	
 
 	@Override
 	public Pentagons lubAux(
@@ -132,45 +135,44 @@ public class Pentagons
 
 	@Override
 	public boolean lessOrEqualAux(Pentagons other) throws SemanticException {
-		
-		if(!this.intervals.lessOrEqual(other.intervals)) {
+
+		if (!this.intervals.lessOrEqual(other.intervals)) {
 			return false;
 		}
-		
-		for(Entry<Identifier, UpperBounds> entry : other.upperbounds) {
-			for(Identifier bound : entry.getValue()) {
-				if(!(this.upperbounds.getState(entry.getKey()).contains(bound)
+
+		for (Entry<Identifier, UpperBounds> entry : other.upperbounds) {
+			for (Identifier bound : entry.getValue()) {
+				if (!(this.upperbounds.getState(entry.getKey()).contains(bound)
 						|| this.intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(this.intervals.getState(bound).interval.getLow()) < 0)) {
+								.compareTo(this.intervals.getState(bound).interval.getLow()) < 0)) {
 					return false;
 				}
-				
+
 			}
-			
+
 		}
 		return true;
 	}
-	
+
 	@Override
 	public Pentagons assign(Identifier id, ValueExpression expression, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		
+
 		ValueEnvironment<UpperBounds> newBounds = upperbounds.assign(id, expression, pp, oracle);
 		ValueEnvironment<Intervals> newIntervals = intervals.assign(id, expression, pp, oracle);
-		
-		
-		if(expression instanceof  BinaryExpression) {
+
+		if (expression instanceof BinaryExpression) {
 			BinaryExpression be = (BinaryExpression) expression;
 			BinaryOperator op = be.getOperator();
 
-			if(op instanceof SubtractionOperator) {
-				if(be.getLeft() instanceof Identifier) {
+			if (op instanceof SubtractionOperator) {
+				if (be.getLeft() instanceof Identifier) {
 					Identifier x = (Identifier) be.getLeft();
-					
-					if(be.getRight() instanceof Identifier) {
+
+					if (be.getRight() instanceof Identifier) {
 						// r = x - y
 						Identifier y = (Identifier) be.getRight();
-						if(newBounds.getState(y).contains(x)) {
+						if (newBounds.getState(y).contains(x)) {
 							newIntervals = newIntervals.putState(id, newIntervals.getState(id)
 									.glb(new Intervals(MathNumber.ONE, MathNumber.PLUS_INFINITY)));
 						}
@@ -178,13 +180,12 @@ public class Pentagons
 						// r = x + 2 (where 2 is the constant)
 						newBounds = newBounds.putState(id, upperbounds.getState(x).add(x));
 				}
-			} 
-			
+			}
+
 		}
-		
-		return new Pentagons(newBounds,newIntervals).closure();
+
+		return new Pentagons(newBounds, newIntervals).closure();
 	}
-	
 
 	@Override
 	public Pentagons forgetIdentifier(
@@ -240,7 +241,6 @@ public class Pentagons
 		return new MapRepresentation(mapping);
 	}
 
-	
 	@Override
 	public int hashCode() {
 		return Objects.hash(intervals, upperbounds);
@@ -271,7 +271,8 @@ public class Pentagons
 	}
 
 	private Pentagons closure() throws SemanticException {
-		ValueEnvironment<UpperBounds> newBounds = new ValueEnvironment<UpperBounds>(upperbounds.lattice, upperbounds.getMap());
+		ValueEnvironment<UpperBounds> newBounds = new ValueEnvironment<UpperBounds>(upperbounds.lattice,
+				upperbounds.getMap());
 
 		for (Identifier id1 : intervals.getKeys()) {
 			Set<Identifier> closure = new HashSet<>();
@@ -288,8 +289,5 @@ public class Pentagons
 
 		return new Pentagons(newBounds, intervals);
 	}
-
-	
-	
 
 }

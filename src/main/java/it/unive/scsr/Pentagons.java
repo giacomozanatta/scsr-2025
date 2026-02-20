@@ -33,11 +33,21 @@ import it.unive.lisa.util.representation.StringRepresentation;
 import it.unive.lisa.util.representation.StructuredRepresentation;
 
 public class Pentagons
-		implements ValueDomain<Pentagons>, BaseLattice<Pentagons>, NonRelationalValueDomain<Pentagons> {
+		implements ValueDomain<Pentagons>, BaseLattice<Pentagons>, NonRelationalValueDomain<Pentagons>
+{
+
 
 	// a value environment is basically a mapping between variables (identifiers) and the corresponding vale state
 	ValueEnvironment<UpperBounds> upperbounds;
 	ValueEnvironment<Intervals> intervals;
+
+	public ValueEnvironment<UpperBounds> getUpperbounds() {
+		return upperbounds;
+	}
+
+	public ValueEnvironment<Intervals> getIntervals() {
+		return intervals;
+	}
 
 	public Pentagons() {
 		this.upperbounds = new ValueEnvironment<UpperBounds>(new UpperBounds(true)).top();
@@ -45,13 +55,19 @@ public class Pentagons
 	}
 
 	public Pentagons(ValueEnvironment<UpperBounds> upperbounds, ValueEnvironment<Intervals> intervals) {
-		this.upperbounds = upperbounds != null ? upperbounds : new ValueEnvironment<UpperBounds>(new UpperBounds(true)).top();
-		this.intervals = intervals != null ? intervals : new ValueEnvironment<Intervals>(new Intervals()).top();
+		this.upperbounds = upperbounds;
+		this.intervals = intervals;
+	}
+
+
+	public Intervals getIntervalForIdentifier(Identifier id) {
+		return intervals.getState(id);
 	}
 
 	@Override
 	public Pentagons top() {
-		return new Pentagons(upperbounds.top(), intervals.top());
+
+		return new Pentagons(upperbounds.top(),intervals.top());
 	}
 
 	@Override
@@ -59,9 +75,10 @@ public class Pentagons
 		return upperbounds.isTop() && intervals.isTop();
 	}
 
+
 	@Override
 	public Pentagons bottom() {
-		return new Pentagons(upperbounds.bottom(), intervals.bottom());
+		return new Pentagons(upperbounds.bottom(),intervals.bottom());
 	}
 
 	@Override
@@ -72,45 +89,29 @@ public class Pentagons
 	@Override
 	public Pentagons smallStepSemantics(ValueExpression expression, ProgramPoint pp, SemanticOracle oracle)
 			throws SemanticException {
-		return new Pentagons(upperbounds.smallStepSemantics(expression, pp, oracle), intervals.smallStepSemantics(expression, pp, oracle));
+		return new Pentagons(upperbounds.smallStepSemantics(expression, pp, oracle),intervals.smallStepSemantics(expression, pp, oracle));
 	}
 
 	@Override
 	public Pentagons assume(ValueExpression expression, ProgramPoint src, ProgramPoint dest, SemanticOracle oracle)
 			throws SemanticException {
-		// Add null checks
-		if (expression == null || src == null || dest == null || oracle == null) {
-			return this;
-		}
-
-		ValueEnvironment<UpperBounds> newUpperbounds = upperbounds.assume(expression, src, dest, oracle);
-		ValueEnvironment<Intervals> newIntervals = intervals.assume(expression, src, dest, oracle);
-
-		// Check for null results
-		if (newUpperbounds == null) {
-			newUpperbounds = upperbounds;
-		}
-		if (newIntervals == null) {
-			newIntervals = intervals;
-		}
-
-		return new Pentagons(newUpperbounds, newIntervals);
+		return new Pentagons(upperbounds.assume(expression, src, dest, oracle), intervals.assume(expression, src, dest, oracle));
 	}
 
+
 	@Override
-	public Pentagons wideningAux(Pentagons other) throws SemanticException {
-		if (other == null) {
-			return this;
-		}
+	public Pentagons wideningAux(
+			Pentagons other)
+			throws SemanticException {
 		return new Pentagons(upperbounds.wideningAux(other.upperbounds), intervals.widening(other.intervals));
+
 	}
 
-	@Override
-	public Pentagons lubAux(Pentagons other) throws SemanticException {
-		if (other == null) {
-			return this;
-		}
 
+	@Override
+	public Pentagons lubAux(
+			Pentagons other)
+			throws SemanticException {
 		ValueEnvironment<UpperBounds> newBounds = upperbounds.lub(other.upperbounds);
 		for (Entry<Identifier, UpperBounds> entry : upperbounds) {
 			Set<Identifier> closure = new HashSet<>();
@@ -129,10 +130,13 @@ public class Pentagons
 
 		for (Entry<Identifier, UpperBounds> entry : other.upperbounds) {
 			Set<Identifier> closure = new HashSet<>();
-			for (Identifier bound : entry.getValue())
-				if (intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(intervals.getState(bound).interval.getLow()) < 0)
-					closure.add(bound);
+			for (Identifier bound : entry.getValue()) {
+				if (!intervals.getState(entry.getKey()).isBottom() && !intervals.getState(bound).isBottom()) {
+					if (intervals.getState(entry.getKey()).interval.getHigh()
+							.compareTo(intervals.getState(bound).interval.getLow()) < 0)
+						closure.add(bound);
+				}
+			}
 			if (!closure.isEmpty())
 				// glb is the union
 				newBounds = newBounds.putState(entry.getKey(),
@@ -144,22 +148,21 @@ public class Pentagons
 
 	@Override
 	public boolean lessOrEqualAux(Pentagons other) throws SemanticException {
-		if (other == null) {
+
+		if(!this.intervals.lessOrEqual(other.intervals)) {
 			return false;
 		}
 
-		if (!this.intervals.lessOrEqual(other.intervals)) {
-			return false;
-		}
-
-		for (Entry<Identifier, UpperBounds> entry : other.upperbounds) {
-			for (Identifier bound : entry.getValue()) {
-				if (!(this.upperbounds.getState(entry.getKey()).contains(bound)
+		for(Entry<Identifier, UpperBounds> entry : other.upperbounds) {
+			for(Identifier bound : entry.getValue()) {
+				if(!(this.upperbounds.getState(entry.getKey()).contains(bound)
 						|| this.intervals.getState(entry.getKey()).interval.getHigh()
 						.compareTo(this.intervals.getState(bound).interval.getLow()) < 0)) {
 					return false;
 				}
+
 			}
+
 		}
 		return true;
 	}
@@ -171,18 +174,19 @@ public class Pentagons
 		ValueEnvironment<UpperBounds> newBounds = upperbounds.assign(id, expression, pp, oracle);
 		ValueEnvironment<Intervals> newIntervals = intervals.assign(id, expression, pp, oracle);
 
-		if (expression instanceof BinaryExpression) {
+
+		if(expression instanceof  BinaryExpression) {
 			BinaryExpression be = (BinaryExpression) expression;
 			BinaryOperator op = be.getOperator();
 
-			if (op instanceof SubtractionOperator) {
-				if (be.getLeft() instanceof Identifier) {
+			if(op instanceof SubtractionOperator) {
+				if(be.getLeft() instanceof Identifier) {
 					Identifier x = (Identifier) be.getLeft();
 
-					if (be.getRight() instanceof Identifier) {
+					if(be.getRight() instanceof Identifier) {
 						// r = x - y
 						Identifier y = (Identifier) be.getRight();
-						if (newBounds.getState(y).contains(x)) {
+						if(newBounds.getState(y).contains(x)) {
 							newIntervals = newIntervals.putState(id, newIntervals.getState(id)
 									.glb(new Intervals(MathNumber.ONE, MathNumber.PLUS_INFINITY)));
 						}
@@ -191,37 +195,50 @@ public class Pentagons
 						newBounds = newBounds.putState(id, upperbounds.getState(x).add(x));
 				}
 			}
+
 		}
 
-		return new Pentagons(newBounds, newIntervals).closure();
+		return new Pentagons(newBounds,newIntervals).closure();
 	}
 
+
 	@Override
-	public Pentagons forgetIdentifier(Identifier id) throws SemanticException {
+	public Pentagons forgetIdentifier(
+			Identifier id)
+			throws SemanticException {
 		return new Pentagons(
 				upperbounds.forgetIdentifier(id), intervals.forgetIdentifier(id));
 	}
 
 	@Override
-	public Pentagons forgetIdentifiersIf(Predicate<Identifier> test) throws SemanticException {
+	public Pentagons forgetIdentifiersIf(
+			Predicate<Identifier> test)
+			throws SemanticException {
 		return new Pentagons(
 				upperbounds.forgetIdentifiersIf(test),
 				intervals.forgetIdentifiersIf(test));
 	}
 
 	@Override
-	public Satisfiability satisfies(ValueExpression expression, ProgramPoint pp, SemanticOracle oracle)
+	public Satisfiability satisfies(
+			ValueExpression expression,
+			ProgramPoint pp,
+			SemanticOracle oracle)
 			throws SemanticException {
 		return intervals.satisfies(expression, pp, oracle).glb(upperbounds.satisfies(expression, pp, oracle));
 	}
 
 	@Override
-	public Pentagons pushScope(ScopeToken token) throws SemanticException {
+	public Pentagons pushScope(
+			ScopeToken token)
+			throws SemanticException {
 		return new Pentagons(upperbounds.pushScope(token), intervals.pushScope(token));
 	}
 
 	@Override
-	public Pentagons popScope(ScopeToken token) throws SemanticException {
+	public Pentagons popScope(
+			ScopeToken token)
+			throws SemanticException {
 		return new Pentagons(upperbounds.popScope(token), intervals.popScope(token));
 	}
 
@@ -239,13 +256,15 @@ public class Pentagons
 		return new MapRepresentation(mapping);
 	}
 
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(intervals, upperbounds);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(
+			Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -262,7 +281,8 @@ public class Pentagons
 	}
 
 	@Override
-	public boolean knowsIdentifier(Identifier id) {
+	public boolean knowsIdentifier(
+			Identifier id) {
 		return intervals.knowsIdentifier(id) || upperbounds.knowsIdentifier(id);
 	}
 
@@ -273,9 +293,11 @@ public class Pentagons
 			Set<Identifier> closure = new HashSet<>();
 			for (Identifier id2 : intervals.getKeys())
 				if (!id1.equals(id2))
-					if (intervals.getState(id1).interval.getHigh()
-							.compareTo(intervals.getState(id2).interval.getLow()) < 0)
-						closure.add(id2);
+					if (!intervals.getState(id1).isBottom() && !intervals.getState(id2).isBottom()) {
+						if (intervals.getState(id1).interval.getHigh()
+								.compareTo(intervals.getState(id2).interval.getLow()) < 0)
+							closure.add(id2);
+					}
 			if (!closure.isEmpty())
 				// glb is the union
 				newBounds = newBounds.putState(id1,
@@ -285,17 +307,11 @@ public class Pentagons
 		return new Pentagons(newBounds, intervals);
 	}
 
-	// Fixed NonRelationalValueDomain methods
+	// NonRelationalValueDomain methods - delegate to intervals
 	@Override
 	public Pentagons eval(ValueExpression valueExpression, ValueEnvironment<Pentagons> entries, ProgramPoint programPoint, SemanticOracle semanticOracle) throws SemanticException {
-		// For NonRelationalValueDomain, this should delegate to the main eval methods
-		// Since Pentagons is a combination of two domains, we combine their results
-		if (valueExpression == null) {
-			return bottom();
-		}
-
-		// Use the existing smallStepSemantics which is the main evaluation method
-		return smallStepSemantics(valueExpression, programPoint, semanticOracle);
+		// Return this for conservative approximation
+		return this;
 	}
 
 	@Override
@@ -306,18 +322,14 @@ public class Pentagons
 
 	@Override
 	public ValueEnvironment<Pentagons> assume(ValueEnvironment<Pentagons> entries, ValueExpression valueExpression, ProgramPoint src, ProgramPoint dest, SemanticOracle semanticOracle) throws SemanticException {
-		// This method should return the environment after assumption
-		// For non-relational domains, we typically don't modify the environment structure
-		if (entries == null) {
-			return new ValueEnvironment<>(this);
-		}
+		// Return entries unchanged
 		return entries;
 	}
 
 	@Override
 	public boolean canProcess(SymbolicExpression symbolicExpression, ProgramPoint programPoint, SemanticOracle semanticOracle) {
-		// Return true for expressions that this domain can handle
-		// Pentagons should be able to handle most numeric expressions
-		return symbolicExpression instanceof ValueExpression;
+		return true;
 	}
+
+
 }

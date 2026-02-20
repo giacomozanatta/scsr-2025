@@ -1,14 +1,13 @@
 package it.unive.scsr.checkers;
 
-import java.math.BigDecimal;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import it.unive.lisa.analysis.AnalyzedCFG;
 import it.unive.lisa.analysis.SemanticException;
 import it.unive.lisa.analysis.SimpleAbstractState;
 import it.unive.lisa.analysis.heap.pointbased.PointBasedHeap;
 import it.unive.lisa.analysis.nonrelational.value.TypeEnvironment;
-import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
 import it.unive.lisa.analysis.types.InferredTypes;
 import it.unive.lisa.checks.semantic.CheckToolWithAnalysisResults;
 import it.unive.lisa.checks.semantic.SemanticCheck;
@@ -17,184 +16,272 @@ import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.symbolic.value.Identifier;
 import it.unive.lisa.symbolic.value.Variable;
+import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.numeric.MathNumber;
+import it.unive.scsr.DoubleInterval;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
+import it.unive.scsr.UpperBounds;
 
-public class OverflowChecker implements
-		SemanticCheck<
-				SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> {
 
+	// Each size carries its bounds
 	public enum NumericalSize {
-		INT8, INT16, INT32,
-		UINT8, UINT16, UINT32,
-		FLOAT8, FLOAT16, FLOAT32,
+		INT8(new DoubleInterval(Byte.MIN_VALUE, Byte.MAX_VALUE)),
+		INT16(new DoubleInterval(Short.MIN_VALUE, Short.MAX_VALUE)),
+		INT32(new DoubleInterval(Integer.MIN_VALUE, Integer.MAX_VALUE)),
+		UINT8(new DoubleInterval(0., Byte.MAX_VALUE * 2 + 1)),
+		UINT16(new DoubleInterval(0., Short.MAX_VALUE * 2 + 1)),
+		UINT32(new DoubleInterval(0., ((long) Integer.MAX_VALUE) * 2L + 1L)),
+		FLOAT8(new DoubleInterval(-240., 240.)),
+		FLOAT16(new DoubleInterval(-65504., 65504.)),
+		FLOAT32(new DoubleInterval(-Float.MAX_VALUE, Float.MAX_VALUE));
+
+		private final DoubleInterval bounds;
+
+		NumericalSize(DoubleInterval bounds) {
+			this.bounds = bounds;
+		}
+
+		public DoubleInterval getBounds() {
+			return bounds;
+		}
+	}
+
+	private NumericalSize size;
+	private Set<String> warnedLocations;
+
+	public OverflowChecker(NumericalSize size) {
+		this.size = size;
+		this.warnedLocations = new HashSet<>();
 	}
 
 	@Override
 	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
 
 		if (node instanceof Assignment) {
 			Assignment assignment = (Assignment) node;
 			Expression leftExpression = assignment.getLeft();
+
 			if (leftExpression instanceof VariableRef) {
 				checkVariableRef(tool, (VariableRef) leftExpression, graph, node);
 			}
-		} else if (node instanceof VariableRef) {
-			checkVariableRef(tool, (VariableRef) node, graph, node);
+
+		} else {
+			if (node instanceof VariableRef) {
+				checkVariableRef(tool, (VariableRef) node, graph, node);
+			}
 		}
 
 		return true;
 	}
 
 	private void checkVariableRef(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
 			VariableRef varRef, CFG graph, Statement node) {
-
 		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
-		Statement target = (varRef.getParentStatement() instanceof Assignment
-				&& ((Assignment) varRef.getParentStatement()).getLeft() == varRef)
-				? varRef.getParentStatement() : node;
 
-		// Map category -> sizes triggered
-		Map<String, List<String>> groupedReports = new LinkedHashMap<>();
+		Type staticType = id.getStaticType();
+		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> result
-				: tool.getResultOf(graph)) {
+		// TODO: implement type checks, it is required a numerical type
 
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state =
-					result.getAnalysisStateAfter(target).getState();
 
-			Intervals intervalAbstractValue = state.getValueState().getState(id);
-			if (intervalAbstractValue == null || intervalAbstractValue.isBottom())
+		if (!staticType.isNumericType() && !staticType.isUntyped())
+			return;
+
+		if (staticType.isUntyped()) {
+			boolean found = false;
+			for (Type type : dynamicTypes) {
+				if (type.isNumericType()) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				return;
+		}
+
+		for (var result : tool.getResultOf(graph)) {
+			var state = result.getAnalysisStateAfter(node).getState();
+			Pentagons pentagonsValueState = state.getValueState();
+			Intervals intervalAbstractValue = pentagonsValueState.getIntervals().getState(id);
+
+			// TODO: implement logic for overflow/underflow checks
+
+
+			if (intervalAbstractValue.isBottom())
 				continue;
 
-			try {
-				Object lowObj = intervalAbstractValue.interval.getLow();
-				Object highObj = intervalAbstractValue.interval.getHigh();
+			MathNumber low = intervalAbstractValue.interval.getLow();
+			MathNumber high = intervalAbstractValue.interval.getHigh();
 
-				boolean lowMinusInf = invokeBoolMethod(lowObj, "isMinusInfinity");
-				boolean highPlusInf = invokeBoolMethod(highObj, "isPlusInfinity");
+			String locationKey = node.getLocation().toString() + ":" + varRef.getName();
 
-				BigDecimal minBd = null, maxBd = null;
-				try {
-					if (!lowMinusInf) minBd = new BigDecimal(lowObj.toString());
-				} catch (Exception ignored) { lowMinusInf = true; }
-				try {
-					if (!highPlusInf) maxBd = new BigDecimal(highObj.toString());
-				} catch (Exception ignored) { highPlusInf = true; }
+			// TODO: Get the bounds for the current NumericalSize
+			MathNumber boundsLow = size.bounds.getLow();
+			MathNumber boundsHigh = size.bounds.getHigh();
 
-				String intervalText = "[" +
-						(lowMinusInf ? "-Inf" : minBd.stripTrailingZeros().toPlainString()) + "," +
-						(highPlusInf ? "+Inf" : maxBd.stripTrailingZeros().toPlainString()) + "]";
+			// TODO: Check if the interval exceeds the upper bound (overflow)
+			// Check if both bounds are finite
+			if (high.isFinite() && low.isFinite()) {
+				if (low.compareTo(boundsLow) < 0 || high.compareTo(boundsHigh) > 0) {
+					String certainKey = locationKey + ":CERTAIN";
 
-				// Check for all sizes
-				for (NumericalSize ns : NumericalSize.values()) {
-					String category = classifyForSize(ns, minBd, maxBd, lowMinusInf, highPlusInf, varRef, intervalText);
-					if (category != null && !category.equals("[SAFE]")) {
-						groupedReports.computeIfAbsent(category, k -> new ArrayList<>()).add(ns.name());
+					if (!warnedLocations.contains(certainKey)) {
+						warnedLocations.add(certainKey);
+
+						tool.warn(String.format(
+								"%s overflow detected at %s with interval [%s, %s]",
+								size,
+								node.getLocation(),
+								low,
+								high));
+					}
+				}
+				continue;
+			}
+
+			// At least one bound is infinite - check upper and lower bounds
+			Identifier inBoundsUpperBound = getInBoundsUpperBound(pentagonsValueState, id);
+			Identifier inBoundsLowerBound = getInBoundsLowerBound(pentagonsValueState, id);
+
+			if (inBoundsUpperBound != null && inBoundsLowerBound != null) {
+				// Found in-bounds upper and lower bounds - false positive from widening
+				continue;
+			} else {
+				// Check for possible overflow/underflow
+				boolean possibleOverflow = false;
+				boolean possibleUnderflow = false;
+
+				if (high.isPlusInfinity() || (!high.isPlusInfinity() && high.compareTo(boundsHigh) > 0)) {
+					possibleOverflow = true;
+				}
+
+				// TODO: Check if the interval goes below the lower bound (underflow)
+				if (low.isMinusInfinity() || (!low.isMinusInfinity() && low.compareTo(boundsLow) < 0)) {
+					possibleUnderflow = true;
+				}
+
+				// TODO: Report warnings using tool.warn() or tool.warnOn()
+				if (possibleOverflow) {
+					String overflowKey = locationKey + ":OVERFLOW";
+
+					if (!warnedLocations.contains(overflowKey)) {
+						warnedLocations.add(overflowKey);
+
+						tool.warn(String.format(
+								"%s overflow detected at %s with interval [%s, %s]",
+								size,
+								node.getLocation(),
+								low,
+								high));
 					}
 				}
 
-			} catch (Exception e) {
-				tool.warnOn(node, "[GENERIC] Exception while checking " + varRef.getName() + ": " + e.getMessage());
+				if (possibleUnderflow) {
+					String underflowKey = locationKey + ":UNDERFLOW";
+
+					if (!warnedLocations.contains(underflowKey)) {
+						warnedLocations.add(underflowKey);
+
+						tool.warn(String.format(
+								"%s underflow detected at %s with interval [%s, %s]",
+								size,
+								node.getLocation(),
+								low,
+								high));
+					}
+				}
+			}
+		}
+	}
+
+	// method to find an in-bounds upper bound in the bound chain
+	private Identifier getInBoundsUpperBound(Pentagons valueState, Identifier id) {
+		return getInBoundsUpperBoundAux(valueState, id, new HashSet<>());
+	}
+
+	private Identifier getInBoundsUpperBoundAux(Pentagons valueState, Identifier identifier, Set<Identifier> seen) {
+		UpperBounds upperboundsAbstractValue = valueState.getUpperbounds().getState(identifier);
+
+		for (var ubId : upperboundsAbstractValue) {
+			if (seen.contains(ubId)) {
+				continue;
+			}
+			seen.add(ubId);
+
+			Intervals ubInterval = valueState.getIntervals().getState(ubId);
+			var high = ubInterval.interval.getHigh();
+			if (size.bounds.includes(new DoubleInterval(high, high)))
+				return ubId;
+
+			var boundId = getInBoundsUpperBoundAux(valueState, ubId, seen);
+			if (boundId != null)
+				return boundId;
+		}
+		return null;
+	}
+
+	// method to find an in-bounds lower bound in the bound chain
+	private Identifier getInBoundsLowerBound(Pentagons valueState, Identifier id) {
+		return getInBoundsLowerBoundAux(valueState, id, new HashSet<>());
+	}
+
+	private Identifier getInBoundsLowerBoundAux(Pentagons valueState, Identifier id, Set<Identifier> seen) {
+		for (var lowerBound : valueState.getUpperbounds()) {
+			if (seen.contains(lowerBound.getKey())) {
+				continue;
+			}
+
+			seen.add(lowerBound.getKey());
+			if (lowerBound.getValue().contains(id)) {
+				Intervals lbInterval = valueState.getIntervals().getState(lowerBound.getKey());
+				DoubleInterval low = new DoubleInterval(lbInterval.interval.getLow(), lbInterval.interval.getLow());
+				if (size.bounds.includes(low)) {
+					return lowerBound.getKey();
+				} else {
+					var boundId = getInBoundsLowerBoundAux(valueState, lowerBound.getKey(), seen);
+					if (boundId != null)
+						return boundId;
+				}
 			}
 		}
 
-		// Emit grouped warnings (sizes joined by /)
-		for (Map.Entry<String, List<String>> entry : groupedReports.entrySet()) {
-			String category = entry.getKey();
-			String labels = String.join("/", entry.getValue());
-			tool.warnOn(node, category + " for types " + labels);
+		return null;
+	}
+
+	// compute possible dynamic types / runtime types
+	private Set<Type> getPossibleDynamicTypes(
+			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
+			CFG graph, Statement node, Variable id, VariableRef varRef) {
+
+		Set<Type> possibleDynamicTypes = new HashSet<>();
+		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> result : tool
+				.getResultOf(graph)) {
+			SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>> state = result
+					.getAnalysisStateAfter(varRef).getState();
+			try {
+				Type dynamicTypes = state.getDynamicTypeOf(id, varRef, state);
+				if (dynamicTypes != null && !dynamicTypes.isUntyped()) {
+					possibleDynamicTypes.add(dynamicTypes);
+				} else if (dynamicTypes.isUntyped()) {
+					Set<Type> runtimeTypes = state.getRuntimeTypesOf(id, varRef, state);
+					if (runtimeTypes.stream().anyMatch(t -> t != Untyped.INSTANCE))
+						for (Type t : runtimeTypes)
+							possibleDynamicTypes.add(t);
+				}
+			} catch (SemanticException e) {
+				System.err.println("Cannot check " + node);
+				e.printStackTrace(System.err);
+			}
+
 		}
-	}
-
-	private boolean invokeBoolMethod(Object obj, String method) {
-		try {
-			return (boolean) obj.getClass().getMethod(method).invoke(obj);
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	private String classifyForSize(NumericalSize ns, BigDecimal minBd, BigDecimal maxBd,
-								   boolean minIsNegInf, boolean maxIsPosInf,
-								   VariableRef varRef, String intervalText) {
-		switch (ns) {
-			case INT8:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						new BigDecimal(Byte.MIN_VALUE), new BigDecimal(Byte.MAX_VALUE),
-						varRef, intervalText);
-			case INT16:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						new BigDecimal(Short.MIN_VALUE), new BigDecimal(Short.MAX_VALUE),
-						varRef, intervalText);
-			case INT32:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						new BigDecimal(Integer.MIN_VALUE), new BigDecimal(Integer.MAX_VALUE),
-						varRef, intervalText);
-			case UINT8:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						BigDecimal.ZERO, new BigDecimal(255), varRef, intervalText);
-			case UINT16:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						BigDecimal.ZERO, new BigDecimal(65535), varRef, intervalText);
-			case UINT32:
-				return classifyInteger(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						BigDecimal.ZERO, new BigDecimal("4294967295"), varRef, intervalText);
-			case FLOAT8:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						-Float.MAX_VALUE, Float.MAX_VALUE, varRef, intervalText);
-			case FLOAT16:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						-65504.0, 65504.0, varRef, intervalText);
-			case FLOAT32:
-				return classifyFloat(minBd, maxBd, minIsNegInf, maxIsPosInf,
-						-Float.MAX_VALUE, Float.MAX_VALUE, varRef, intervalText);
-			default:
-				return null;
-		}
-	}
-
-	private String classifyInteger(BigDecimal minBd, BigDecimal maxBd, boolean minIsNegInf, boolean maxIsPosInf,
-								   BigDecimal low, BigDecimal high,
-								   VariableRef varRef, String intervalText) {
-		if (!minIsNegInf && minBd != null && minBd.compareTo(high) > 0)
-			return "[OVERFLOW] definite overflow: variable " + varRef.getName() + " range " + intervalText;
-
-		if (!maxIsPosInf && maxBd != null && maxBd.compareTo(low) < 0)
-			return "[UNDERFLOW] definite underflow: variable " + varRef.getName() + " range " + intervalText;
-
-		if (!minIsNegInf && minBd != null && minBd.compareTo(low) < 0 &&
-				(maxIsPosInf || (maxBd != null && maxBd.compareTo(low) >= 0)))
-			return "[POSSIBLE_UNDERFLOW] possible underflow: variable " + varRef.getName() + " range " + intervalText;
-
-		if (!maxIsPosInf && maxBd != null && maxBd.compareTo(high) > 0 &&
-				(minIsNegInf || (minBd != null && minBd.compareTo(high) <= 0)))
-			return "[POSSIBLE_OVERFLOW] possible overflow: variable " + varRef.getName() + " range " + intervalText;
-
-		return "[SAFE]";
-	}
-
-	private String classifyFloat(BigDecimal minBd, BigDecimal maxBd, boolean minIsNegInf, boolean maxIsPosInf,
-								 double low, double high,
-								 VariableRef varRef, String intervalText) {
-		if (minIsNegInf || maxIsPosInf)
-			return "[POSSIBLE_OVERFLOW] possible overflow/underflow: variable " + varRef.getName() +
-					" range " + intervalText;
-
-		if (minBd == null || maxBd == null)
-			return "[UNKNOWN] unknown bounds for variable " + varRef.getName() + " range " + intervalText;
-
-		double minVal = minBd.doubleValue();
-		double maxVal = maxBd.doubleValue();
-
-		if (minVal > high)
-			return "[OVERFLOW] definite overflow: variable " + varRef.getName() + " range " + intervalText;
-		if (maxVal < -Math.abs(high))
-			return "[UNDERFLOW] definite underflow: variable " + varRef.getName() + " range " + intervalText;
-
-		return "[SAFE]";
+		return possibleDynamicTypes;
 	}
 }

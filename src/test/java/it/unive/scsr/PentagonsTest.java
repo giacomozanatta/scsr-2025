@@ -29,17 +29,17 @@ public class PentagonsTest {
 		conf.analysisGraphs = GraphType.HTML;
 
 		// we specify the analysis that we want to execute
-		
-		 conf.abstractState = DefaultConfiguration.simpleState(
+
+		conf.abstractState = DefaultConfiguration.simpleState(
 				DefaultConfiguration.defaultHeapDomain(),
 				new Pentagons(),
 				DefaultConfiguration.defaultTypeDomain());
-		
+
 		// we instantiate LiSA with our configuration
 		LiSA lisa = new LiSA(conf);
 
 		// finally, we tell LiSA to analyze the program
 		lisa.run(program);
 	}
-	
+
 }

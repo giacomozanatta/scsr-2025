@@ -135,12 +135,11 @@ public class DivisionByZeroChecker implements
 	 * Emits a warning on {@code div} if the abstract value {@code iv} of the
 	 * divisor contains 0.
 	 *
-	 * <p>Cases:
-	 * <ul>
-	 *   <li><b>null / bottom</b> – unreachable, nothing to warn.</li>
-	 *   <li><b>TOP</b> – the divisor is completely unknown; 0 is possible.</li>
-	 *   <li><b>[lo, hi]</b> – 0 is possible iff {@code lo <= 0 <= hi}.</li>
-	 * </ul>
+	 * Cases:
+	 * null / bottom – unreachable, nothing to warn.</li>
+	 * TOP – the divisor is completely unknown; 0 is possible.</li>
+	 * [lo, hi] – 0 is possible iff {@code lo <= 0 <= hi}.</li>
+	 *
 	 */
 	private void warnIfMayBeZero(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,

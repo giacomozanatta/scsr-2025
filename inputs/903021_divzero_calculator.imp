@@ -1,0 +1,86 @@
+/**
+ * Division by zero test cases.
+ * Scenarios: speed calculator, grade book, discount calculator.
+ *
+ * Expected warnings:
+ * - SpeedCalculator.calcSpeed: div by zero (timeEnd - timeStart = 0)
+ * - GradeBook.average: div by zero (count = 0, never incremented)
+ * - DiscountCalculator.discountRate: div by zero (originalPrice = 0)
+ *
+ * Expected safe (no warnings):
+ * - SpeedCalculator.calcSpeedSafe
+ * - GradeBook.passingAverage
+ * - DiscountCalculator.fixedDiscount
+ */
+
+class SpeedCalculator {
+    ~SpeedCalculator() {}
+
+    // UNSAFE: if timeStart == timeEnd, elapsed = 0
+    calcSpeed(distance, timeStart, timeEnd) {
+        def elapsed = timeEnd - timeStart;
+        def speed = distance / elapsed;
+        return speed;
+    }
+
+    // SAFE: fixed nonzero elapsed time
+    calcSpeedSafe(distance) {
+        def elapsed = 10;
+        def speed = distance / elapsed;
+        return speed;
+    }
+}
+
+class GradeBook {
+    ~GradeBook() {}
+
+    // UNSAFE: count is never incremented, stays 0
+    average(g1, g2, g3) {
+        def total = g1 + g2 + g3;
+        def count = 0;
+        def avg = total / count;
+        return avg;
+    }
+
+    // SAFE: count is always 3
+    passingAverage(g1, g2, g3) {
+        def total = g1 + g2 + g3;
+        def count = 3;
+        def avg = total / count;
+        return avg;
+    }
+}
+
+class DiscountCalculator {
+    ~DiscountCalculator() {}
+
+    // UNSAFE: originalPrice could be 0
+    discountRate(originalPrice, discountedPrice) {
+        def saved = originalPrice - discountedPrice;
+        def rate = saved / originalPrice;
+        return rate;
+    }
+
+    // SAFE: always dividing by 100
+    fixedDiscount(price) {
+        def discount = price * 10 / 100;
+        def finalPrice = price - discount;
+        return finalPrice;
+    }
+}
+
+class Main {
+    main() {
+        def calc = new SpeedCalculator();
+        calc.calcSpeed(100, 5, 5);
+        calc.calcSpeedSafe(100);
+
+        def book = new GradeBook();
+        book.average(28, 30, 25);
+        book.passingAverage(28, 30, 25);
+
+        def discount = new DiscountCalculator();
+        discount.discountRate(0, 0);
+        discount.fixedDiscount(50);
+    }
+}

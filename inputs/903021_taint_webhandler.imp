@@ -1,0 +1,124 @@
+/**
+ * Taint analysis test cases (Untainted / Tainted / Sanitized).
+ * Scenarios: web login (SQL injection), file upload (path traversal),
+ * email notification (header injection).
+ *
+ * Sources:    source1()       -> returns tainted user input
+ * Sanitizers: sanitizer1(x)   -> cleans the input
+ * Sinks:      sink1(x)        -> dangerous output point
+ *
+ * Expected warnings:
+ * - LoginHandler.unsafeLogin: tainted value reaches sink1 unsanitized
+ * - UploadHandler.unsafeUpload: tainted value reaches sink1 unsanitized
+ * - NotificationHandler.unsafeSend: tainted value reaches sink1 unsanitized
+ *
+ * Expected safe (no warnings):
+ * - LoginHandler.safeLogin
+ * - UploadHandler.safeUpload
+ * - NotificationHandler.safeSend
+ */
+
+class LoginHandler {
+    ~LoginHandler() {}
+
+    source1() {
+        return "admin' OR '1'='1";
+    }
+
+    sanitizer1(input) {
+        return input;
+    }
+
+    sink1(data) {
+        // Executes SQL query - dangerous if tainted
+    }
+
+    // UNSAFE: username flows directly into sink1
+    unsafeLogin() {
+        def username = this.source1();
+        def sql = "SELECT * FROM users WHERE name = " + username;
+        this.sink1(sql);
+    }
+
+    // SAFE: username is sanitized before reaching sink1
+    safeLogin() {
+        def username = this.source1();
+        def cleanUsername = this.sanitizer1(username);
+        def sql = "SELECT * FROM users WHERE name = " + cleanUsername;
+        this.sink1(sql);
+    }
+}
+
+class UploadHandler {
+    ~UploadHandler() {}
+
+    source1() {
+        return "../../../etc/passwd";
+    }
+
+    sanitizer1(input) {
+        return input;
+    }
+
+    sink1(data) {
+        // Saves file to disk - dangerous if tainted
+    }
+
+    // UNSAFE: filename flows directly into sink1
+    unsafeUpload() {
+        def filename = this.source1();
+        this.sink1(filename);
+    }
+
+    // SAFE: filename is sanitized before reaching sink1
+    safeUpload() {
+        def filename = this.source1();
+        def cleanFilename = this.sanitizer1(filename);
+        this.sink1(cleanFilename);
+    }
+}
+
+class NotificationHandler {
+    ~NotificationHandler() {}
+
+    source1() {
+        return "Hello\nBcc: attacker@evil.com";
+    }
+
+    sanitizer1(input) {
+        return input;
+    }
+
+    sink1(data) {
+        // Sends email - dangerous if tainted
+    }
+
+    // UNSAFE: subject flows directly into sink1
+    unsafeSend() {
+        def subject = this.source1();
+        this.sink1(subject);
+    }
+
+    // SAFE: subject is sanitized before reaching sink1
+    safeSend() {
+        def subject = this.source1();
+        def cleanSubject = this.sanitizer1(subject);
+        this.sink1(cleanSubject);
+    }
+}
+
+class Main {
+    main() {
+        def loginHandler = new LoginHandler();
+        loginHandler.unsafeLogin();
+        loginHandler.safeLogin();
+
+        def uploadHandler = new UploadHandler();
+        uploadHandler.unsafeUpload();
+        uploadHandler.safeUpload();
+
+        def notifHandler = new NotificationHandler();
+        notifHandler.unsafeSend();
+        notifHandler.safeSend();
+    }
+}

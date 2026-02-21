@@ -1,0 +1,94 @@
+/**
+ * Overflow and underflow test cases.
+ * Scenarios: temperature monitor, game score counter, bank account.
+ *
+ * Expected warnings:
+ * - TemperatureMonitor.accumulateReadings: overflow (100+100+100=300 > INT8 max 127)
+ * - ScoreCounter.incrementScore: overflow (120+50=170, *2=340 > INT8 max 127)
+ * - BankAccount.applyDebt: underflow (10-200=-190 < INT8 min -128)
+ *
+ * Expected safe (no warnings):
+ * - TemperatureMonitor.safeRead
+ * - ScoreCounter.resetScore
+ * - BankAccount.deposit
+ */
+
+class Sensor {
+    ~Sensor() {}
+
+    read() {
+        return 100;
+    }
+}
+
+class TemperatureMonitor {
+    ~TemperatureMonitor() {}
+
+    // UNSAFE: 100 + 100 + 100 = 300, overflows INT8 max (127)
+    accumulateReadings(sensor) {
+        def r1 = sensor.read();
+        def r2 = sensor.read();
+        def r3 = sensor.read();
+        def total = r1 + r2 + r3;
+        def avg = total / 3;
+        return avg;
+    }
+
+    // SAFE: single reading stays within range
+    safeRead(sensor) {
+        def reading = sensor.read();
+        return reading;
+    }
+}
+
+class ScoreCounter {
+    ~ScoreCounter() {}
+
+    // UNSAFE: 120 + 50 = 170, * 2 = 340, overflows INT8 max (127)
+    incrementScore(base, bonus) {
+        def score = base + bonus;
+        def doubled = score * 2;
+        return doubled;
+    }
+
+    // SAFE: reset always produces a small value
+    resetScore() {
+        def score = 0;
+        def penalty = 5;
+        def result = score - penalty;
+        return result;
+    }
+}
+
+class BankAccount {
+    ~BankAccount() {}
+
+    // UNSAFE: 10 - 200 = -190, underflows INT8 min (-128)
+    applyDebt(balance, debt) {
+        def result = balance - debt;
+        return result;
+    }
+
+    // SAFE: small deposit stays within range
+    deposit(balance, amount) {
+        def result = balance + amount;
+        return result;
+    }
+}
+
+class Main {
+    main() {
+        def sensor = new Sensor();
+        def monitor = new TemperatureMonitor();
+        monitor.accumulateReadings(sensor);
+        monitor.safeRead(sensor);
+
+        def counter = new ScoreCounter();
+        counter.incrementScore(120, 50);
+        counter.resetScore();
+
+        def account = new BankAccount();
+        account.applyDebt(10, 200);
+        account.deposit(10, 5);
+    }
+}

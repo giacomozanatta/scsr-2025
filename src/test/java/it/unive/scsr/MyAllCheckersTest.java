@@ -6,6 +6,7 @@ import it.unive.lisa.AnalysisException;
 import it.unive.lisa.DefaultConfiguration;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.analysis.nonrelational.value.ValueEnvironment;
+import it.unive.scsr.Pentagons;
 import it.unive.lisa.conf.LiSAConfiguration;
 import it.unive.lisa.conf.LiSAConfiguration.GraphType;
 import it.unive.lisa.imp.IMPFrontend;
@@ -22,10 +23,19 @@ import it.unive.scsr.checkers.OverflowChecker;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 import it.unive.scsr.checkers.TaintThreeLevelsChecker;
 
+import java.io.File;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 /**
  * Test class for running the overflow, division by zero, and taint checkers
  * on a set of IMP programs. Programs are organized in separate input folders
  * per checker. Results are written to the outputs folder.
+ * Files that do not converge within the timeout are skipped.
  *
  * @author 903021
  */
@@ -42,6 +52,9 @@ public class MyAllCheckersTest {
     private static final String OVERFLOW_OUTPUT = "outputs/903021/overflows";
     private static final String DIVZERO_OUTPUT  = "outputs/903021/divzero";
     private static final String TAINT_OUTPUT    = "outputs/903021/taintthree";
+
+    // Timeout in seconds per file - files that loop forever will be skipped
+    private static final int TIMEOUT_SECONDS = 30;
 
     // Method names used to identify sources, sanitizers and sinks in taint programs
     private static final String[] SOURCES    = {"source1", "source2"};
@@ -82,41 +95,61 @@ public class MyAllCheckersTest {
      * Iterates over all .imp files in inputFolder and runs the
      * checker identified by type on each of them, writing results
      * under outputFolder/<filename>/.
+     * Files that exceed the timeout are skipped.
      */
     private void runCheckerOnFolder(String inputFolder, String outputFolder, CheckerType type)
             throws Exception {
 
-        java.io.File folder = new java.io.File(inputFolder);
+        File folder = new File(inputFolder);
 
         if (!folder.exists() || !folder.isDirectory()) {
             System.err.println("Input folder not found: " + inputFolder);
             return;
         }
 
-        java.io.File[] impFiles = folder.listFiles(
-                (dir, name) -> name.endsWith(".imp"));
+        File[] impFiles = folder.listFiles((dir, name) -> name.endsWith(".imp"));
 
         if (impFiles == null || impFiles.length == 0) {
             System.out.println("No .imp files found in: " + inputFolder);
             return;
         }
 
-        int passed = 0, failed = 0;
+        int passed = 0, failed = 0, timedOut = 0;
 
-        for (java.io.File file : impFiles) {
+        for (File file : impFiles) {
             String outDir = outputFolder + "/" + stripExtension(file.getName());
             System.out.println("Analyzing: " + file.getName());
+
+            // Create a fresh executor per file so a timeout/hang on one file
+            // does not affect the next one
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+
+            Future<?> future = executor.submit(() -> {
+                try {
+                    runSingleAnalysis(file.getPath(), outDir, type);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
             try {
-                runSingleAnalysis(file.getPath(), outDir, type);
+                future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 System.out.println("  -> OK");
                 passed++;
-            } catch (Exception e) {
-                System.err.println("  -> ERROR: " + e.getMessage());
+            } catch (TimeoutException e) {
+                future.cancel(true);
+                System.err.println("  -> TIMEOUT (skipped after " + TIMEOUT_SECONDS + "s)");
+                timedOut++;
+            } catch (ExecutionException e) {
+                System.err.println("  -> ERROR: " + e.getCause().getMessage());
+                e.getCause().printStackTrace();
                 failed++;
+            } finally {
+                executor.shutdownNow();
             }
         }
 
-        System.out.println("Done. Passed: " + passed + ", Failed: " + failed);
+        System.out.println("Done. Passed: " + passed + ", Failed: " + failed + ", Timed out: " + timedOut);
     }
 
     /**

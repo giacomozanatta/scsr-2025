@@ -24,6 +24,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
 /**
@@ -41,8 +42,8 @@ import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
  *   <li>Warn if 0 is contained in the resulting interval.</li>
  * </ol>
  */
-public class DivisionByZeroChecker implements
-		SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class DivisionByZeroChecker implements SemanticCheck {
 
 	private final NumericalSize size;
 
@@ -54,10 +55,7 @@ public class DivisionByZeroChecker implements
 	// SemanticCheck entry point
 	// -------------------------------------------------------------------------
 
-	@Override
-	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node) {
+	public boolean visit(CheckToolWithAnalysisResults tool, CFG graph, Statement node) {
 
 		if (node instanceof Division)
 			checkDivision(tool, graph, (Division) node);
@@ -69,18 +67,14 @@ public class DivisionByZeroChecker implements
 	// Division check
 	// -------------------------------------------------------------------------
 
-	private void checkDivision(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Division div) {
+	private void checkDivision(CheckToolWithAnalysisResults tool, CFG graph, Division div) {
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
+		for (Object r : tool.getResultOf(graph)) {
+			AnalyzedCFG result = (AnalyzedCFG) r;
 
 			// We want the state *after* the right operand (the divisor) has been
 			// computed, so we read getAnalysisStateAfter(div.getRight()).
-			AnalysisState<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-					TypeEnvironment<InferredTypes>>> state =
-					result.getAnalysisStateAfter(div.getRight());
+			AnalysisState state = result.getAnalysisStateAfter(div.getRight());
 
 			// getComputedExpressions() holds the symbolic expressions produced
 			// by evaluating the right operand.
@@ -95,20 +89,22 @@ public class DivisionByZeroChecker implements
 			try {
 				// Expand to all memory locations reachable from the divisor
 				// expression (important when the divisor is a pointer/reference).
+				SimpleAbstractState rawState = (SimpleAbstractState) state.getState();
 				reachableIds.addAll(
-						state.getState().reachableFrom(divisorExpr, div, state.getState()).elements);
+						rawState.reachableFrom(divisorExpr, div, rawState).elements);
 
 				for (SymbolicExpression s : reachableIds) {
 					// ---- TODO resolved: type check ----------------------------------
 					// We only care about numeric divisors.
-					Set<Type> dynamicTypes = getPossibleDynamicTypes(s, div, state.getState());
+					Set<Type> dynamicTypes = getPossibleDynamicTypes(s, div, rawState);
 					if (!isNumericSymbolicExpression(s, dynamicTypes))
 						continue;
 					// -----------------------------------------------------------------
 
 					// Evaluate the symbolic expression in the Intervals domain
 					// to get an abstract value for the divisor.
-					ValueEnvironment<Intervals> valueState = state.getState().getValueState();
+					ValueEnvironment<Intervals> valueState = extractIntervals(rawState.getValueState());
+					if (valueState == null) continue;
 					Intervals divisorInterval;
 					try {
 						divisorInterval = valueState.eval((ValueExpression) s, div, state.getState());
@@ -141,9 +137,7 @@ public class DivisionByZeroChecker implements
 	 * [lo, hi] – 0 is possible iff {@code lo <= 0 <= hi}.</li>
 	 *
 	 */
-	private void warnIfMayBeZero(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			Division div, Intervals iv) {
+	private void warnIfMayBeZero(CheckToolWithAnalysisResults tool, Division div, Intervals iv) {
 
 		if (iv == null || iv.isBottom())
 			return; // unreachable – no warning needed
@@ -173,6 +167,30 @@ public class DivisionByZeroChecker implements
 					+ "Possible division by zero: divisor interval is ["
 					+ lo + ", " + hi + "] which contains 0.");
 		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Abstract state helper
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Extracts ValueEnvironment<Intervals> from either a raw ValueEnvironment<Intervals>
+	 * or a Pentagons domain (which wraps one internally).
+	 */
+	@SuppressWarnings("unchecked")
+	private ValueEnvironment<Intervals> extractIntervals(Object valueState) {
+		if (valueState instanceof Pentagons) {
+			try {
+				java.lang.reflect.Field f = Pentagons.class.getDeclaredField("intervals");
+				f.setAccessible(true);
+				return (ValueEnvironment<Intervals>) f.get(valueState);
+			} catch (Exception e) {
+				return null;
+			}
+		}
+		if (valueState instanceof ValueEnvironment)
+			return (ValueEnvironment<Intervals>) valueState;
+		return null;
 	}
 
 	// -------------------------------------------------------------------------
@@ -206,8 +224,7 @@ public class DivisionByZeroChecker implements
 	}
 
 	/** Collects possible runtime types for a symbolic expression. */
-	private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div,
-											  SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>> state)
+	private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div, SimpleAbstractState state)
 			throws SemanticException {
 
 		Set<Type> result = new HashSet<>();

@@ -23,9 +23,10 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
+import it.unive.scsr.Pentagons;
 
-public class OverflowChecker implements
-		SemanticCheck<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> {
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class OverflowChecker implements SemanticCheck {
 
 	// -------------------------------------------------------------------------
 	// NumericalSize: min/max bounds for each supported type
@@ -73,10 +74,7 @@ public class OverflowChecker implements
 	// SemanticCheck entry point
 	// -------------------------------------------------------------------------
 
-	@Override
-	public boolean visit(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node) {
+	public boolean visit(CheckToolWithAnalysisResults tool, CFG graph, Statement node) {
 
 		if (node instanceof Assignment) {
 			Expression left = ((Assignment) node).getLeft();
@@ -94,9 +92,7 @@ public class OverflowChecker implements
 	// Core check logic
 	// -------------------------------------------------------------------------
 
-	private void checkVariableRef(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			VariableRef varRef, CFG graph, Statement node) {
+	private void checkVariableRef(CheckToolWithAnalysisResults tool, VariableRef varRef, CFG graph, Statement node) {
 
 		Variable id = new Variable(
 				varRef.getStaticType(),
@@ -125,14 +121,12 @@ public class OverflowChecker implements
 			target = varRef.getParentStatement();
 		}
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-					TypeEnvironment<InferredTypes>> state =
-					result.getAnalysisStateAfter(target).getState();
-
-			Intervals iv = state.getValueState().getState(id);
+		for (Object r : tool.getResultOf(graph)) {
+			AnalyzedCFG result = (AnalyzedCFG) r;
+			Object rawState = result.getAnalysisStateAfter(target).getState();
+			ValueEnvironment<Intervals> valueEnv = extractIntervals(rawState);
+			if (valueEnv == null) continue;
+			Intervals iv = valueEnv.getState(id);
 
 			// ---- TODO resolved: overflow/underflow detection -------------------
 			checkOverflowUnderflow(tool, target, iv);
@@ -153,9 +147,7 @@ public class OverflowChecker implements
 	 * warning because the value <em>could</em> exceed the bounds; if the
 	 * interval is entirely within the valid range we stay silent.</p>
 	 */
-	private void checkOverflowUnderflow(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			Statement target, Intervals iv) {
+	private void checkOverflowUnderflow(CheckToolWithAnalysisResults tool, Statement target, Intervals iv) {
 
 		if (iv == null || iv.isBottom())
 			return; // unreachable code – nothing to warn about
@@ -208,6 +200,30 @@ public class OverflowChecker implements
 	}
 
 	// -------------------------------------------------------------------------
+	// Abstract state helper
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Extracts ValueEnvironment<Intervals> from either a raw ValueEnvironment<Intervals>
+	 * or a Pentagons domain (which wraps one internally).
+	 */
+	@SuppressWarnings("unchecked")
+	private ValueEnvironment<Intervals> extractIntervals(Object valueState) {
+		if (valueState instanceof Pentagons) {
+			try {
+				java.lang.reflect.Field f = Pentagons.class.getDeclaredField("intervals");
+				f.setAccessible(true);
+				return (ValueEnvironment<Intervals>) f.get(valueState);
+			} catch (Exception e) {
+				return null;
+			}
+		}
+		if (valueState instanceof ValueEnvironment)
+			return (ValueEnvironment<Intervals>) valueState;
+		return null;
+	}
+
+	// -------------------------------------------------------------------------
 	// Type helpers
 	// -------------------------------------------------------------------------
 
@@ -230,17 +246,14 @@ public class OverflowChecker implements
 
 	/** Collects possible runtime types for a variable at a given program point. */
 	private Set<Type> getPossibleDynamicTypes(
-			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>, TypeEnvironment<InferredTypes>>> tool,
-			CFG graph, Statement node, Variable id, VariableRef varRef) {
+			CheckToolWithAnalysisResults tool, CFG graph, Statement node, Variable id, VariableRef varRef) {
 
 		Set<Type> possibleDynamicTypes = new HashSet<>();
 
-		for (AnalyzedCFG<SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-				TypeEnvironment<InferredTypes>>> result : tool.getResultOf(graph)) {
-
-			SimpleAbstractState<PointBasedHeap, ValueEnvironment<Intervals>,
-					TypeEnvironment<InferredTypes>> state =
-					result.getAnalysisStateAfter(varRef).getState();
+		for (Object r : tool.getResultOf(graph)) {
+			AnalyzedCFG result = (AnalyzedCFG) r;
+			SimpleAbstractState state =
+					(SimpleAbstractState) result.getAnalysisStateAfter(varRef).getState();
 			try {
 				Type dynamic = state.getDynamicTypeOf(id, varRef, state);
 				if (dynamic != null && !dynamic.isUntyped()) {

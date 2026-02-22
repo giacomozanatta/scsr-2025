@@ -31,30 +31,26 @@ import it.unive.lisa.program.annotations.Annotation;
 public class TaintThreeLevelsChecker implements
 SemanticCheck<
 		SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> {
-	
-	/**
-	 * Sink annotation.
-	 */
+
+	//Sink annotation
 	public static final Annotation SINK_ANNOTATION = new Annotation("lisa.taint.Sink");
 
-	/**
-	 * Sink matcher.
-	 */
+	//Sink matcher
 	public static final AnnotationMatcher SINK_MATCHER = new BasicAnnotationMatcher(SINK_ANNOTATION);
 
 	@Override
 	public boolean visit(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node) {
-		
+
 		if (!(node instanceof UnresolvedCall))
-			return true; 
+			return true;
 		UnresolvedCall call = (UnresolvedCall) node;
 		try {
 			for (AnalyzedCFG<
 					SimpleAbstractState<PointBasedHeap, ValueEnvironment<TaintThreeLevels>,
 							TypeEnvironment<InferredTypes>>> result : tool.getResultOf(call.getCFG())) {
-				
+
 				Call resolved = tool.getResolvedVersion(call, result);
 				if (resolved == null)
 					System.err.println("Error");
@@ -90,7 +86,7 @@ SemanticCheck<
 							}
 
 					}
-				} 
+				}
 			}
 		} catch (SemanticException e) {
 			System.err.println("Cannot check " + node);
@@ -100,8 +96,8 @@ SemanticCheck<
 		return true;
 	}
 
-	
-		
-	
+
+
+
 
 }

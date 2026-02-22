@@ -25,13 +25,21 @@ import it.unive.lisa.util.numeric.MathNumber;
 import it.unive.scsr.Intervals;
 import it.unive.scsr.Pentagons;
 
+// Checks whether variables can overflow or underflow for a given numeric type.
+//
+// It implements SemanticCheck (not SyntacticCheck) because I need to read the
+// abstract interval of a variable from the analysis post-state. SyntacticCheck
+// only sees the AST, not the analysis results.
+//
+// The raw types + @SuppressWarnings are needed because I want this checker to
+// work with both a plain ValueEnvironment<Intervals> state and a Pentagons state,
+// without fixing a single generic type parameter.
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class OverflowChecker implements SemanticCheck {
 
-	// -------------------------------------------------------------------------
-	// NumericalSize: min/max bounds for each supported type
-	// -------------------------------------------------------------------------
-
+	// Supported numeric types and their min/max bounds.
+	// For floats I use the integer range of the mantissa as an approximation,
+	// since the Intervals domain is integer-based.
 	public enum NumericalSize {
 		INT8   (true,  false, -128L,                    127L),
 		INT16  (true,  false, -32768L,                  32767L),
@@ -39,9 +47,6 @@ public class OverflowChecker implements SemanticCheck {
 		UINT8  (false, false, 0L,                        255L),
 		UINT16 (false, false, 0L,                        65535L),
 		UINT32 (false, false, 0L,                        4294967295L),
-		// For floats we approximate with the integer range of their mantissa
-		// so that the Intervals domain (which is integer-based) can still
-		// flag obviously out-of-range values.
 		FLOAT8 (true,  true,  -128L,                    127L),
 		FLOAT16(true,  true,  -65504L,                  65504L),
 		FLOAT32(true,  true,  -2147483648L,              2147483647L);
@@ -62,59 +67,36 @@ public class OverflowChecker implements SemanticCheck {
 		public MathNumber maxAsMathNumber() { return new MathNumber(max); }
 	}
 
-	// -------------------------------------------------------------------------
-
 	private final NumericalSize size;
 
-	public OverflowChecker(NumericalSize size) {
-		this.size = size;
-	}
+	public OverflowChecker(NumericalSize size) { this.size = size; }
 
-	// -------------------------------------------------------------------------
-	// SemanticCheck entry point
-	// -------------------------------------------------------------------------
-
+	// Called by LiSA for every statement. I only care about assignments
+	// (where a variable gets a new value). For other statements I just return true.
 	public boolean visit(CheckToolWithAnalysisResults tool, CFG graph, Statement node) {
-
 		if (node instanceof Assignment) {
 			Expression left = ((Assignment) node).getLeft();
 			if (left instanceof VariableRef)
 				checkVariableRef(tool, (VariableRef) left, graph, node);
-
 		} else if (node instanceof VariableRef) {
 			checkVariableRef(tool, (VariableRef) node, graph, node);
 		}
-
 		return true;
 	}
 
-	// -------------------------------------------------------------------------
-	// Core check logic
-	// -------------------------------------------------------------------------
-
 	private void checkVariableRef(CheckToolWithAnalysisResults tool, VariableRef varRef, CFG graph, Statement node) {
+		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 
-		Variable id = new Variable(
-				varRef.getStaticType(),
-				varRef.getName(),
-				varRef.getLocation());
-
+		// Skip non-numeric variables. If the static type is Untyped (IMP parameters
+		// without explicit types), fall back to the types inferred by LiSA.
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
-
-		// ---- TODO resolved: type check ----------------------------------------
-		// We only proceed when the variable is of a numeric type.
-		// If the static type is Untyped we fall back to dynamic types.
 		boolean isNumeric = isNumericType(staticType);
-		if (!isNumeric) {
-			isNumeric = dynamicTypes.stream().anyMatch(this::isNumericType);
-		}
-		if (!isNumeric)
-			return; // not a numerical variable – skip
-		// -----------------------------------------------------------------------
+		if (!isNumeric) isNumeric = dynamicTypes.stream().anyMatch(this::isNumericType);
+		if (!isNumeric) return;
 
-		// The statement we want the post-state of is the assignment itself
-		// (so we read the value *after* it has been assigned).
+		// I want the state AFTER the assignment, so I use the assignment node
+		// as the target (not the variable reference itself).
 		Statement target = node;
 		if (varRef.getParentStatement() instanceof Assignment
 				&& ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
@@ -127,38 +109,22 @@ public class OverflowChecker implements SemanticCheck {
 			ValueEnvironment<Intervals> valueEnv = extractIntervals(rawState);
 			if (valueEnv == null) continue;
 			Intervals iv = valueEnv.getState(id);
-
-			// ---- TODO resolved: overflow/underflow detection -------------------
 			checkOverflowUnderflow(tool, target, iv);
-			// -------------------------------------------------------------------
 		}
 	}
 
-	// -------------------------------------------------------------------------
-	// Overflow / underflow detection
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Compares the abstract interval {@code iv} against the valid range of
-	 * {@link #size} and emits warnings when the bounds exceed the type limits
-	 * (potential overflow) or go below the type minimum (potential underflow).
-	 *
-	 * <p>The check is sound but not complete: if the interval is TOP we emit a
-	 * warning because the value <em>could</em> exceed the bounds; if the
-	 * interval is entirely within the valid range we stay silent.</p>
-	 */
+	// Compare the interval against the type bounds and emit warnings.
+	//   upper > typeMax  -> overflow
+	//   lower < typeMin  -> underflow
+	//   TOP              -> warn because the value could be anything
+	//   BOTTOM           -> dead code, skip
 	private void checkOverflowUnderflow(CheckToolWithAnalysisResults tool, Statement target, Intervals iv) {
-
-		if (iv == null || iv.isBottom())
-			return; // unreachable code – nothing to warn about
+		if (iv == null || iv.isBottom()) return;
 
 		String prefix = "[OverflowChecker-" + size + "] ";
 
-		// TOP means we have no information: the value may be anything,
-		// so it might overflow or underflow.
 		if (iv.isTop()) {
-			tool.warnOn(target, prefix
-					+ "Possible overflow/underflow: value is unbounded (TOP).");
+			tool.warnOn(target, prefix + "Possible overflow/underflow: value is unbounded (TOP).");
 			return;
 		}
 
@@ -166,47 +132,35 @@ public class OverflowChecker implements SemanticCheck {
 		MathNumber hi = iv.getUpperBound();
 
 		if (lo == null || hi == null) {
-			tool.warnOn(target, prefix
-					+ "Possible overflow/underflow: cannot determine value bounds.");
+			tool.warnOn(target, prefix + "Possible overflow/underflow: cannot determine value bounds.");
 			return;
 		}
 
 		MathNumber typeMin = size.minAsMathNumber();
 		MathNumber typeMax = size.maxAsMathNumber();
 
-		// Overflow:  upper bound exceeds the type maximum
 		if (!hi.isInfinite() && hi.compareTo(typeMax) > 0) {
-			tool.warnOn(target, prefix
-					+ "Possible overflow: upper bound " + hi
+			tool.warnOn(target, prefix + "Possible overflow: upper bound " + hi
 					+ " exceeds " + size + " maximum (" + size.max + ").");
 		} else if (hi.isPlusInfinity()) {
-			// Infinite upper bound – could overflow
-			tool.warnOn(target, prefix
-					+ "Possible overflow: upper bound is +Inf, may exceed "
+			tool.warnOn(target, prefix + "Possible overflow: upper bound is +Inf, may exceed "
 					+ size + " maximum (" + size.max + ").");
 		}
 
-		// Underflow: lower bound is below the type minimum
 		if (!lo.isInfinite() && lo.compareTo(typeMin) < 0) {
-			tool.warnOn(target, prefix
-					+ "Possible underflow: lower bound " + lo
+			tool.warnOn(target, prefix + "Possible underflow: lower bound " + lo
 					+ " is below " + size + " minimum (" + size.min + ").");
 		} else if (lo.isMinusInfinity()) {
-			// Infinite lower bound – could underflow
-			tool.warnOn(target, prefix
-					+ "Possible underflow: lower bound is -Inf, may go below "
+			tool.warnOn(target, prefix + "Possible underflow: lower bound is -Inf, may go below "
 					+ size + " minimum (" + size.min + ").");
 		}
 	}
 
-	// -------------------------------------------------------------------------
-	// Abstract state helper
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Extracts ValueEnvironment<Intervals> from either a raw ValueEnvironment<Intervals>
-	 * or a Pentagons domain (which wraps one internally).
-	 */
+	// Extract ValueEnvironment<Intervals> from the abstract state.
+	// If the analysis ran with Pentagons, the state is a Pentagons object,
+	// not a plain ValueEnvironment. Pentagons stores its interval component in
+	// a package-private field called "intervals". I access it via reflection
+	// (setAccessible(true)) to avoid touching professor-provided Pentagons.java.
 	@SuppressWarnings("unchecked")
 	private ValueEnvironment<Intervals> extractIntervals(Object valueState) {
 		if (valueState instanceof Pentagons) {
@@ -223,20 +177,11 @@ public class OverflowChecker implements SemanticCheck {
 		return null;
 	}
 
-	// -------------------------------------------------------------------------
-	// Type helpers
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Returns {@code true} if {@code t} represents a numeric type.
-	 * We check both LiSA's {@link NumericType} marker interface and a
-	 * name-based heuristic to cover all IMP/LiSA numeric type names.
-	 */
+	// Check numeric type via LiSA's NumericType interface first,
+	// then fall back to a name-based check for IMP types that don't implement it.
 	private boolean isNumericType(Type t) {
-		if (t == null || t instanceof Untyped)
-			return false;
-		if (t instanceof NumericType)
-			return true;
+		if (t == null || t instanceof Untyped) return false;
+		if (t instanceof NumericType) return true;
 		String name = t.toString().toLowerCase();
 		return name.contains("int")   || name.contains("uint")
 				|| name.contains("float") || name.contains("double")
@@ -244,12 +189,12 @@ public class OverflowChecker implements SemanticCheck {
 				|| name.contains("byte")  || name.contains("numeric");
 	}
 
-	/** Collects possible runtime types for a variable at a given program point. */
+	// If the static type is Untyped, collect runtime types from LiSA's type analysis.
+	// getDynamicTypeOf() gives the most general type; if still Untyped,
+	// getRuntimeTypesOf() gives all possible concrete types.
 	private Set<Type> getPossibleDynamicTypes(
 			CheckToolWithAnalysisResults tool, CFG graph, Statement node, Variable id, VariableRef varRef) {
-
 		Set<Type> possibleDynamicTypes = new HashSet<>();
-
 		for (Object r : tool.getResultOf(graph)) {
 			AnalyzedCFG result = (AnalyzedCFG) r;
 			SimpleAbstractState state =
@@ -260,16 +205,13 @@ public class OverflowChecker implements SemanticCheck {
 					possibleDynamicTypes.add(dynamic);
 				} else if (dynamic != null && dynamic.isUntyped()) {
 					Set<Type> runtime = state.getRuntimeTypesOf(id, varRef, state);
-					runtime.stream()
-							.filter(t -> t != Untyped.INSTANCE)
-							.forEach(possibleDynamicTypes::add);
+					runtime.stream().filter(t -> t != Untyped.INSTANCE).forEach(possibleDynamicTypes::add);
 				}
 			} catch (SemanticException e) {
 				System.err.println("OverflowChecker: cannot check " + node);
 				e.printStackTrace(System.err);
 			}
 		}
-
 		return possibleDynamicTypes;
 	}
 }

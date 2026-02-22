@@ -27,95 +27,61 @@ import it.unive.scsr.Intervals;
 import it.unive.scsr.Pentagons;
 import it.unive.scsr.checkers.OverflowChecker.NumericalSize;
 
-/**
- * A semantic checker that warns whenever a division may have a zero divisor.
- *
- * <p>Strategy:
- * <ol>
- *   <li>Intercept every {@link Division} node in the CFG.</li>
- *   <li>Look up the abstract state <em>after</em> evaluating the right-hand
- *       operand (the divisor).</li>
- *   <li>Collect all symbolic expressions that could represent the divisor value
- *       (via {@code reachableFrom}).</li>
- *   <li>For each such expression that has a numeric type, evaluate it against
- *       the {@link Intervals} domain.</li>
- *   <li>Warn if 0 is contained in the resulting interval.</li>
- * </ol>
- */
+// Checks for potential division by zero.
+// For every Division node it reads the abstract interval of the divisor
+// and warns if 0 is within that interval: lo <= 0 <= hi.
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class DivisionByZeroChecker implements SemanticCheck {
 
 	private final NumericalSize size;
 
-	public DivisionByZeroChecker(NumericalSize size) {
-		this.size = size;
-	}
-
-	// -------------------------------------------------------------------------
-	// SemanticCheck entry point
-	// -------------------------------------------------------------------------
+	public DivisionByZeroChecker(NumericalSize size) { this.size = size; }
 
 	public boolean visit(CheckToolWithAnalysisResults tool, CFG graph, Statement node) {
-
 		if (node instanceof Division)
 			checkDivision(tool, graph, (Division) node);
-
 		return true;
 	}
 
-	// -------------------------------------------------------------------------
-	// Division check
-	// -------------------------------------------------------------------------
-
 	private void checkDivision(CheckToolWithAnalysisResults tool, CFG graph, Division div) {
-
 		for (Object r : tool.getResultOf(graph)) {
 			AnalyzedCFG result = (AnalyzedCFG) r;
 
-			// We want the state *after* the right operand (the divisor) has been
-			// computed, so we read getAnalysisStateAfter(div.getRight()).
+			// I use getAnalysisStateAfter(div.getRight()) — not the division itself —
+			// because I want the state after the divisor expression has been evaluated.
+			// That gives me the symbolic values the divisor produced via getComputedExpressions().
 			AnalysisState state = result.getAnalysisStateAfter(div.getRight());
 
-			// getComputedExpressions() holds the symbolic expressions produced
-			// by evaluating the right operand.
 			Set<SymbolicExpression> reachableIds = new HashSet<>();
 			Iterator<SymbolicExpression> it = state.getComputedExpressions().iterator();
-
-			if (!it.hasNext())
-				continue;
-
+			if (!it.hasNext()) continue;
 			SymbolicExpression divisorExpr = it.next();
 
 			try {
-				// Expand to all memory locations reachable from the divisor
-				// expression (important when the divisor is a pointer/reference).
 				SimpleAbstractState rawState = (SimpleAbstractState) state.getState();
-				reachableIds.addAll(
-						rawState.reachableFrom(divisorExpr, div, rawState).elements);
+
+				// reachableFrom() follows the heap graph from the divisor expression.
+				// For a plain integer variable this just returns the variable itself.
+				// For a field access or pointer it resolves aliases in the heap model.
+				reachableIds.addAll(rawState.reachableFrom(divisorExpr, div, rawState).elements);
 
 				for (SymbolicExpression s : reachableIds) {
-					// ---- TODO resolved: type check ----------------------------------
-					// We only care about numeric divisors.
+					// Only warn for numeric divisors (not strings, objects, etc.)
 					Set<Type> dynamicTypes = getPossibleDynamicTypes(s, div, rawState);
-					if (!isNumericSymbolicExpression(s, dynamicTypes))
-						continue;
-					// -----------------------------------------------------------------
+					if (!isNumericSymbolicExpression(s, dynamicTypes)) continue;
 
-					// Evaluate the symbolic expression in the Intervals domain
-					// to get an abstract value for the divisor.
 					ValueEnvironment<Intervals> valueState = extractIntervals(rawState.getValueState());
 					if (valueState == null) continue;
+
 					Intervals divisorInterval;
 					try {
+						// eval() looks up or computes the abstract value of s in the interval env
 						divisorInterval = valueState.eval((ValueExpression) s, div, state.getState());
 					} catch (ClassCastException cce) {
-						// s is not a ValueExpression – skip
-						continue;
+						continue; // s is a heap expression, not a value expression — skip
 					}
 
-					// ---- TODO resolved: division-by-zero check ----------------------
 					warnIfMayBeZero(tool, div, divisorInterval);
-					// -----------------------------------------------------------------
 				}
 			} catch (SemanticException e) {
 				e.printStackTrace();
@@ -123,24 +89,10 @@ public class DivisionByZeroChecker implements SemanticCheck {
 		}
 	}
 
-	// -------------------------------------------------------------------------
-	// Division-by-zero detection
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Emits a warning on {@code div} if the abstract value {@code iv} of the
-	 * divisor contains 0.
-	 *
-	 * Cases:
-	 * null / bottom – unreachable, nothing to warn.</li>
-	 * TOP – the divisor is completely unknown; 0 is possible.</li>
-	 * [lo, hi] – 0 is possible iff {@code lo <= 0 <= hi}.</li>
-	 *
-	 */
+	// The actual zero check: 0 in [lo, hi] iff lo <= 0 <= hi.
+	// TOP -> divisor unknown, warn. BOTTOM -> dead code, skip.
 	private void warnIfMayBeZero(CheckToolWithAnalysisResults tool, Division div, Intervals iv) {
-
-		if (iv == null || iv.isBottom())
-			return; // unreachable – no warning needed
+		if (iv == null || iv.isBottom()) return;
 
 		String prefix = "[DivisionByZeroChecker-" + size + "] ";
 
@@ -157,7 +109,7 @@ public class DivisionByZeroChecker implements SemanticCheck {
 			return;
 		}
 
-		// 0 ∈ [lo, hi]  ⟺  lo <= 0 <= hi
+		// 0 is in the interval if lo <= 0 and hi >= 0
 		boolean zeroPossible =
 				lo.compareTo(MathNumber.ZERO) <= 0 &&
 						hi.compareTo(MathNumber.ZERO) >= 0;
@@ -169,14 +121,8 @@ public class DivisionByZeroChecker implements SemanticCheck {
 		}
 	}
 
-	// -------------------------------------------------------------------------
-	// Abstract state helper
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Extracts ValueEnvironment<Intervals> from either a raw ValueEnvironment<Intervals>
-	 * or a Pentagons domain (which wraps one internally).
-	 */
+	// Same reflection trick as OverflowChecker: Pentagons wraps the interval
+	// env in a package-private field "intervals" that I access via setAccessible.
 	@SuppressWarnings("unchecked")
 	private ValueEnvironment<Intervals> extractIntervals(Object valueState) {
 		if (valueState instanceof Pentagons) {
@@ -193,29 +139,16 @@ public class DivisionByZeroChecker implements SemanticCheck {
 		return null;
 	}
 
-	// -------------------------------------------------------------------------
-	// Type helpers
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Returns {@code true} if the symbolic expression {@code s} (or one of its
-	 * possible dynamic types) is numeric.
-	 */
 	private boolean isNumericSymbolicExpression(SymbolicExpression s, Set<Type> dynamicTypes) {
-		// 1. Try the static type of the expression first.
 		Type staticType = s.getStaticType();
 		if (staticType != null && !staticType.isUntyped())
 			return isNumericType(staticType);
-
-		// 2. Fall back to dynamic / runtime types.
 		return dynamicTypes.stream().anyMatch(this::isNumericType);
 	}
 
 	private boolean isNumericType(Type t) {
-		if (t == null || t instanceof Untyped)
-			return false;
-		if (t instanceof NumericType)
-			return true;
+		if (t == null || t instanceof Untyped) return false;
+		if (t instanceof NumericType) return true;
 		String name = t.toString().toLowerCase();
 		return name.contains("int")   || name.contains("uint")
 				|| name.contains("float") || name.contains("double")
@@ -223,22 +156,16 @@ public class DivisionByZeroChecker implements SemanticCheck {
 				|| name.contains("byte")  || name.contains("numeric");
 	}
 
-	/** Collects possible runtime types for a symbolic expression. */
 	private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div, SimpleAbstractState state)
 			throws SemanticException {
-
 		Set<Type> result = new HashSet<>();
 		Type dynamic = state.getDynamicTypeOf(s, div, state);
-
 		if (dynamic != null && !dynamic.isUntyped()) {
 			result.add(dynamic);
 		} else if (dynamic != null && dynamic.isUntyped()) {
 			Set<Type> runtime = state.getRuntimeTypesOf(s, div, state);
-			runtime.stream()
-					.filter(t -> t != Untyped.INSTANCE)
-					.forEach(result::add);
+			runtime.stream().filter(t -> t != Untyped.INSTANCE).forEach(result::add);
 		}
-
 		return result;
 	}
 }

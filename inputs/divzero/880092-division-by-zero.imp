@@ -1,0 +1,123 @@
+class DivisionByZero {
+    divByZero() {
+        def a = 3 / 0;
+        return;
+    }
+
+    divByVariable() {
+        def a = 0;
+        def b = 3 / a;
+        return;
+    }
+
+    divByOperation() {
+        def a = -1;
+        def c = 3;
+        a = a + 1;
+        def b = c / a;
+        return;
+    }
+
+    conditionalZero(a){
+        def b = -1;
+        if(a > 0)
+            b = 10;
+        else
+            b = b + 1;
+
+        def c = 10 / b;
+        return;
+    }
+
+    divByInput(a){
+        def b = 3 / a;
+        return;
+    }
+
+    loop(a){
+        def b = 10;
+        def c = 3;
+        def d = 100;
+        while(b > 0){
+            d = d / c;                              // Surely division by zero
+            b = b - 1;
+            c = c - 1;
+        }
+
+        def e = 3 / c;                              // Safe
+
+        if(c > 0)
+            e = 3 / c;                              // Safe
+        return;
+    }
+
+    helperSum(arr, length) {
+        def sum = 0;
+        for (def i = 0; i < length; i = i + 1){
+            sum = sum + arr[i];
+        }
+
+        return sum;
+    }
+
+    calcMean(arr, length){
+        def sum = this.helperSum(arr, length);
+
+        def mean = sum / length;                    // length possibly zero
+        return mean;
+    }
+
+    arrayAccess(index){
+        def arr = new int[3];
+        arr[0] = 42;
+        arr[1] = 0;
+        arr[2] = -1;
+
+        def el = arr[index];
+        return 10 / el;                             // el possibly zero
+    }
+
+    arrayNormalization(arr, length){
+        def sum = this.helperSum(arr, length);
+
+        for (def j = 0; j < length; j = j + 1){
+            arr[j] = arr[j] / sum;                  // Requires NumericalSize.FLOAT32
+        }
+    }
+
+    linearInterpolation(x1, y1, x2, y2, ratio){     // Returns y value from interpolation between x and y
+        def slope = (y2 - y1) / (x2 - x1);          // Requires NumericalSize.FLOAT32
+        return y1 + slope * (ratio - x1);
+    }
+
+    invertMatrix2x2(a, b, c, d) {
+      def det = a * d - b * c;                      // Requires NumericalSize.FLOAT32
+
+      def invDet = 1 / det;
+
+      def result = new int[4];
+
+      result[0] = d * invDet;
+      result[1] = -b * invDet;
+      result[2] = -c * invDet;
+      result[3] = a * invDet;
+
+      return result;
+    }
+
+    minValueDiv(arr, length) {
+        def min = arr[0];
+        for (def i = 1; i < length; i = i + 1) {
+            if (arr[i] < min)
+                min = arr[i];
+        }
+        def res = 10 / min;                         // Possible div by zero
+        return res;
+    }
+
+    functionDiv(x) {
+        def f = x * x - x;
+        def res = 1 / f;                        // div by zero for x = 0 or 1
+        return res;
+    }
+}

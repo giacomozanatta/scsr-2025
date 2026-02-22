@@ -1,0 +1,69 @@
+class taint_test3_data {
+
+    source1() {
+        return 1;
+    }
+    
+    sanitizer1(input) {
+        return input;
+    }
+    
+    sink1(data) {
+    }
+    
+    json_serializer(user_data) {
+        def json_prefix = "data:";
+        def json_suffix = "end";
+        def tainted_data = this.source1(); 
+        
+        def json_string = json_prefix + tainted_data + json_suffix;
+        this.sink1(json_string); 
+        
+        def escaped_data = this.sanitizer1(tainted_data);
+        def safe_json = json_prefix + escaped_data + json_suffix;
+        this.sink1(safe_json); 
+    }
+    
+    xml_processor(element_content) {
+        def xml_open = "<element>";
+        def xml_close = "</element>";
+        def user_content = this.source1(); 
+        
+        def user_attr = this.source1(); 
+        def attr_part = "attr=" + user_attr + "end";
+        
+        def element_with_attr = xml_open + attr_part;
+        def full_element = element_with_attr + user_content + xml_close;
+        this.sink1(full_element); 
+        
+        def clean_attr = this.sanitizer1(user_attr);
+        def mixed_element = xml_open + clean_attr + user_content + xml_close;
+        this.sink1(mixed_element); 
+        
+        def clean_content = this.sanitizer1(user_content);
+        def safe_element = xml_open + clean_attr + clean_content + xml_close;
+        this.sink1(safe_element);
+    }
+    
+    data_transformation_pipeline(input_data) {
+        def stage1_input = this.source1(); 
+        def stage1_output = stage1_input + "_processed";
+        
+        def stage2_output = stage1_output;
+        if (stage1_output > 100) {
+            stage2_output = this.sanitizer1(stage1_output);
+        }
+        
+        def stage3_output = stage2_output + "_final";
+        this.sink1(stage3_output); 
+        
+        def clean_input = this.sanitizer1(stage1_input);
+        def clean_stage1 = clean_input + "_processed";
+        def clean_stage2 = clean_stage1 + "_enhanced";
+        def clean_final = clean_stage2 + "_final";
+        this.sink1(clean_final); 
+        
+        def mixed_result = clean_final + stage1_output;
+        this.sink1(mixed_result); 
+    }
+}

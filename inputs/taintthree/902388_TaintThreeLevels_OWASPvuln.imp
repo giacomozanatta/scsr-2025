@@ -1,0 +1,125 @@
+// Program to test three-level taint analysis simulating a backend with OWASP vulnerability:
+// - command injection
+// - path traversal
+// - insufficient input validation
+
+
+// ------> CONFIGURE LiSA TO WORK WITH THOSE SIGNATURES! <------
+
+//	String[] sources    = new String[] {"getUserInput", "readFromRequest"};
+//	String[] sanitizers = new String[] {"sanitizeInput", "validatePath", "escapeHtml"};
+//	String[] sinks      = new String[] {"executeCommand", "writeToFile", "sendToNetwork"};
+
+// -------------------------------------------------------------
+
+class WebApplication {
+
+    // ===== SOURCES: User input entry points =====
+    getUserInput(fieldName) {
+        // SOURCE: External user input
+        def input = "user_provided_data_" + fieldName;
+        return input;
+    }
+
+    readFromRequest(param) {
+        // SOURCE: HTTP request parameter
+        def value = "request_param_" + param;
+        return value;
+    }
+
+    // ===== SANITIZERS: Input cleaning functions =====
+    sanitizeInput(dirtyInput) {
+        // SANITIZER: Basic input sanitization
+        def clean = dirtyInput; // Simplified sanitization
+        return clean;
+    }
+
+    validatePath(pathInput) {
+        // SANITIZER: Path validation
+        if (pathInput == "../" || pathInput == "..\\") {
+            return "INVALID_PATH";
+        }
+        return pathInput;
+    }
+
+    escapeHtml(unsafeHtml) {
+        // SANITIZER: HTML escaping
+        def safe = unsafeHtml; // Simplified escaping
+        return safe;
+    }
+
+    // ===== MAIN APPLICATION LOGIC =====
+    processUserRequest() {
+        // Get user inputs (SOURCES)
+        def username = this.getUserInput("username");
+        def filepath = this.getUserInput("file");
+        def command = this.readFromRequest("cmd");
+
+        // Process username with sanitization
+        def cleanUsername = this.sanitizeInput(username);
+        def displayName = this.escapeHtml(cleanUsername);
+
+        // Process filepath with validation
+        def validatedPath = this.validatePath(filepath);
+
+        // Process command - NO sanitization (intentional vulnerability)
+        def finalCommand = command; // Tainted data flows directly
+
+        // ===== SINKS: Dangerous operations =====
+
+        // Sink 1: File system operation (should be flagged as tainted)
+        this.writeToFile(validatedPath, displayName);
+
+        // Sink 2: Command execution (should be flagged as tainted - no sanitization)
+        this.executeCommand(finalCommand);
+
+        // Sink 3: Network operation (safe - sanitized data)
+        this.sendToNetwork(displayName);
+
+        return "Request processed";
+    }
+
+    // ===== SINKS: Dangerous operations =====
+    writeToFile(filePath, content) {
+        // SINK: File system write operation
+        // If filePath is tainted, this is a security vulnerability
+        return "File written: " + filePath + " with content: " + content;
+    }
+
+    executeCommand(cmd) {
+        // SINK: System command execution
+        // If cmd is tainted, this is a command injection vulnerability
+        return "Command executed: " + cmd;
+    }
+
+    sendToNetwork(data) {
+        // SINK: Network transmission
+        // If data is properly sanitized, this should be safe
+        return "Data sent: " + data;
+    }
+
+    // ===== ADDITIONAL TEST SCENARIOS =====
+    testTaintPropagation() {
+        // Scenario 1: Safe flow (source -> sanitizer -> sink)
+        def safeInput = this.getUserInput("safe_data");
+        def sanitized = this.sanitizeInput(safeInput);
+        this.sendToNetwork(sanitized);
+
+        // Scenario 2: Dangerous flow (source -> sink, no sanitization)
+        def dangerousInput = this.readFromRequest("dangerous_cmd");
+        this.executeCommand(dangerousInput); // Direct tainted flow to sink
+
+        // Scenario 3: Partial sanitization
+        def partialInput = this.getUserInput("file_path");
+        def validated = this.validatePath(partialInput);
+        // Even with validation, if validation is incomplete, still risky
+        this.writeToFile(validated, "content");
+    }
+
+    // ===== UTILITY METHODS =====
+    logActivity(message) {
+        // Utility method - not a sink
+        return "Logged: " + message;
+    }
+
+}

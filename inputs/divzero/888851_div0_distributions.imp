@@ -1,0 +1,138 @@
+class GeometricDistribution {
+
+    ~GeometricDistribution() {}
+
+    pow(base, exp) {
+        def result = 1;
+        for (def i = 0; i < exp; i = i + 1) {
+            result = result * base;
+        }
+        return result;
+    }
+
+    /**
+     * Probability Mass Function (PMF) for the geometric distribution
+     * @param k number of failures before the first success (NOT the number of trials)
+     * with k in {0, 1, 2, ...}
+     */
+    pmf(prob, k) {
+        if (k < 0) {
+            return 0;
+        } else {
+            def q = 1 - prob;
+            return prob * this.pow(q, k);
+        }
+    }
+
+    mean(prob) {
+        def m = (1 - prob) / prob;
+        return m;
+    }
+
+    variance(prob) {
+        return (1 - prob) / (prob * prob);
+    }
+}
+
+
+class BinomialDistribution {
+    ~BinomialDistribution() {}
+
+    factorial(n) {
+        def result = 1;
+        for (def i = 1; i <= n; i = i + 1) {
+            result = result * i;
+        }
+        return result;
+    }
+
+    combination(n, k) {
+        // if (k > n || k < 0) {
+        //     return 0;
+        // }
+        // IMP doesn't let me compute an expression in the argument
+        def n_k = n - k;
+        def divisor = this.factorial(k) * this.factorial(n_k);
+        def result = this.factorial(n) / divisor;
+        return result;
+    }
+
+    /**
+     * Probability Mass Function (PMF) for the binomial distribution
+     * @param k number of successes in n trials
+     * with k in {0, 1, 2, ..., n}
+     */
+    pmf(trials, prob, k) {
+        // if (k < 0 || k > this.trials) {
+        //     return 0;
+        // }
+        // IMP doesn't let me compute an expression in the argument
+        def q = 1 - prob;
+        def trials_k = trials - k;
+        return this.combination(trials, k) * this.pow(prob, k) * this.pow(q, trials_k);
+    }
+
+    pow(base, exp) {
+        def result = 1;
+        for (def i = 0; i < exp; i = i + 1) {
+            result = result * base;
+        }
+        return result;
+    }
+
+    mean(trials, prob) {
+        return trials * prob;
+    }
+
+    variance(trials, prob) {
+        return trials * prob * (1 - prob);
+    }
+}
+
+class Test {
+
+    // Parameter here to introduce a top value
+    testGeometric(x) {
+        def geom = new GeometricDistribution();
+
+        def geomMean1 = geom.mean(0.3);
+        // Oops, division by zero
+        def geomMean2 = geom.mean(0.0);
+
+        def a = 0;
+        if (x) {
+            a = 10;
+        } else {
+            a = -20;
+        }
+
+        def b = -1;
+        if (a < b) {
+            // Yes, this doesn't make sense, but it's to test the analysis
+            // If using pentagons, it should not be detected as div by zero
+            def geomMean3 = geom.mean(a);
+        }
+    }
+
+    testBinomial(x) {
+        def binom = new BinomialDistribution();
+
+        def binomPmf1 = binom.pmf(10, 0.5, 5);
+        // Oops, division by zero
+        def binomPmf2 = binom.pmf(10, 0.0, 5);
+
+        def a = 0;
+        if (x) {
+            a = 3;
+        } else {
+            a = -7;
+        }
+
+        def b = -1;
+        if (a < b) {
+            // Yes, this doesn't make sense, but it's to test the analysis
+            // If using pentagons, it should not be detected as div by zero
+            def binomPmf3 = binom.pmf(10, a, 5);
+        }
+    }
+}

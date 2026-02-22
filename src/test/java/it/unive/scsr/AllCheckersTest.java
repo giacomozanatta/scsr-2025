@@ -134,12 +134,12 @@ public class AllCheckersTest {
         // Parse the program
         Program program = IMPFrontend.processFile(inputFile);
 
-        // CRITICAL: Load taint annotations before running taint analysis
+
         if (analysisType == AnalysisType.TAINT) {
             loadTaintAnnotations(program);
         }
 
-        // Build configuration
+
         LiSAConfiguration conf = new DefaultConfiguration();
         conf.workdir = outputDir;
         conf.analysisGraphs = GraphType.HTML;
@@ -153,7 +153,7 @@ public class AllCheckersTest {
                     new ValueEnvironment<>(new TaintThreeLevels()),
                     DefaultConfiguration.defaultTypeDomain());
 
-            // Taint analysis requires interprocedural analysis to track flows
+
             conf.interproceduralAnalysis = new ContextBasedAnalysis<>(
                     FullStackToken.getSingleton());
         } else {
@@ -177,68 +177,59 @@ public class AllCheckersTest {
                 break;
         }
 
-        // Run the analysis
+
         LiSA lisa = new LiSA(conf);
         lisa.run(program);
     }
 
-    /**
-     * Load taint annotations for sources, sanitizers, and sinks.
-     * This is REQUIRED for taint analysis to work properly.
-     *
-     * Without this step, the taint checker cannot identify which methods
-     * are sources (produce tainted data), sanitizers (clean tainted data),
-     * or sinks (should not receive tainted data).
-     */
     private void loadTaintAnnotations(Program program) {
-        // Define method name patterns for sources, sanitizers, and sinks
-        // These patterns match common naming conventions in taint test programs
+
         String[] sources = {
-                // Your test program
+
                 "source1", "source2",
-                // Student test programs
+
                 "source_SQL", "source_HTML", "source_PATH",
                 "getSource", "getUserInput", "getTainted"
         };
 
         String[] sanitizers = {
-                // Your test program
+
                 "sanitizer1", "sanitizer2",
-                // Student test programs
+
                 "sanitize_SQL", "sanitize_HTML", "sanitize_PATH",
                 "sanitize", "clean", "escape"
         };
 
         String[] sinks = {
-                // Your test program
+
                 "sink1", "sinks",
-                // Student test programs
+
                 "sink_SQL", "sink_HTML", "sink_PATH",
                 "execute", "eval", "render"
         };
 
-        // Iterate through all units (classes) in the program
+
         for (Unit unit : program.getUnits()) {
             if (unit instanceof ClassUnit) {
                 ClassUnit cunit = (ClassUnit) unit;
 
-                // Iterate through all methods in the class
+
                 for (CodeMember cm : cunit.getInstanceCodeMembers(false)) {
                     String methodName = cm.getDescriptor().getName();
 
-                    // Check if this method is a source
+
                     if (isInArray(methodName, sources)) {
                         cm.getDescriptor().getAnnotations()
                                 .addAnnotation(TaintThreeLevels.TAINTED_ANNOTATION);
                         System.out.println("  Marked as SOURCE: " + methodName);
                     }
-                    // Check if this method is a sanitizer
+
                     else if (isInArray(methodName, sanitizers)) {
                         cm.getDescriptor().getAnnotations()
                                 .addAnnotation(TaintThreeLevels.CLEAN_ANNOTATION);
                         System.out.println("  Marked as SANITIZER: " + methodName);
                     }
-                    // Check if this method is a sink
+
                     else if (isInArray(methodName, sinks)) {
                         // For sinks, we annotate the parameters, not the method
                         for (Parameter param : cm.getDescriptor().getFormals()) {
@@ -251,9 +242,7 @@ public class AllCheckersTest {
         }
     }
 
-    /**
-     * Helper method to check if a string is in an array
-     */
+
     private boolean isInArray(String name, String[] array) {
         for (String s : array) {
             if (name.equals(s)) {

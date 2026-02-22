@@ -166,7 +166,7 @@ public class DivisionByZeroChecker implements SemanticCheck<SimpleAbstractState<
 		return false;
 	}
 
-	// compute possible dynamic types / runtime types
+	// compute possible dynamic types
 	private Set<Type> getPossibleDynamicTypes(SymbolicExpression s, Division div,
 											  SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>> state)
 			throws SemanticException {

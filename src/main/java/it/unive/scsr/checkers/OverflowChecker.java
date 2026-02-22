@@ -256,7 +256,7 @@ public class OverflowChecker implements SemanticCheck<SimpleAbstractState<PointB
 		return null;
 	}
 
-	// compute possible dynamic types / runtime types
+	// compute possible dynamic types
 	private Set<Type> getPossibleDynamicTypes(
 			CheckToolWithAnalysisResults<SimpleAbstractState<PointBasedHeap, Pentagons, TypeEnvironment<InferredTypes>>> tool,
 			CFG graph, Statement node, Variable id, VariableRef varRef) {

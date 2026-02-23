@@ -26,14 +26,8 @@ import it.unive.scsr.Intervals;
 import it.unive.scsr.Pentagons;
 
 // Checks whether variables can overflow or underflow for a given numeric type.
-//
-// It implements SemanticCheck (not SyntacticCheck) because I need to read the
-// abstract interval of a variable from the analysis post-state. SyntacticCheck
-// only sees the AST, not the analysis results.
-//
-// The raw types + @SuppressWarnings are needed because I want this checker to
-// work with both a plain ValueEnvironment<Intervals> state and a Pentagons state,
-// without fixing a single generic type parameter.
+// It implements SemanticCheck because I need to read the
+// abstract interval of a variable from the analysis post-state.
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class OverflowChecker implements SemanticCheck {
 
@@ -71,8 +65,7 @@ public class OverflowChecker implements SemanticCheck {
 
 	public OverflowChecker(NumericalSize size) { this.size = size; }
 
-	// Called by LiSA for every statement. I only care about assignments
-	// (where a variable gets a new value). For other statements I just return true.
+	// Where a variable gets a new value, for other statements I just return true
 	public boolean visit(CheckToolWithAnalysisResults tool, CFG graph, Statement node) {
 		if (node instanceof Assignment) {
 			Expression left = ((Assignment) node).getLeft();
@@ -87,16 +80,15 @@ public class OverflowChecker implements SemanticCheck {
 	private void checkVariableRef(CheckToolWithAnalysisResults tool, VariableRef varRef, CFG graph, Statement node) {
 		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 
-		// Skip non-numeric variables. If the static type is Untyped (IMP parameters
-		// without explicit types), fall back to the types inferred by LiSA.
+		// Skip non-numeric variables
+
 		Type staticType = id.getStaticType();
 		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
 		boolean isNumeric = isNumericType(staticType);
 		if (!isNumeric) isNumeric = dynamicTypes.stream().anyMatch(this::isNumericType);
 		if (!isNumeric) return;
 
-		// I want the state AFTER the assignment, so I use the assignment node
-		// as the target (not the variable reference itself).
+
 		Statement target = node;
 		if (varRef.getParentStatement() instanceof Assignment
 				&& ((Assignment) varRef.getParentStatement()).getLeft() == varRef) {
@@ -156,11 +148,6 @@ public class OverflowChecker implements SemanticCheck {
 		}
 	}
 
-	// Extract ValueEnvironment<Intervals> from the abstract state.
-	// If the analysis ran with Pentagons, the state is a Pentagons object,
-	// not a plain ValueEnvironment. Pentagons stores its interval component in
-	// a package-private field called "intervals". I access it via reflection
-	// (setAccessible(true)) to avoid touching professor-provided Pentagons.java.
 	@SuppressWarnings("unchecked")
 	private ValueEnvironment<Intervals> extractIntervals(Object valueState) {
 		if (valueState instanceof Pentagons) {
@@ -177,8 +164,7 @@ public class OverflowChecker implements SemanticCheck {
 		return null;
 	}
 
-	// Check numeric type via LiSA's NumericType interface first,
-	// then fall back to a name-based check for IMP types that don't implement it.
+
 	private boolean isNumericType(Type t) {
 		if (t == null || t instanceof Untyped) return false;
 		if (t instanceof NumericType) return true;
@@ -189,9 +175,7 @@ public class OverflowChecker implements SemanticCheck {
 				|| name.contains("byte")  || name.contains("numeric");
 	}
 
-	// If the static type is Untyped, collect runtime types from LiSA's type analysis.
-	// getDynamicTypeOf() gives the most general type; if still Untyped,
-	// getRuntimeTypesOf() gives all possible concrete types.
+
 	private Set<Type> getPossibleDynamicTypes(
 			CheckToolWithAnalysisResults tool, CFG graph, Statement node, Variable id, VariableRef varRef) {
 		Set<Type> possibleDynamicTypes = new HashSet<>();

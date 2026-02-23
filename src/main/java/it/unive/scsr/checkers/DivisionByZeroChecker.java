@@ -47,9 +47,6 @@ public class DivisionByZeroChecker implements SemanticCheck {
 		for (Object r : tool.getResultOf(graph)) {
 			AnalyzedCFG result = (AnalyzedCFG) r;
 
-			// I use getAnalysisStateAfter(div.getRight()) — not the division itself —
-			// because I want the state after the divisor expression has been evaluated.
-			// That gives me the symbolic values the divisor produced via getComputedExpressions().
 			AnalysisState state = result.getAnalysisStateAfter(div.getRight());
 
 			Set<SymbolicExpression> reachableIds = new HashSet<>();
@@ -60,9 +57,6 @@ public class DivisionByZeroChecker implements SemanticCheck {
 			try {
 				SimpleAbstractState rawState = (SimpleAbstractState) state.getState();
 
-				// reachableFrom() follows the heap graph from the divisor expression.
-				// For a plain integer variable this just returns the variable itself.
-				// For a field access or pointer it resolves aliases in the heap model.
 				reachableIds.addAll(rawState.reachableFrom(divisorExpr, div, rawState).elements);
 
 				for (SymbolicExpression s : reachableIds) {
@@ -75,10 +69,9 @@ public class DivisionByZeroChecker implements SemanticCheck {
 
 					Intervals divisorInterval;
 					try {
-						// eval() looks up or computes the abstract value of s in the interval env
 						divisorInterval = valueState.eval((ValueExpression) s, div, state.getState());
 					} catch (ClassCastException cce) {
-						continue; // s is a heap expression, not a value expression — skip
+						continue;
 					}
 
 					warnIfMayBeZero(tool, div, divisorInterval);
@@ -89,7 +82,7 @@ public class DivisionByZeroChecker implements SemanticCheck {
 		}
 	}
 
-	// The actual zero check: 0 in [lo, hi] iff lo <= 0 <= hi.
+	// 0 in [lo, hi] iff lo <= 0 <= hi.
 	// TOP -> divisor unknown, warn. BOTTOM -> dead code, skip.
 	private void warnIfMayBeZero(CheckToolWithAnalysisResults tool, Division div, Intervals iv) {
 		if (iv == null || iv.isBottom()) return;
@@ -121,9 +114,7 @@ public class DivisionByZeroChecker implements SemanticCheck {
 		}
 	}
 
-	// Same reflection trick as OverflowChecker: Pentagons wraps the interval
-	// env in a package-private field "intervals" that I access via setAccessible.
-	@SuppressWarnings("unchecked")
+
 	private ValueEnvironment<Intervals> extractIntervals(Object valueState) {
 		if (valueState instanceof Pentagons) {
 			try {

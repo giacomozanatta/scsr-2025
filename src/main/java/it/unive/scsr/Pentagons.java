@@ -117,10 +117,13 @@ public class Pentagons
 
 		for (Entry<Identifier, UpperBounds> entry : other.upperbounds) {
 			Set<Identifier> closure = new HashSet<>();
-			for (Identifier bound : entry.getValue())
-				if (intervals.getState(entry.getKey()).interval.getHigh()
-						.compareTo(intervals.getState(bound).interval.getLow()) < 0)
-					closure.add(bound);
+			for (Identifier bound : entry.getValue()) {
+				if (!intervals.getState(entry.getKey()).isBottom() && !intervals.getState(bound).isBottom()) {
+					if (intervals.getState(entry.getKey()).interval.getHigh()
+							.compareTo(intervals.getState(bound).interval.getLow()) < 0)
+						closure.add(bound);
+				}
+			}
 			if (!closure.isEmpty())
 				// glb is the union
 				newBounds = newBounds.putState(entry.getKey(),
@@ -277,9 +280,11 @@ public class Pentagons
 			Set<Identifier> closure = new HashSet<>();
 			for (Identifier id2 : intervals.getKeys())
 				if (!id1.equals(id2))
-					if (intervals.getState(id1).interval.getHigh()
-							.compareTo(intervals.getState(id2).interval.getLow()) < 0)
-						closure.add(id2);
+					if (!intervals.getState(id1).isBottom() && !intervals.getState(id2).isBottom()) {
+						if (intervals.getState(id1).interval.getHigh()
+								.compareTo(intervals.getState(id2).interval.getLow()) < 0)
+							closure.add(id2);
+					}
 			if (!closure.isEmpty())
 				// glb is the union
 				newBounds = newBounds.putState(id1,

@@ -172,7 +172,7 @@ public class MyAllCheckersTest {
                         DefaultConfiguration.defaultHeapDomain(),
                         new Pentagons(),
                         DefaultConfiguration.defaultTypeDomain());
-                conf.semanticChecks.add(new OverflowChecker(NumericalSize.INT32));
+                conf.semanticChecks.add(new OverflowChecker(NumericalSize.INT8));
                 break;
 
             case DIVISION_BY_ZERO:
@@ -180,7 +180,7 @@ public class MyAllCheckersTest {
                         DefaultConfiguration.defaultHeapDomain(),
                         new Pentagons(),
                         DefaultConfiguration.defaultTypeDomain());
-                conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.INT32));
+                conf.semanticChecks.add(new DivisionByZeroChecker(NumericalSize.INT8));
                 break;
 
             case TAINT:

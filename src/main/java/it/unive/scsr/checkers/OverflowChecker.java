@@ -96,8 +96,13 @@ public class OverflowChecker implements SemanticCheck {
 
 		for (Object r : tool.getResultOf(graph)) {
 			AnalyzedCFG result = (AnalyzedCFG) r;
-			Object rawState = result.getAnalysisStateAfter(target).getState();
-			ValueEnvironment<Intervals> valueEnv = extractIntervals(rawState);
+			Object abstractState = result.getAnalysisStateAfter(target).getState();
+			// getState() returns a SimpleAbstractState; we need its value component
+			Object valueComponent = abstractState;
+			if (abstractState instanceof it.unive.lisa.analysis.SimpleAbstractState) {
+				valueComponent = ((it.unive.lisa.analysis.SimpleAbstractState) abstractState).getValueState();
+			}
+			ValueEnvironment<Intervals> valueEnv = extractIntervals(valueComponent);
 			if (valueEnv == null) continue;
 			Intervals iv = valueEnv.getState(id);
 			checkOverflowUnderflow(tool, target, iv);

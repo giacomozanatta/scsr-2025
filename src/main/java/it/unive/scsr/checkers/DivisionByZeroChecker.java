@@ -133,9 +133,15 @@ public class DivisionByZeroChecker implements SemanticCheck {
 
 	private boolean isNumericSymbolicExpression(SymbolicExpression s, Set<Type> dynamicTypes) {
 		Type staticType = s.getStaticType();
+		// If statically typed as non-numeric, skip it (e.g. strings, objects)
 		if (staticType != null && !staticType.isUntyped())
 			return isNumericType(staticType);
-		return dynamicTypes.stream().anyMatch(this::isNumericType);
+		// Untyped: check dynamic types if available, otherwise treat as numeric.
+		// IMP parameters are always Untyped, so without this fallback all
+		// divisions on parameters would be silently skipped.
+		if (!dynamicTypes.isEmpty())
+			return dynamicTypes.stream().anyMatch(this::isNumericType);
+		return true;
 	}
 
 	private boolean isNumericType(Type t) {

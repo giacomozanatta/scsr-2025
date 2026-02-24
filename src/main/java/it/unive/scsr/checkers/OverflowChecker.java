@@ -80,13 +80,12 @@ public class OverflowChecker implements SemanticCheck {
 	private void checkVariableRef(CheckToolWithAnalysisResults tool, VariableRef varRef, CFG graph, Statement node) {
 		Variable id = new Variable(varRef.getStaticType(), varRef.getName(), varRef.getLocation());
 
-		// Skip non-numeric variables
-
+		// Skip variables that are explicitly typed as non-numeric (e.g. strings, objects).
+		// Untyped variables — the default for IMP parameters — are treated as potentially
+		// numeric under the worst-case assumption: skipping them would produce false negatives
+		// on the entire student corpus, since IMP programs rarely declare parameter types.
 		Type staticType = id.getStaticType();
-		Set<Type> dynamicTypes = getPossibleDynamicTypes(tool, graph, node, id, varRef);
-		boolean isNumeric = isNumericType(staticType);
-		if (!isNumeric) isNumeric = dynamicTypes.stream().anyMatch(this::isNumericType);
-		if (!isNumeric) return;
+		if (!staticType.isNumericType() && !staticType.isUntyped()) return;
 
 
 		Statement target = node;

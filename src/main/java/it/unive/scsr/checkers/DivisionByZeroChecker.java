@@ -60,7 +60,8 @@ public class DivisionByZeroChecker implements SemanticCheck {
 				reachableIds.addAll(rawState.reachableFrom(divisorExpr, div, rawState).elements);
 
 				for (SymbolicExpression s : reachableIds) {
-					// Only warn for numeric divisors (not strings, objects, etc.)
+					// Only warn for numeric divisors (not strings, objects, etc.).
+					// Untyped divisors are included — see isNumericSymbolicExpression.
 					Set<Type> dynamicTypes = getPossibleDynamicTypes(s, div, rawState);
 					if (!isNumericSymbolicExpression(s, dynamicTypes)) continue;
 
